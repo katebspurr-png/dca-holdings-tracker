@@ -1,0 +1,155 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Calculator } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { fetchHolding } from "@/lib/supabase-holdings";
+import { supabase } from "@/integrations/supabase/client";
+
+const METHOD_LABELS: Record<string, string> = {
+  price_shares: "Price + Shares",
+  price_budget: "Price + Budget",
+  price_target: "Price + Target Avg",
+  budget_target: "Budget + Target Avg",
+};
+
+async function fetchScenariosForHolding(holdingId: string) {
+  const { data, error } = await supabase
+    .from("dca_scenarios")
+    .select("*")
+    .eq("holding_id", holdingId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data;
+}
+
+export default function HoldingDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const { data: holding, isLoading } = useQuery({
+    queryKey: ["holding", id],
+    queryFn: () => fetchHolding(id!),
+    enabled: !!id,
+  });
+
+  const { data: scenarios } = useQuery({
+    queryKey: ["dca_scenarios", "holding", id],
+    queryFn: () => fetchScenariosForHolding(id!),
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!holding) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Holding not found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-5">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Holdings
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight">
+            <span className="text-primary font-mono">{holding.ticker}</span>
+          </h1>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
+        {/* Holding info */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+            <Stat label="Ticker" value={holding.ticker} />
+            <Stat label="Shares" value={Number(holding.shares).toFixed(4)} />
+            <Stat label="Avg Cost" value={`$${Number(holding.avg_cost).toFixed(2)}`} />
+            <Stat label="Fee" value={`$${Number(holding.fee).toFixed(2)}`} />
+          </div>
+          <Button size="sm" onClick={() => navigate(`/holdings/${id}/dca`)}>
+            <Calculator className="mr-1.5 h-4 w-4" />
+            Open DCA Calculator
+          </Button>
+        </div>
+
+        {/* Saved scenarios */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Saved Scenarios
+          </h2>
+          {!scenarios || scenarios.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No saved scenarios yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Total Spend</TableHead>
+                    <TableHead className="text-right">Shares to Buy</TableHead>
+                    <TableHead className="text-right">New Avg Cost</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scenarios.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/scenarios/${s.id}`)}
+                    >
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(s.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {METHOD_LABELS[s.method] ?? s.method}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        ${Number(s.total_spend).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {Number(s.shares_to_buy).toFixed(4)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-primary font-semibold">
+                        ${Number(s.new_avg_cost).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-mono font-semibold">{value}</p>
+    </div>
+  );
+}
