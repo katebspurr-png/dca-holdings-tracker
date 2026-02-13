@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Holdings from "./pages/Holdings";
 import DcaCalculator from "./pages/DcaCalculator";
+import Scenarios from "./pages/Scenarios";
+import ScenarioDetail from "./pages/ScenarioDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +20,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Holdings />} />
           <Route path="/holdings/:id/dca" element={<DcaCalculator />} />
+          <Route path="/scenarios" element={<Scenarios />} />
+          <Route path="/scenarios/:id" element={<ScenarioDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
