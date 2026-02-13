@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,58 +42,55 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
   ],
 };
 
-function computeResults(
-  method: Method,
-  S: number,
-  A: number,
-  f: number,
-  input1: number,
-  input2: number
-) {
-  const currentTotalCost = S * A + f;
+type ResultOk = {
+  ok: true;
+  x: number;
+  bTotal: number;
+  totalShares: number;
+  newAvg: number;
+  effectivePrice: number | null;
+};
+type ResultErr = { ok: false; error: string; level: "error" | "info" };
+type Result = ResultOk | ResultErr;
 
+function compute(method: Method, S: number, A: number, f: number, i1: number, i2: number): Result {
   switch (method) {
     case "price_shares": {
-      const buyPrice = input1;
-      const newShares = input2;
-      if (buyPrice <= 0 || newShares <= 0) return null;
-      const totalShares = S + newShares;
-      const newTotalCost = currentTotalCost + newShares * buyPrice;
-      const newAvg = newTotalCost / totalShares;
-      return { newShares, buyPrice, totalShares, newTotalCost, newAvg };
+      const p = i1, x = i2;
+      if (p <= 0 || x <= 0) return { ok: false, error: "Values must be positive", level: "error" };
+      const bTotal = x * p + f;
+      const newAvg = (S * A + x * p + f) / (S + x);
+      return { ok: true, x, bTotal, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_budget": {
-      const buyPrice = input1;
-      const budget = input2;
-      if (buyPrice <= 0 || budget <= 0) return null;
-      const newShares = budget / buyPrice;
-      const totalShares = S + newShares;
-      const newTotalCost = currentTotalCost + budget;
-      const newAvg = newTotalCost / totalShares;
-      return { newShares, buyPrice, totalShares, newTotalCost, newAvg };
+      const p = i1, B = i2;
+      if (p <= 0 || B <= 0) return { ok: false, error: "Values must be positive", level: "error" };
+      if (B <= f) return { ok: false, error: "Budget must be greater than fee", level: "error" };
+      const x = (B - f) / p;
+      const newAvg = (S * A + B) / (S + x);
+      return { ok: true, x, bTotal: B, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_target": {
-      const buyPrice = input1;
-      const targetAvg = input2;
-      if (buyPrice <= 0 || targetAvg <= 0 || Math.abs(buyPrice - targetAvg) < 1e-10) return null;
-      const newShares = (targetAvg * S - currentTotalCost) / (buyPrice - targetAvg);
-      if (newShares <= 0) return null;
-      const totalShares = S + newShares;
-      const newTotalCost = currentTotalCost + newShares * buyPrice;
-      const newAvg = newTotalCost / totalShares;
-      return { newShares, buyPrice, totalShares, newTotalCost, newAvg };
+      const p = i1, t = i2;
+      if (p <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
+      if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
+      if (p >= t) return { ok: false, error: "Cannot reach target when buy price is ≥ target", level: "error" };
+      const x = (S * (A - t) + f) / (t - p);
+      const bTotal = x * p + f;
+      const newAvg = (S * A + x * p + f) / (S + x);
+      return { ok: true, x, bTotal, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "budget_target": {
-      const budget = input1;
-      const targetAvg = input2;
-      if (budget <= 0 || targetAvg <= 0) return null;
-      const totalShares = (currentTotalCost + budget) / targetAvg;
-      const newShares = totalShares - S;
-      if (newShares <= 0) return null;
-      const buyPrice = budget / newShares;
-      const newTotalCost = currentTotalCost + budget;
-      const newAvg = newTotalCost / totalShares;
-      return { newShares, buyPrice, totalShares, newTotalCost, newAvg };
+      const B = i1, t = i2;
+      if (B <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
+      if (B <= f) return { ok: false, error: "Budget must be greater than fee", level: "error" };
+      if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
+      const den = S * (A - t) + B;
+      if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+      const p = (t * (B - f)) / den;
+      const x = (B - f) / p;
+      const newAvg = (S * A + B) / (S + x);
+      return { ok: true, x, bTotal: B, totalShares: S + x, newAvg, effectivePrice: p };
     }
   }
 }
@@ -113,19 +110,12 @@ export default function DcaCalculator() {
 
   const fields = FIELD_CONFIG[method];
 
-  const results = useMemo(() => {
+  const result = useMemo(() => {
     if (!holding) return null;
     const n1 = parseFloat(val1);
     const n2 = parseFloat(val2);
     if (isNaN(n1) || isNaN(n2)) return null;
-    return computeResults(
-      method,
-      Number(holding.shares),
-      Number(holding.avg_cost),
-      Number(holding.fee),
-      n1,
-      n2
-    );
+    return compute(method, Number(holding.shares), Number(holding.avg_cost), Number(holding.fee), n1, n2);
   }, [method, val1, val2, holding]);
 
   const handleMethodChange = (v: Method) => {
@@ -174,7 +164,7 @@ export default function DcaCalculator() {
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Stat label="Ticker" value={holding.ticker} />
-            <Stat label="Shares (S)" value={S.toString()} />
+            <Stat label="Shares (S)" value={S.toFixed(4)} />
             <Stat label="Avg Cost (A)" value={`$${A.toFixed(2)}`} />
             <Stat label="Fee (f)" value={`$${f.toFixed(2)}`} />
           </div>
@@ -229,18 +219,38 @@ export default function DcaCalculator() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Results
           </h2>
-          {results ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <Stat label="Shares to Buy" value={results.newShares.toFixed(6)} />
-              <Stat label="Buy Price" value={`$${results.buyPrice.toFixed(2)}`} />
-              <Stat label="Total Shares" value={results.totalShares.toFixed(6)} />
-              <Stat label="New Total Cost" value={`$${results.newTotalCost.toFixed(2)}`} />
-              <Stat
-                label="New Avg Cost"
-                value={`$${results.newAvg.toFixed(2)}`}
-                highlight
-              />
-            </div>
+          {result ? (
+            result.ok === true ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <Stat label="Shares to Buy" value={result.x.toFixed(4)} />
+                <Stat label="Est. Total Spend (incl. fee)" value={`$${result.bTotal.toFixed(2)}`} />
+                <Stat label="New Total Shares" value={result.totalShares.toFixed(4)} />
+                <Stat label="New Avg Cost" value={`$${result.newAvg.toFixed(2)}`} highlight />
+                {result.effectivePrice !== null && (
+                  <Stat label="Effective Buy Price" value={`$${result.effectivePrice.toFixed(2)}`} />
+                )}
+              </div>
+            ) : (
+              (() => {
+                const err = result as ResultErr;
+                return (
+                  <div
+                    className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm ${
+                      err.level === "error"
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    {err.level === "error" ? (
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <Info className="h-4 w-4 shrink-0" />
+                    )}
+                    {err.error}
+                  </div>
+                );
+              })()
+            )
           ) : (
             <p className="text-sm text-muted-foreground">
               Enter valid values above to see results.
@@ -252,23 +262,11 @@ export default function DcaCalculator() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p
-        className={`text-lg font-mono font-semibold ${
-          highlight ? "text-primary" : ""
-        }`}
-      >
+      <p className={`text-lg font-mono font-semibold ${highlight ? "text-primary" : ""}`}>
         {value}
       </p>
     </div>
