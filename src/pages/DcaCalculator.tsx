@@ -19,7 +19,7 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 
 const METHOD_OPTIONS: { value: Method; label: string }[] = [
   { value: "price_shares", label: "Price + Shares" },
-  { value: "price_budget", label: "Price + Budget (total spend incl. fee)" },
+  { value: "price_budget", label: "Price + Budget" },
   { value: "price_target", label: "Price + Target Avg" },
   { value: "budget_target", label: "Budget + Target Avg" },
 ];
@@ -31,14 +31,14 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
   ],
   price_budget: [
     { key: "buyPrice", label: "Buy price" },
-    { key: "budget", label: "Budget (total spend incl. fee)" },
+    { key: "budget", label: "Budget (shares only, excl. fee)" },
   ],
   price_target: [
     { key: "buyPrice", label: "Buy price" },
     { key: "targetAvg", label: "Target average cost" },
   ],
   budget_target: [
-    { key: "budget", label: "Budget (total spend incl. fee)" },
+    { key: "budget", label: "Budget (shares only, excl. fee)" },
     { key: "targetAvg", label: "Target average cost" },
   ],
 };
@@ -66,17 +66,19 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
     case "price_budget": {
       const p = i1, B = i2;
       if (p <= 0 || B <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      if (B <= f) return { ok: false, error: "Budget must be greater than fee", level: "error" };
-      const x = (B - f) / p;
-      const newAvg = (S * A + B) / (S + x);
-      return { ok: true, x, bTotal: B, totalShares: S + x, newAvg, effectivePrice: null };
+      const x = B / p;
+      const newAvg = (S * A + B + f) / (S + x);
+      return { ok: true, x, bTotal: B + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_target": {
       const p = i1, t = i2;
       if (p <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
       if (p >= t) return { ok: false, error: "Cannot reach target when buy price is ≥ target", level: "error" };
-      const x = (S * (A - t) + f) / (t - p);
+      const den = t - p;
+      if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+      const x = (S * (A - t) + f) / den;
+      if (x <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
       const bTotal = x * p + f;
       const newAvg = (S * A + x * p + f) / (S + x);
       return { ok: true, x, bTotal, totalShares: S + x, newAvg, effectivePrice: null };
@@ -84,14 +86,14 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
     case "budget_target": {
       const B = i1, t = i2;
       if (B <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      if (B <= f) return { ok: false, error: "Budget must be greater than fee", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
-      const den = S * (A - t) + B;
+      const den = S * (A - t) + f;
       if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
-      const p = (t * (B - f)) / den;
-      const x = (B - f) / p;
-      const newAvg = (S * A + B) / (S + x);
-      return { ok: true, x, bTotal: B, totalShares: S + x, newAvg, effectivePrice: p };
+      const p = (t * B) / den;
+      if (p <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+      const x = B / p;
+      const newAvg = (S * A + B + f) / (S + x);
+      return { ok: true, x, bTotal: B + f, totalShares: S + x, newAvg, effectivePrice: p };
     }
   }
 }
