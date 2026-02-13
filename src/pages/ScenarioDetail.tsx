@@ -69,6 +69,15 @@ export default function ScenarioDetail() {
             <Stat label="Date" value={new Date(scenario.created_at).toLocaleString()} />
             <Stat label="Ticker" value={scenario.ticker} />
             <Stat label="Method" value={METHOD_LABELS[scenario.method] ?? scenario.method} />
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Holding</p>
+              <button
+                onClick={() => navigate(`/holdings/${scenario.holding_id}/dca`)}
+                className="text-lg font-mono font-semibold text-primary underline underline-offset-2 hover:opacity-80"
+              >
+                Open holding →
+              </button>
+            </div>
           </div>
         </div>
 
