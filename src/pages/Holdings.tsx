@@ -117,8 +117,13 @@ export default function Holdings() {
               <TableBody>
                 {holdings.map((h) => (
                   <TableRow key={h.id}>
-                    <TableCell className="font-mono font-semibold text-primary">
-                      {h.ticker}
+                    <TableCell>
+                      <button
+                        onClick={() => navigate(`/holdings/${h.id}`)}
+                        className="font-mono font-semibold text-primary underline underline-offset-2 hover:opacity-80"
+                      >
+                        {h.ticker}
+                      </button>
                     </TableCell>
                     <TableCell className="text-right font-mono">{fmt(h.shares)}</TableCell>
                     <TableCell className="text-right font-mono">${fmt(h.avg_cost)}</TableCell>
