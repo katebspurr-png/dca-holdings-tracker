@@ -46,7 +46,9 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
 type ResultOk = {
   ok: true;
   x: number;
-  bTotal: number;
+  budget: number;
+  feeApplied: number;
+  totalSpend: number;
   totalShares: number;
   newAvg: number;
   effectivePrice: number | null;
@@ -59,16 +61,16 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
     case "price_shares": {
       const p = i1, x = i2;
       if (p <= 0 || x <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      const bTotal = x * p + f;
-      const newAvg = (S * A + x * p + f) / (S + x);
-      return { ok: true, x, bTotal, totalShares: S + x, newAvg, effectivePrice: null };
+      const budget = x * p;
+      const newAvg = (S * A + budget + f) / (S + x);
+      return { ok: true, x, budget, feeApplied: f, totalSpend: budget + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_budget": {
       const p = i1, B = i2;
       if (p <= 0 || B <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       const x = B / p;
       const newAvg = (S * A + B + f) / (S + x);
-      return { ok: true, x, bTotal: B + f, totalShares: S + x, newAvg, effectivePrice: null };
+      return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_target": {
       const p = i1, t = i2;
@@ -79,9 +81,9 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
       if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
       const x = (S * (A - t) + f) / den;
       if (x <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
-      const bTotal = x * p + f;
-      const newAvg = (S * A + x * p + f) / (S + x);
-      return { ok: true, x, bTotal, totalShares: S + x, newAvg, effectivePrice: null };
+      const budget = x * p;
+      const newAvg = (S * A + budget + f) / (S + x);
+      return { ok: true, x, budget, feeApplied: f, totalSpend: budget + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "budget_target": {
       const B = i1, t = i2;
@@ -93,7 +95,7 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
       if (p <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
       const x = B / p;
       const newAvg = (S * A + B + f) / (S + x);
-      return { ok: true, x, bTotal: B + f, totalShares: S + x, newAvg, effectivePrice: p };
+      return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: p };
     }
   }
 }
@@ -262,7 +264,9 @@ export default function DcaCalculator() {
           {isValid ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
-              <Stat label="Est. Total Spend (incl. fee)" value={`$${(result as ResultOk).bTotal.toFixed(2)}`} />
+              <Stat label="Budget Invested" value={`$${(result as ResultOk).budget.toFixed(2)}`} />
+              <Stat label="Fee Applied" value={`$${(result as ResultOk).feeApplied.toFixed(2)}`} />
+              <Stat label="Total Spend" value={`$${(result as ResultOk).totalSpend.toFixed(2)}`} />
               <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
               <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />
               {(result as ResultOk).effectivePrice !== null && (
