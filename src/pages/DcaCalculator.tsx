@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -101,6 +102,7 @@ export default function DcaCalculator() {
   const [method, setMethod] = useState<Method>("price_shares");
   const [val1, setVal1] = useState("");
   const [val2, setVal2] = useState("");
+  const [includeFees, setIncludeFees] = useState(true);
 
   const { data: holding, isLoading } = useQuery({
     queryKey: ["holding", id],
@@ -115,8 +117,9 @@ export default function DcaCalculator() {
     const n1 = parseFloat(val1);
     const n2 = parseFloat(val2);
     if (isNaN(n1) || isNaN(n2)) return null;
-    return compute(method, Number(holding.shares), Number(holding.avg_cost), Number(holding.fee), n1, n2);
-  }, [method, val1, val2, holding]);
+    const fee = includeFees ? Number(holding.fee) : 0;
+    return compute(method, Number(holding.shares), Number(holding.avg_cost), fee, n1, n2);
+  }, [method, val1, val2, holding, includeFees]);
 
   const handleMethodChange = (v: Method) => {
     setMethod(v);
@@ -215,6 +218,17 @@ export default function DcaCalculator() {
                 onChange={(e) => setVal2(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Switch
+              id="include-fees"
+              checked={includeFees}
+              onCheckedChange={setIncludeFees}
+            />
+            <Label htmlFor="include-fees" className="cursor-pointer">
+              Include fees in calculation
+            </Label>
           </div>
         </div>
 
