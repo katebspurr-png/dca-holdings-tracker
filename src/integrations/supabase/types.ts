@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      dca_scenarios: {
+        Row: {
+          budget_invested: number
+          buy_price: number | null
+          created_at: string
+          fee_amount: number
+          fee_applied: number
+          holding_id: string
+          id: string
+          include_fees: boolean
+          input1_label: string
+          input1_value: number
+          input2_label: string
+          input2_value: number
+          method: string
+          new_avg_cost: number
+          new_total_shares: number
+          notes: string | null
+          shares_to_buy: number
+          ticker: string
+          total_spend: number
+        }
+        Insert: {
+          budget_invested: number
+          buy_price?: number | null
+          created_at?: string
+          fee_amount: number
+          fee_applied: number
+          holding_id: string
+          id?: string
+          include_fees: boolean
+          input1_label: string
+          input1_value: number
+          input2_label: string
+          input2_value: number
+          method: string
+          new_avg_cost: number
+          new_total_shares: number
+          notes?: string | null
+          shares_to_buy: number
+          ticker: string
+          total_spend: number
+        }
+        Update: {
+          budget_invested?: number
+          buy_price?: number | null
+          created_at?: string
+          fee_amount?: number
+          fee_applied?: number
+          holding_id?: string
+          id?: string
+          include_fees?: boolean
+          input1_label?: string
+          input1_value?: number
+          input2_label?: string
+          input2_value?: number
+          method?: string
+          new_avg_cost?: number
+          new_total_shares?: number
+          notes?: string | null
+          shares_to_buy?: number
+          ticker?: string
+          total_spend?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dca_scenarios_holding_id_fkey"
+            columns: ["holding_id"]
+            isOneToOne: false
+            referencedRelation: "holdings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holdings: {
         Row: {
           avg_cost: number
