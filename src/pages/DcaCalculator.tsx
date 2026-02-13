@@ -144,13 +144,17 @@ export default function DcaCalculator() {
   const A = Number(holding.avg_cost);
   const f = Number(holding.fee);
 
+  const hasInputs = val1 !== "" && val2 !== "";
+  const isError = result !== null && !result.ok;
+  const isValid = result !== null && result.ok === true;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-5">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            Back to Holdings
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
             DCA Calculator —{" "}
@@ -214,46 +218,44 @@ export default function DcaCalculator() {
           </div>
         </div>
 
+        {/* Inline guardrail message */}
+        {isError && (() => {
+          const err = result as ResultErr;
+          return err.level === "error" ? (
+            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {err.error}
+            </div>
+          ) : (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Info className="h-4 w-4 shrink-0" />
+              {err.error}
+            </p>
+          );
+        })()}
+
         {/* Results */}
-        <div className="rounded-lg border border-border bg-card p-6">
+        <div
+          className={`rounded-lg border border-border bg-card p-6 transition-opacity ${
+            isValid ? "opacity-100" : "opacity-40 pointer-events-none"
+          }`}
+        >
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Results
           </h2>
-          {result ? (
-            result.ok === true ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <Stat label="Shares to Buy" value={result.x.toFixed(4)} />
-                <Stat label="Est. Total Spend (incl. fee)" value={`$${result.bTotal.toFixed(2)}`} />
-                <Stat label="New Total Shares" value={result.totalShares.toFixed(4)} />
-                <Stat label="New Avg Cost" value={`$${result.newAvg.toFixed(2)}`} highlight />
-                {result.effectivePrice !== null && (
-                  <Stat label="Effective Buy Price" value={`$${result.effectivePrice.toFixed(2)}`} />
-                )}
-              </div>
-            ) : (
-              (() => {
-                const err = result as ResultErr;
-                return (
-                  <div
-                    className={`flex items-center gap-2 rounded-md px-4 py-3 text-sm ${
-                      err.level === "error"
-                        ? "bg-destructive/10 text-destructive"
-                        : "bg-primary/10 text-primary"
-                    }`}
-                  >
-                    {err.level === "error" ? (
-                      <AlertCircle className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <Info className="h-4 w-4 shrink-0" />
-                    )}
-                    {err.error}
-                  </div>
-                );
-              })()
-            )
+          {isValid ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
+              <Stat label="Est. Total Spend (incl. fee)" value={`$${(result as ResultOk).bTotal.toFixed(2)}`} />
+              <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
+              <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />
+              {(result as ResultOk).effectivePrice !== null && (
+                <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />
+              )}
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Enter valid values above to see results.
+              {hasInputs ? "Adjust inputs to see results." : "Enter values above to see results."}
             </p>
           )}
         </div>
