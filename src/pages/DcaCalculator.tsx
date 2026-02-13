@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, AlertCircle, Info } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetchHolding } from "@/lib/supabase-holdings";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
 
@@ -107,6 +109,8 @@ export default function DcaCalculator() {
   const [val1, setVal1] = useState("");
   const [val2, setVal2] = useState("");
   const [includeFees, setIncludeFees] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   const { data: holding, isLoading } = useQuery({
     queryKey: ["holding", id],
@@ -129,6 +133,52 @@ export default function DcaCalculator() {
     setMethod(v);
     setVal1("");
     setVal2("");
+  };
+
+  const handleSave = async () => {
+    if (!holding || !result || !result.ok) return;
+    const r = result as ResultOk;
+    const flds = FIELD_CONFIG[method];
+    const n1 = parseFloat(val1);
+    const n2 = parseFloat(val2);
+    const feeUsed = includeFees ? Number(holding.fee) : 0;
+
+    // Determine buy_price
+    let buyPrice: number | null = null;
+    if (method === "price_shares" || method === "price_budget" || method === "price_target") {
+      buyPrice = n1; // first input is always price for these methods
+    } else if (method === "budget_target" && r.effectivePrice !== null) {
+      buyPrice = r.effectivePrice;
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("dca_scenarios").insert({
+      holding_id: holding.id,
+      ticker: holding.ticker,
+      method,
+      input1_label: flds[0].label,
+      input1_value: n1,
+      input2_label: flds[1].label,
+      input2_value: n2,
+      include_fees: includeFees,
+      fee_amount: feeUsed,
+      buy_price: buyPrice,
+      shares_to_buy: r.x,
+      budget_invested: r.budget,
+      fee_applied: r.feeApplied,
+      total_spend: r.totalSpend,
+      new_total_shares: r.totalShares,
+      new_avg_cost: r.newAvg,
+    });
+    setSaving(false);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to save scenario", variant: "destructive" });
+    } else {
+      toast({ title: "Scenario saved" });
+      setVal1("");
+      setVal2("");
+    }
   };
 
   if (isLoading) {
@@ -277,6 +327,14 @@ export default function DcaCalculator() {
             <p className="text-sm text-muted-foreground">
               {hasInputs ? "Adjust inputs to see results." : "Enter values above to see results."}
             </p>
+          )}
+          {isValid && (
+            <div className="mt-5 flex justify-end">
+              <Button onClick={handleSave} disabled={saving} size="sm">
+                <Save className="mr-1.5 h-4 w-4" />
+                {saving ? "Saving…" : "Save scenario"}
+              </Button>
+            </div>
           )}
         </div>
       </main>
