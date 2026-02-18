@@ -1,25 +1,15 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
+import { getScenarios } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -28,32 +18,14 @@ const METHOD_LABELS: Record<string, string> = {
   budget_target: "Budget + Target Avg",
 };
 
-async function fetchScenarios() {
-  const { data, error } = await supabase
-    .from("dca_scenarios")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data;
-}
-
 export default function Scenarios() {
   const navigate = useNavigate();
   const [tickerFilter, setTickerFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("all");
 
-  const { data: scenarios, isLoading } = useQuery({
-    queryKey: ["dca_scenarios"],
-    queryFn: fetchScenarios,
-  });
-
-  const tickers = useMemo(() => {
-    if (!scenarios) return [];
-    return [...new Set(scenarios.map((s) => s.ticker))].sort();
-  }, [scenarios]);
+  const scenarios = getScenarios();
 
   const filtered = useMemo(() => {
-    if (!scenarios) return [];
     return scenarios.filter((s) => {
       if (tickerFilter && !s.ticker.toLowerCase().includes(tickerFilter.toLowerCase())) return false;
       if (methodFilter !== "all" && s.method !== methodFilter) return false;
@@ -74,14 +46,8 @@ export default function Scenarios() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
-        {/* Filters */}
         <div className="flex flex-wrap gap-3">
-          <Input
-            placeholder="Filter by ticker…"
-            value={tickerFilter}
-            onChange={(e) => setTickerFilter(e.target.value)}
-            className="w-48"
-          />
+          <Input placeholder="Filter by ticker…" value={tickerFilter} onChange={(e) => setTickerFilter(e.target.value)} className="w-48" />
           <Select value={methodFilter} onValueChange={setMethodFilter}>
             <SelectTrigger className="w-52 bg-background">
               <SelectValue placeholder="All methods" />
@@ -89,18 +55,13 @@ export default function Scenarios() {
             <SelectContent className="bg-popover z-50">
               <SelectItem value="all">All methods</SelectItem>
               {Object.entries(METHOD_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
-                </SelectItem>
+                <SelectItem key={k} value={k}>{v}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Table */}
-        {isLoading ? (
-          <p className="text-muted-foreground">Loading…</p>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="text-muted-foreground text-sm">No scenarios found.</p>
         ) : (
           <div className="rounded-lg border border-border overflow-x-auto">
@@ -119,33 +80,15 @@ export default function Scenarios() {
               </TableHeader>
               <TableBody>
                 {filtered.map((s) => (
-                  <TableRow
-                    key={s.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/scenarios/${s.id}`)}
-                  >
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {new Date(s.created_at).toLocaleDateString()}
-                    </TableCell>
+                  <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/scenarios/${s.id}`)}>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="font-mono font-semibold">{s.ticker}</TableCell>
-                    <TableCell className="text-sm">
-                      {METHOD_LABELS[s.method] ?? s.method}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      ${Number(s.budget_invested).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      ${Number(s.fee_applied).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      ${Number(s.total_spend).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {Number(s.shares_to_buy).toFixed(4)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono text-primary font-semibold">
-                      ${Number(s.new_avg_cost).toFixed(2)}
-                    </TableCell>
+                    <TableCell className="text-sm">{METHOD_LABELS[s.method] ?? s.method}</TableCell>
+                    <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
+                    <TableCell className="text-right font-mono text-primary font-semibold">${Number(s.new_avg_cost).toFixed(2)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

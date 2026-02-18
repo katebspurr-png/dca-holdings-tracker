@@ -1,17 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { fetchHolding } from "@/lib/supabase-holdings";
-import { supabase } from "@/integrations/supabase/client";
+import { getHolding, getScenariosForHolding, getRecommendedTargets } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -20,58 +13,13 @@ const METHOD_LABELS: Record<string, string> = {
   budget_target: "Budget + Target Avg",
 };
 
-async function fetchScenariosForHolding(holdingId: string) {
-  const { data, error } = await supabase
-    .from("dca_scenarios")
-    .select("*")
-    .eq("holding_id", holdingId)
-    .order("created_at", { ascending: false })
-    .limit(10);
-  if (error) throw error;
-  return data;
-}
-
-async function fetchRecommendedTargets(holdingId: string) {
-  const { data, error } = await supabase
-    .from("dca_scenarios")
-    .select("*")
-    .eq("holding_id", holdingId)
-    .not("recommended_target" as any, "is", null)
-    .order("created_at", { ascending: false })
-    .limit(10);
-  if (error) throw error;
-  return data;
-}
-
 export default function HoldingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: holding, isLoading } = useQuery({
-    queryKey: ["holding", id],
-    queryFn: () => fetchHolding(id!),
-    enabled: !!id,
-  });
-
-  const { data: scenarios } = useQuery({
-    queryKey: ["dca_scenarios", "holding", id],
-    queryFn: () => fetchScenariosForHolding(id!),
-    enabled: !!id,
-  });
-
-  const { data: recommendedTargets } = useQuery({
-    queryKey: ["dca_scenarios", "recommended", id],
-    queryFn: () => fetchRecommendedTargets(id!),
-    enabled: !!id,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
-  }
+  const holding = id ? getHolding(id) : undefined;
+  const scenarios = id ? getScenariosForHolding(id) : [];
+  const recommendedTargets = id ? getRecommendedTargets(id) : [];
 
   if (!holding) {
     return (
@@ -80,6 +28,10 @@ export default function HoldingDetail() {
       </div>
     );
   }
+
+  const feeLabel = holding.fee_type === "percent"
+    ? `${Number(holding.fee_value).toFixed(2)}%`
+    : `$${Number(holding.fee_value ?? holding.fee).toFixed(2)}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,20 +48,12 @@ export default function HoldingDetail() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
-        {/* Holding info */}
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares" value={Number(holding.shares).toFixed(4)} />
             <Stat label="Avg Cost" value={`$${Number(holding.avg_cost).toFixed(2)}`} />
-            <Stat
-              label="Fee"
-              value={
-                (holding as any).fee_type === "percent"
-                  ? `${Number((holding as any).fee_value).toFixed(2)}%`
-                  : `$${Number((holding as any).fee_value ?? holding.fee).toFixed(2)}`
-              }
-            />
+            <Stat label="Fee" value={feeLabel} />
           </div>
           <Button size="sm" onClick={() => navigate(`/holdings/${id}/dca`)}>
             <Calculator className="mr-1.5 h-4 w-4" />
@@ -120,9 +64,9 @@ export default function HoldingDetail() {
         {/* Recommended targets */}
         <div className="rounded-lg border border-border bg-card p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Recommended Targets (from saved scenarios)
+            Recommended Targets
           </h2>
-          {!recommendedTargets || recommendedTargets.length === 0 ? (
+          {recommendedTargets.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recommended targets yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -140,36 +84,16 @@ export default function HoldingDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recommendedTargets.map((s: any) => (
-                    <TableRow
-                      key={s.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/scenarios/${s.id}`)}
-                    >
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {new Date(s.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {s.buy_price != null ? `$${Number(s.buy_price).toFixed(2)}` : "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        ${Number(s.budget_invested).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {s.budget_percent_used != null ? `${Number(s.budget_percent_used)}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {s.include_fees ? "Yes" : "No"}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        ${Number(s.fee_applied).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        ${Number(s.total_spend).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-primary font-semibold">
-                        ${Number(s.recommended_target).toFixed(2)}
-                      </TableCell>
+                  {recommendedTargets.map((s) => (
+                    <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/scenarios/${s.id}`)}>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right font-mono">{s.buy_price != null ? `$${Number(s.buy_price).toFixed(2)}` : "—"}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{s.budget_percent_used != null ? `${s.budget_percent_used}%` : "—"}</TableCell>
+                      <TableCell className="text-sm">{s.include_fees ? "Yes" : "No"}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono text-primary font-semibold">${Number(s.recommended_target!).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -183,7 +107,7 @@ export default function HoldingDetail() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             Saved Scenarios
           </h2>
-          {!scenarios || scenarios.length === 0 ? (
+          {scenarios.length === 0 ? (
             <p className="text-sm text-muted-foreground">No saved scenarios yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -199,26 +123,12 @@ export default function HoldingDetail() {
                 </TableHeader>
                 <TableBody>
                   {scenarios.map((s) => (
-                    <TableRow
-                      key={s.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/scenarios/${s.id}`)}
-                    >
-                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                        {new Date(s.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {METHOD_LABELS[s.method] ?? s.method}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        ${Number(s.total_spend).toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {Number(s.shares_to_buy).toFixed(4)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-primary font-semibold">
-                        ${Number(s.new_avg_cost).toFixed(2)}
-                      </TableCell>
+                    <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/scenarios/${s.id}`)}>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-sm">{METHOD_LABELS[s.method] ?? s.method}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
+                      <TableCell className="text-right font-mono text-primary font-semibold">${Number(s.new_avg_cost).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

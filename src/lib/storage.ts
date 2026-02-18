@@ -1,0 +1,190 @@
+/**
+ * Versioned localStorage persistence layer.
+ * Replaces Supabase for local-first data storage.
+ */
+
+export type FeeType = "flat" | "percent";
+
+export type Holding = {
+  id: string;
+  ticker: string;
+  shares: number;
+  avg_cost: number;
+  fee: number;
+  fee_type: FeeType;
+  fee_value: number;
+  created_at: string;
+};
+
+export type Scenario = {
+  id: string;
+  holding_id: string;
+  ticker: string;
+  method: string;
+  input1_label: string;
+  input1_value: number;
+  input2_label: string;
+  input2_value: number;
+  include_fees: boolean;
+  fee_amount: number;
+  buy_price: number | null;
+  shares_to_buy: number;
+  budget_invested: number;
+  fee_applied: number;
+  total_spend: number;
+  new_total_shares: number;
+  new_avg_cost: number;
+  recommended_target: number | null;
+  budget_percent_used: number | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export interface AppData {
+  version: 1;
+  holdings: Holding[];
+  scenarios: Scenario[];
+}
+
+const STORAGE_KEY = "dca-down-data";
+
+// ── Demo data ────────────────────────────────────────────────
+const DEMO_HOLDINGS: Holding[] = [
+  { id: "demo-aapl", ticker: "AAPL", shares: 75, avg_cost: 198.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-nvda", ticker: "NVDA", shares: 30, avg_cost: 142.8, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-tsla", ticker: "TSLA", shares: 20, avg_cost: 385, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+];
+
+const DEMO_SCENARIOS: Scenario[] = [
+  {
+    id: "demo-calc-1", holding_id: "demo-nvda", ticker: "NVDA", method: "price_target",
+    input1_label: "Buy price", input1_value: 112.5, input2_label: "Target average cost", input2_value: 125,
+    include_fees: false, fee_amount: 0, buy_price: 112.5, shares_to_buy: 43,
+    budget_invested: 4837.5, fee_applied: 0, total_spend: 4837.5,
+    new_total_shares: 73, new_avg_cost: 125, recommended_target: null,
+    budget_percent_used: null, notes: null, created_at: new Date().toISOString(),
+  },
+  {
+    id: "demo-calc-2", holding_id: "demo-tsla", ticker: "TSLA", method: "price_budget",
+    input1_label: "Buy price", input1_value: 340, input2_label: "Max budget", input2_value: 1000,
+    include_fees: false, fee_amount: 0, buy_price: 340, shares_to_buy: 2.94,
+    budget_invested: 1000, fee_applied: 0, total_spend: 1000,
+    new_total_shares: 22.94, new_avg_cost: 380.91, recommended_target: 380.91,
+    budget_percent_used: 100, notes: null, created_at: new Date().toISOString(),
+  },
+  {
+    id: "demo-calc-3", holding_id: "demo-aapl", ticker: "AAPL", method: "price_target",
+    input1_label: "Buy price", input1_value: 172, input2_label: "Target average cost", input2_value: 185,
+    include_fees: false, fee_amount: 0, buy_price: 172, shares_to_buy: 78,
+    budget_invested: 13416, fee_applied: 0, total_spend: 13416,
+    new_total_shares: 153, new_avg_cost: 185, recommended_target: null,
+    budget_percent_used: null, notes: null, created_at: new Date().toISOString(),
+  },
+];
+
+function demoData(): AppData {
+  return { version: 1, holdings: [...DEMO_HOLDINGS], scenarios: [...DEMO_SCENARIOS] };
+}
+
+// ── Core read/write ──────────────────────────────────────────
+
+function read(): AppData {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return demoData();
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.version !== 1) return demoData();
+    return parsed as AppData;
+  } catch {
+    return demoData();
+  }
+}
+
+function write(data: AppData) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function uid(): string {
+  return crypto.randomUUID();
+}
+
+// ── Holdings CRUD ────────────────────────────────────────────
+
+export function getHoldings(): Holding[] {
+  return read().holdings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function getHolding(id: string): Holding | undefined {
+  return read().holdings.find((h) => h.id === id);
+}
+
+export function addHolding(h: Omit<Holding, "id" | "created_at">): Holding {
+  const data = read();
+  const holding: Holding = { ...h, id: uid(), created_at: new Date().toISOString() };
+  data.holdings.push(holding);
+  write(data);
+  return holding;
+}
+
+export function editHolding(id: string, patch: Partial<Omit<Holding, "id" | "created_at">>): Holding {
+  const data = read();
+  const idx = data.holdings.findIndex((h) => h.id === id);
+  if (idx === -1) throw new Error("Holding not found");
+  data.holdings[idx] = { ...data.holdings[idx], ...patch };
+  write(data);
+  return data.holdings[idx];
+}
+
+export function removeHolding(id: string) {
+  const data = read();
+  data.holdings = data.holdings.filter((h) => h.id !== id);
+  data.scenarios = data.scenarios.filter((s) => s.holding_id !== id);
+  write(data);
+}
+
+// ── Scenarios CRUD ───────────────────────────────────────────
+
+export function getScenarios(): Scenario[] {
+  return read().scenarios.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function getScenariosForHolding(holdingId: string): Scenario[] {
+  return getScenarios().filter((s) => s.holding_id === holdingId);
+}
+
+export function getRecommendedTargets(holdingId: string): Scenario[] {
+  return getScenariosForHolding(holdingId).filter((s) => s.recommended_target != null);
+}
+
+export function getScenario(id: string): Scenario | undefined {
+  return read().scenarios.find((s) => s.id === id);
+}
+
+export function addScenario(s: Omit<Scenario, "id" | "created_at">): Scenario {
+  const data = read();
+  const scenario: Scenario = { ...s, id: uid(), created_at: new Date().toISOString() };
+  data.scenarios.push(scenario);
+  write(data);
+  return scenario;
+}
+
+// ── Reset ────────────────────────────────────────────────────
+
+export function resetAll() {
+  localStorage.removeItem(STORAGE_KEY);
+  // Next read() will return demo data
+}
+
+// ── Export / Import ──────────────────────────────────────────
+
+export function exportData(): string {
+  return JSON.stringify(read(), null, 2);
+}
+
+export function importData(json: string) {
+  const parsed = JSON.parse(json);
+  if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.holdings) || !Array.isArray(parsed.scenarios)) {
+    throw new Error("Invalid backup file");
+  }
+  write(parsed as AppData);
+}
