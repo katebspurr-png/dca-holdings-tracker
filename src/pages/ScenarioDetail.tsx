@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
-  price_budget: "Price + Budget",
+  price_budget: "Price + Budget (Recommended target)",
   price_target: "Price + Target Avg",
   budget_target: "Budget + Target Avg",
 };
@@ -108,6 +108,12 @@ export default function ScenarioDetail() {
             <Stat label="New Avg Cost" value={`$${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
             {scenario.buy_price !== null && (
               <Stat label="Buy Price" value={`$${Number(scenario.buy_price).toFixed(2)}`} />
+            )}
+            {(scenario as any).recommended_target != null && (
+              <Stat label="Recommended Target" value={`$${Number((scenario as any).recommended_target).toFixed(2)}`} highlight />
+            )}
+            {(scenario as any).budget_percent_used != null && (
+              <Stat label="Budget % Used" value={`${Number((scenario as any).budget_percent_used)}%`} />
             )}
           </div>
         </div>

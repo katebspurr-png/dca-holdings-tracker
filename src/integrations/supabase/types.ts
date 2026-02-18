@@ -17,6 +17,7 @@ export type Database = {
       dca_scenarios: {
         Row: {
           budget_invested: number
+          budget_percent_used: number | null
           buy_price: number | null
           created_at: string
           fee_amount: number
@@ -32,12 +33,14 @@ export type Database = {
           new_avg_cost: number
           new_total_shares: number
           notes: string | null
+          recommended_target: number | null
           shares_to_buy: number
           ticker: string
           total_spend: number
         }
         Insert: {
           budget_invested: number
+          budget_percent_used?: number | null
           buy_price?: number | null
           created_at?: string
           fee_amount: number
@@ -53,12 +56,14 @@ export type Database = {
           new_avg_cost: number
           new_total_shares: number
           notes?: string | null
+          recommended_target?: number | null
           shares_to_buy: number
           ticker: string
           total_spend: number
         }
         Update: {
           budget_invested?: number
+          budget_percent_used?: number | null
           buy_price?: number | null
           created_at?: string
           fee_amount?: number
@@ -74,6 +79,7 @@ export type Database = {
           new_avg_cost?: number
           new_total_shares?: number
           notes?: string | null
+          recommended_target?: number | null
           shares_to_buy?: number
           ticker?: string
           total_spend?: number
