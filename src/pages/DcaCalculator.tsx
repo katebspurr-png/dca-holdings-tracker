@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, AlertCircle, Info, Save, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,14 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { fetchHolding } from "@/lib/supabase-holdings";
-import { supabase } from "@/integrations/supabase/client";
+import { getHolding, addScenario } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
@@ -61,14 +55,9 @@ type ResultOk = {
 type ResultErr = { ok: false; error: string; level: "error" | "info" };
 type Result = ResultOk | ResultErr;
 
-/**
- * Compute fee based on holding fee_type/fee_value and the budget B.
- * For flat: f = fee_value
- * For percent: f = B * (fee_value / 100)
- */
 function computeFee(feeType: string, feeValue: number, B: number): number {
   if (feeType === "percent") return B * (feeValue / 100);
-  return feeValue; // flat
+  return feeValue;
 }
 
 function compute(
@@ -76,7 +65,6 @@ function compute(
   feeType: string, feeValue: number, includeFees: boolean,
   i1: number, i2: number
 ): Result {
-  // Helper to get fee; for methods where B isn't known upfront we compute it first
   switch (method) {
     case "price_shares": {
       const p = i1, x = i2;
@@ -99,23 +87,9 @@ function compute(
       if (p <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
       if (p >= t) return { ok: false, error: "Cannot reach target when buy price is ≥ target", level: "error" };
-
       if (feeType === "percent" && includeFees) {
-        // With percentage fee: (S*A + B + B*r/100) / (S + B/p) = t
-        // B(1 + r/100) + S*A = t*(S + B/p)
-        // B(1 + r/100 - t/p) = t*S - S*A = S(t - A)
-        // But t < A so S(t-A) < 0, we need denominator < 0 too
         const r = feeValue / 100;
-        const num = S * (A - t); // positive
-        const den = 1 + r - t / p;
-        if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
-        // Actually: (S*A + B + B*r) / (S + x) = t where x = B/p
-        // S*A + B(1+r) = t(S + B/p)
-        // S*A + B(1+r) = tS + tB/p
-        // B(1+r - t/p) = S(t - A)
-        // Since t < A, numerator is negative. We need denominator negative too.
-        // B = S(t - A) / (1 + r - t/p)
-        const numB = S * (t - A); // negative
+        const numB = S * (t - A);
         const denB = 1 + r - t / p;
         if (denB === 0) return { ok: false, error: "Invalid inputs", level: "error" };
         const B = numB / denB;
@@ -125,7 +99,6 @@ function compute(
         const newAvg = (S * A + B + f) / (S + x);
         return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
       } else {
-        // Flat fee or no fees
         const f = includeFees ? computeFee(feeType, feeValue, 0) : 0;
         const den = t - p;
         if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
@@ -141,10 +114,6 @@ function compute(
       if (B <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
       const f = includeFees ? computeFee(feeType, feeValue, B) : 0;
-      // (S*A + B + f) / (S + x) = t, x = B/p
-      // S*A + B + f = t*S + t*B/p
-      // t*B/p = S*A + B + f - t*S = S(A-t) + B + f
-      // p = t*B / (S(A-t) + B + f)
       const den = S * (A - t) + B + f;
       if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
       const p = (t * B) / den;
@@ -163,19 +132,13 @@ export default function DcaCalculator() {
   const [val1, setVal1] = useState("");
   const [val2, setVal2] = useState("");
   const [includeFees, setIncludeFees] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [budgetPercent, setBudgetPercent] = useState(100);
+  const [tick, setTick] = useState(0);
   const { toast } = useToast();
 
-  const { data: holding, isLoading } = useQuery({
-    queryKey: ["holding", id],
-    queryFn: () => fetchHolding(id!),
-    enabled: !!id,
-  });
-
+  const holding = id ? getHolding(id) : undefined;
   const fields = FIELD_CONFIG[method];
 
-  // For price_budget, apply the slider percentage to the max budget
   const effectiveVal2 = useMemo(() => {
     if (method === "price_budget" && val2 !== "") {
       const maxB = parseFloat(val2);
@@ -189,10 +152,8 @@ export default function DcaCalculator() {
     const n1 = parseFloat(val1);
     const n2 = parseFloat(method === "price_budget" ? effectiveVal2 : val2);
     if (isNaN(n1) || isNaN(n2)) return null;
-    const feeType = (holding as any).fee_type || "flat";
-    const feeValue = Number((holding as any).fee_value ?? holding.fee ?? 0);
-    return compute(method, Number(holding.shares), Number(holding.avg_cost), feeType, feeValue, includeFees, n1, n2);
-  }, [method, val1, val2, effectiveVal2, holding, includeFees]);
+    return compute(method, Number(holding.shares), Number(holding.avg_cost), holding.fee_type, Number(holding.fee_value), includeFees, n1, n2);
+  }, [method, val1, val2, effectiveVal2, holding, includeFees, tick]);
 
   const handleMethodChange = (v: Method) => {
     setMethod(v);
@@ -203,15 +164,14 @@ export default function DcaCalculator() {
 
   const handleUseAsTarget = () => {
     if (!result || !result.ok) return;
-    const r = result as ResultOk;
     const currentPrice = val1;
     setMethod("price_target");
     setVal1(currentPrice);
-    setVal2(String(r.newAvg));
+    setVal2(String((result as ResultOk).newAvg));
     setBudgetPercent(100);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!holding || !result || !result.ok) return;
     const r = result as ResultOk;
     const flds = FIELD_CONFIG[method];
@@ -227,8 +187,7 @@ export default function DcaCalculator() {
 
     const isRecommended = method === "price_budget";
 
-    setSaving(true);
-    const { error } = await supabase.from("dca_scenarios").insert({
+    addScenario({
       holding_id: holding.id,
       ticker: holding.ticker,
       method,
@@ -247,26 +206,15 @@ export default function DcaCalculator() {
       new_avg_cost: r.newAvg,
       recommended_target: isRecommended ? r.newAvg : null,
       budget_percent_used: isRecommended ? budgetPercent : null,
-    } as any);
-    setSaving(false);
+      notes: null,
+    });
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to save scenario", variant: "destructive" });
-    } else {
-      toast({ title: "Scenario saved" });
-      setVal1("");
-      setVal2("");
-      setBudgetPercent(100);
-    }
+    toast({ title: "Scenario saved" });
+    setVal1("");
+    setVal2("");
+    setBudgetPercent(100);
+    setTick((t) => t + 1);
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
-      </div>
-    );
-  }
 
   if (!holding) {
     return (
@@ -278,9 +226,7 @@ export default function DcaCalculator() {
 
   const S = Number(holding.shares);
   const A = Number(holding.avg_cost);
-  const feeType = (holding as any).fee_type || "flat";
-  const feeValue = Number((holding as any).fee_value ?? holding.fee ?? 0);
-  const feeLabel = feeType === "percent" ? `${feeValue}%` : `$${feeValue.toFixed(2)}`;
+  const feeLabel = holding.fee_type === "percent" ? `${holding.fee_value}%` : `$${Number(holding.fee_value).toFixed(2)}`;
 
   const hasInputs = val1 !== "" && val2 !== "";
   const isError = result !== null && !result.ok;
@@ -309,7 +255,7 @@ export default function DcaCalculator() {
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares (S)" value={S.toFixed(4)} />
             <Stat label="Avg Cost (A)" value={`$${A.toFixed(2)}`} />
-            <Stat label={`Fee (${feeType})`} value={feeLabel} />
+            <Stat label={`Fee (${holding.fee_type})`} value={feeLabel} />
           </div>
         </div>
 
@@ -323,9 +269,7 @@ export default function DcaCalculator() {
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
                 {METHOD_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -334,62 +278,32 @@ export default function DcaCalculator() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="input1">{fields[0].label}</Label>
-              <Input
-                id="input1"
-                type="number"
-                step="any"
-                placeholder="0"
-                value={val1}
-                onChange={(e) => setVal1(e.target.value)}
-              />
+              <Input id="input1" type="number" step="any" placeholder="0" value={val1} onChange={(e) => setVal1(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="input2">{fields[1].label}</Label>
-              <Input
-                id="input2"
-                type="number"
-                step="any"
-                placeholder="0"
-                value={val2}
-                onChange={(e) => setVal2(e.target.value)}
-              />
+              <Input id="input2" type="number" step="any" placeholder="0" value={val2} onChange={(e) => setVal2(e.target.value)} />
             </div>
           </div>
 
-          {/* Budget slider for price_budget method */}
           {isPriceBudget && (
             <div className="space-y-3">
               <Label>Use % of max budget: {budgetPercent}%</Label>
-              <Slider
-                min={25}
-                max={100}
-                step={25}
-                value={[budgetPercent]}
-                onValueChange={(v) => setBudgetPercent(v[0])}
-              />
+              <Slider min={25} max={100} step={25} value={[budgetPercent]} onValueChange={(v) => setBudgetPercent(v[0])} />
               <div className="flex justify-between text-xs text-muted-foreground">
                 {SLIDER_STEPS.map((s) => (
-                  <span key={s} className={budgetPercent === s ? "text-primary font-semibold" : ""}>
-                    {s}%
-                  </span>
+                  <span key={s} className={budgetPercent === s ? "text-primary font-semibold" : ""}>{s}%</span>
                 ))}
               </div>
             </div>
           )}
 
           <div className="flex items-center gap-3">
-            <Switch
-              id="include-fees"
-              checked={includeFees}
-              onCheckedChange={setIncludeFees}
-            />
-            <Label htmlFor="include-fees" className="cursor-pointer">
-              Include fees in calculation
-            </Label>
+            <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            <Label htmlFor="include-fees" className="cursor-pointer">Include fees in calculation</Label>
           </div>
         </div>
 
-        {/* Inline guardrail message */}
         {isError && (() => {
           const err = result as ResultErr;
           return err.level === "error" ? (
@@ -406,35 +320,19 @@ export default function DcaCalculator() {
         })()}
 
         {/* Results */}
-        <div
-          className={`rounded-lg border border-border bg-card p-6 transition-opacity ${
-            isValid ? "opacity-100" : "opacity-40 pointer-events-none"
-          }`}
-        >
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Results
-          </h2>
+        <div className={`rounded-lg border border-border bg-card p-6 transition-opacity ${isValid ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Results</h2>
           {isValid ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {isPriceBudget && (
-                  <Stat
-                    label="Achievable Target Avg Cost"
-                    value={`$${(result as ResultOk).newAvg.toFixed(2)}`}
-                    highlight
-                  />
-                )}
+                {isPriceBudget && <Stat label="Achievable Target Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
                 <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
                 <Stat label="Budget Invested" value={`$${(result as ResultOk).budget.toFixed(2)}`} />
                 <Stat label="Fee Applied" value={`$${(result as ResultOk).feeApplied.toFixed(2)}`} />
                 <Stat label="Total Spend" value={`$${(result as ResultOk).totalSpend.toFixed(2)}`} />
                 <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
-                {!isPriceBudget && (
-                  <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />
-                )}
-                {(result as ResultOk).effectivePrice !== null && (
-                  <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />
-                )}
+                {!isPriceBudget && <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
+                {(result as ResultOk).effectivePrice !== null && <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />}
               </div>
             </>
           ) : (
@@ -450,9 +348,9 @@ export default function DcaCalculator() {
                   Use as target
                 </Button>
               )}
-              <Button onClick={handleSave} disabled={saving} size="sm">
+              <Button onClick={handleSave} size="sm">
                 <Save className="mr-1.5 h-4 w-4" />
-                {saving ? "Saving…" : "Save scenario"}
+                Save scenario
               </Button>
             </div>
           )}
@@ -466,9 +364,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div>
       <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className={`text-lg font-mono font-semibold ${highlight ? "text-primary" : ""}`}>
-        {value}
-      </p>
+      <p className={`text-lg font-mono font-semibold ${highlight ? "text-primary" : ""}`}>{value}</p>
     </div>
   );
 }

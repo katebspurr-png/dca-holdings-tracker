@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Holding, FeeType } from "@/lib/supabase-holdings";
+import type { Holding, FeeType } from "@/lib/storage";
 
 type Props = {
   open: boolean;
