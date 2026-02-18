@@ -7,6 +7,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
+import LivePriceDisplay from "@/components/LivePriceDisplay";
+import ProSettings from "@/components/ProSettings";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
   getScenariosForHolding, getScenarios, resetAll, exportData, importData,
@@ -106,11 +108,12 @@ export default function Holdings() {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button onClick={() => navigate("/scenarios")} size="sm" variant="ghost">
               <BarChart3 className="mr-1.5 h-4 w-4" />
               All Scenarios
             </Button>
+            <ProSettings onChanged={refresh} />
           </div>
         </div>
       </header>
@@ -185,7 +188,10 @@ export default function Holdings() {
             {/* Holding stats card */}
             <div className="rounded-lg border border-border bg-card p-6">
               <div className="flex items-start justify-between mb-4">
-                <h2 className="text-xl font-bold font-mono text-primary">{selected.ticker}</h2>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-bold font-mono text-primary">{selected.ticker}</h2>
+                  <LivePriceDisplay ticker={selected.ticker} />
+                </div>
                 <div className="flex items-center gap-1">
                   <Button size="sm" variant="ghost" onClick={() => { setEditing(selected); setFormOpen(true); }} aria-label="Edit">
                     <Pencil className="h-4 w-4" />
