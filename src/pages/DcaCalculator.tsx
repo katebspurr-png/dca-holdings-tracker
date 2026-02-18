@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, AlertCircle, Info, Save } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -21,7 +22,7 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 
 const METHOD_OPTIONS: { value: Method; label: string }[] = [
   { value: "price_shares", label: "Price + Shares" },
-  { value: "price_budget", label: "Price + Budget" },
+  { value: "price_budget", label: "Price + Budget (Recommended target)" },
   { value: "price_target", label: "Price + Target Avg" },
   { value: "budget_target", label: "Budget + Target Avg" },
 ];
@@ -33,7 +34,7 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
   ],
   price_budget: [
     { key: "buyPrice", label: "Buy price" },
-    { key: "budget", label: "Budget (shares only, excl. fee)" },
+    { key: "budget", label: "Max budget (shares only, excl. fee)" },
   ],
   price_target: [
     { key: "buyPrice", label: "Buy price" },
@@ -44,6 +45,8 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
     { key: "targetAvg", label: "Target average cost" },
   ],
 };
+
+const SLIDER_STEPS = [25, 50, 75, 100];
 
 type ResultOk = {
   ok: true;
@@ -110,6 +113,7 @@ export default function DcaCalculator() {
   const [val2, setVal2] = useState("");
   const [includeFees, setIncludeFees] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [budgetPercent, setBudgetPercent] = useState(100);
   const { toast } = useToast();
 
   const { data: holding, isLoading } = useQuery({
@@ -120,19 +124,39 @@ export default function DcaCalculator() {
 
   const fields = FIELD_CONFIG[method];
 
+  // For price_budget, apply the slider percentage to the max budget
+  const effectiveVal2 = useMemo(() => {
+    if (method === "price_budget" && val2 !== "") {
+      const maxB = parseFloat(val2);
+      if (!isNaN(maxB)) return String(maxB * (budgetPercent / 100));
+    }
+    return val2;
+  }, [method, val2, budgetPercent]);
+
   const result = useMemo(() => {
     if (!holding) return null;
     const n1 = parseFloat(val1);
-    const n2 = parseFloat(val2);
+    const n2 = parseFloat(method === "price_budget" ? effectiveVal2 : val2);
     if (isNaN(n1) || isNaN(n2)) return null;
     const fee = includeFees ? Number(holding.fee) : 0;
     return compute(method, Number(holding.shares), Number(holding.avg_cost), fee, n1, n2);
-  }, [method, val1, val2, holding, includeFees]);
+  }, [method, val1, val2, effectiveVal2, holding, includeFees]);
 
   const handleMethodChange = (v: Method) => {
     setMethod(v);
     setVal1("");
     setVal2("");
+    setBudgetPercent(100);
+  };
+
+  const handleUseAsTarget = () => {
+    if (!result || !result.ok) return;
+    const r = result as ResultOk;
+    const currentPrice = val1;
+    setMethod("price_target");
+    setVal1(currentPrice);
+    setVal2(String(r.newAvg));
+    setBudgetPercent(100);
   };
 
   const handleSave = async () => {
@@ -146,10 +170,13 @@ export default function DcaCalculator() {
     // Determine buy_price
     let buyPrice: number | null = null;
     if (method === "price_shares" || method === "price_budget" || method === "price_target") {
-      buyPrice = n1; // first input is always price for these methods
+      buyPrice = n1;
     } else if (method === "budget_target" && r.effectivePrice !== null) {
       buyPrice = r.effectivePrice;
     }
+
+    // Extra fields for price_budget (recommended target)
+    const isRecommended = method === "price_budget";
 
     setSaving(true);
     const { error } = await supabase.from("dca_scenarios").insert({
@@ -169,7 +196,9 @@ export default function DcaCalculator() {
       total_spend: r.totalSpend,
       new_total_shares: r.totalShares,
       new_avg_cost: r.newAvg,
-    });
+      recommended_target: isRecommended ? r.newAvg : null,
+      budget_percent_used: isRecommended ? budgetPercent : null,
+    } as any);
     setSaving(false);
 
     if (error) {
@@ -178,6 +207,7 @@ export default function DcaCalculator() {
       toast({ title: "Scenario saved" });
       setVal1("");
       setVal2("");
+      setBudgetPercent(100);
     }
   };
 
@@ -204,6 +234,7 @@ export default function DcaCalculator() {
   const hasInputs = val1 !== "" && val2 !== "";
   const isError = result !== null && !result.ok;
   const isValid = result !== null && result.ok === true;
+  const isPriceBudget = method === "price_budget";
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,6 +305,27 @@ export default function DcaCalculator() {
             </div>
           </div>
 
+          {/* Budget slider for price_budget method */}
+          {isPriceBudget && (
+            <div className="space-y-3">
+              <Label>Use % of max budget: {budgetPercent}%</Label>
+              <Slider
+                min={25}
+                max={100}
+                step={25}
+                value={[budgetPercent]}
+                onValueChange={(v) => setBudgetPercent(v[0])}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                {SLIDER_STEPS.map((s) => (
+                  <span key={s} className={budgetPercent === s ? "text-primary font-semibold" : ""}>
+                    {s}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <Switch
               id="include-fees"
@@ -312,24 +364,41 @@ export default function DcaCalculator() {
             Results
           </h2>
           {isValid ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
-              <Stat label="Budget Invested" value={`$${(result as ResultOk).budget.toFixed(2)}`} />
-              <Stat label="Fee Applied" value={`$${(result as ResultOk).feeApplied.toFixed(2)}`} />
-              <Stat label="Total Spend" value={`$${(result as ResultOk).totalSpend.toFixed(2)}`} />
-              <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
-              <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />
-              {(result as ResultOk).effectivePrice !== null && (
-                <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />
-              )}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {isPriceBudget && (
+                  <Stat
+                    label="Achievable Target Avg Cost"
+                    value={`$${(result as ResultOk).newAvg.toFixed(2)}`}
+                    highlight
+                  />
+                )}
+                <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
+                <Stat label="Budget Invested" value={`$${(result as ResultOk).budget.toFixed(2)}`} />
+                <Stat label="Fee Applied" value={`$${(result as ResultOk).feeApplied.toFixed(2)}`} />
+                <Stat label="Total Spend" value={`$${(result as ResultOk).totalSpend.toFixed(2)}`} />
+                <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
+                {!isPriceBudget && (
+                  <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />
+                )}
+                {(result as ResultOk).effectivePrice !== null && (
+                  <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />
+                )}
+              </div>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground">
               {hasInputs ? "Adjust inputs to see results." : "Enter values above to see results."}
             </p>
           )}
           {isValid && (
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex justify-end gap-2">
+              {isPriceBudget && (
+                <Button variant="outline" size="sm" onClick={handleUseAsTarget}>
+                  <Target className="mr-1.5 h-4 w-4" />
+                  Use as target
+                </Button>
+              )}
               <Button onClick={handleSave} disabled={saving} size="sm">
                 <Save className="mr-1.5 h-4 w-4" />
                 {saving ? "Saving…" : "Save scenario"}

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
-  price_budget: "Price + Budget",
+  price_budget: "Price + Budget (Recommended target)",
   price_target: "Price + Target Avg",
   budget_target: "Budget + Target Avg",
 };
@@ -25,6 +25,18 @@ async function fetchScenariosForHolding(holdingId: string) {
     .from("dca_scenarios")
     .select("*")
     .eq("holding_id", holdingId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data;
+}
+
+async function fetchRecommendedTargets(holdingId: string) {
+  const { data, error } = await supabase
+    .from("dca_scenarios")
+    .select("*")
+    .eq("holding_id", holdingId)
+    .not("recommended_target" as any, "is", null)
     .order("created_at", { ascending: false })
     .limit(10);
   if (error) throw error;
@@ -44,6 +56,12 @@ export default function HoldingDetail() {
   const { data: scenarios } = useQuery({
     queryKey: ["dca_scenarios", "holding", id],
     queryFn: () => fetchScenariosForHolding(id!),
+    enabled: !!id,
+  });
+
+  const { data: recommendedTargets } = useQuery({
+    queryKey: ["dca_scenarios", "recommended", id],
+    queryFn: () => fetchRecommendedTargets(id!),
     enabled: !!id,
   });
 
@@ -90,6 +108,67 @@ export default function HoldingDetail() {
             <Calculator className="mr-1.5 h-4 w-4" />
             Open DCA Calculator
           </Button>
+        </div>
+
+        {/* Recommended targets */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Recommended Targets (from saved scenarios)
+          </h2>
+          {!recommendedTargets || recommendedTargets.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No recommended targets yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Buy Price</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead className="text-right">% Used</TableHead>
+                    <TableHead>Fees</TableHead>
+                    <TableHead className="text-right">Fee Applied</TableHead>
+                    <TableHead className="text-right">Total Spend</TableHead>
+                    <TableHead className="text-right">Rec. Target</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recommendedTargets.map((s: any) => (
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/scenarios/${s.id}`)}
+                    >
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(s.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {s.buy_price != null ? `$${Number(s.buy_price).toFixed(2)}` : "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        ${Number(s.budget_invested).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {s.budget_percent_used != null ? `${Number(s.budget_percent_used)}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {s.include_fees ? "Yes" : "No"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        ${Number(s.fee_applied).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        ${Number(s.total_spend).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-primary font-semibold">
+                        ${Number(s.recommended_target).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
 
         {/* Saved scenarios */}
