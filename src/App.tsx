@@ -9,6 +9,7 @@ import HoldingDetail from "./pages/HoldingDetail";
 import Scenarios from "./pages/Scenarios";
 import ScenarioDetail from "./pages/ScenarioDetail";
 import NotFound from "./pages/NotFound";
+import ThemeToggle from "./components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <ThemeToggle />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Holdings />} />
