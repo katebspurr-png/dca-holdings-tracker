@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import themeIcon from "@/assets/theme-toggle.png";
 
 export default function ThemeToggle() {
   const [dark, setDark] = useState(() => {
@@ -24,7 +25,12 @@ export default function ThemeToggle() {
       aria-label="Toggle dark mode"
       className="fixed bottom-5 left-5 z-[100] flex h-11 w-11 items-center justify-center rounded-full bg-card border border-border shadow-lg transition-transform hover:scale-110"
     >
-      <span className="text-lg">{dark ? "☀️" : "🌙"}</span>
+      <img
+        src={themeIcon}
+        alt="Toggle theme"
+        className={`h-6 w-6 transition-transform ${dark ? "rotate-180" : ""}`}
+        style={{ filter: dark ? "invert(1)" : "none" }}
+      />
     </button>
   );
 }
