@@ -102,7 +102,14 @@ export default function HoldingDetail() {
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares" value={Number(holding.shares).toFixed(4)} />
             <Stat label="Avg Cost" value={`$${Number(holding.avg_cost).toFixed(2)}`} />
-            <Stat label="Fee" value={`$${Number(holding.fee).toFixed(2)}`} />
+            <Stat
+              label="Fee"
+              value={
+                (holding as any).fee_type === "percent"
+                  ? `${Number((holding as any).fee_value).toFixed(2)}%`
+                  : `$${Number((holding as any).fee_value ?? holding.fee).toFixed(2)}`
+              }
+            />
           </div>
           <Button size="sm" onClick={() => navigate(`/holdings/${id}/dca`)}>
             <Calculator className="mr-1.5 h-4 w-4" />

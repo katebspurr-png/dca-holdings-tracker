@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Plus, Pencil, Trash2, Calculator } from "lucide-react";
+import type { FeeType } from "@/lib/supabase-holdings";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -54,7 +55,7 @@ export default function Holdings() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, ...rest }: { id: string; ticker: string; shares: number; avg_cost: number; fee: number }) =>
+    mutationFn: ({ id, ...rest }: { id: string; ticker: string; shares: number; avg_cost: number; fee: number; fee_type: FeeType; fee_value: number }) =>
       updateHolding(id, rest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holdings"] });
@@ -127,7 +128,11 @@ export default function Holdings() {
                     </TableCell>
                     <TableCell className="text-right font-mono">{fmt(h.shares)}</TableCell>
                     <TableCell className="text-right font-mono">${fmt(h.avg_cost)}</TableCell>
-                    <TableCell className="text-right font-mono">${fmt(h.fee)}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {(h as any).fee_type === "percent"
+                        ? `${Number((h as any).fee_value).toFixed(2)}%`
+                        : `$${Number((h as any).fee_value ?? h.fee).toFixed(2)}`}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button

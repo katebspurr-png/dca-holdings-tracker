@@ -61,19 +61,36 @@ type ResultOk = {
 type ResultErr = { ok: false; error: string; level: "error" | "info" };
 type Result = ResultOk | ResultErr;
 
-function compute(method: Method, S: number, A: number, f: number, i1: number, i2: number): Result {
+/**
+ * Compute fee based on holding fee_type/fee_value and the budget B.
+ * For flat: f = fee_value
+ * For percent: f = B * (fee_value / 100)
+ */
+function computeFee(feeType: string, feeValue: number, B: number): number {
+  if (feeType === "percent") return B * (feeValue / 100);
+  return feeValue; // flat
+}
+
+function compute(
+  method: Method, S: number, A: number,
+  feeType: string, feeValue: number, includeFees: boolean,
+  i1: number, i2: number
+): Result {
+  // Helper to get fee; for methods where B isn't known upfront we compute it first
   switch (method) {
     case "price_shares": {
       const p = i1, x = i2;
       if (p <= 0 || x <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      const budget = x * p;
-      const newAvg = (S * A + budget + f) / (S + x);
-      return { ok: true, x, budget, feeApplied: f, totalSpend: budget + f, totalShares: S + x, newAvg, effectivePrice: null };
+      const B = x * p;
+      const f = includeFees ? computeFee(feeType, feeValue, B) : 0;
+      const newAvg = (S * A + B + f) / (S + x);
+      return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
     case "price_budget": {
       const p = i1, B = i2;
       if (p <= 0 || B <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       const x = B / p;
+      const f = includeFees ? computeFee(feeType, feeValue, B) : 0;
       const newAvg = (S * A + B + f) / (S + x);
       return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
     }
@@ -82,19 +99,53 @@ function compute(method: Method, S: number, A: number, f: number, i1: number, i2
       if (p <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
       if (p >= t) return { ok: false, error: "Cannot reach target when buy price is ≥ target", level: "error" };
-      const den = t - p;
-      if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
-      const x = (S * (A - t) + f) / den;
-      if (x <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
-      const budget = x * p;
-      const newAvg = (S * A + budget + f) / (S + x);
-      return { ok: true, x, budget, feeApplied: f, totalSpend: budget + f, totalShares: S + x, newAvg, effectivePrice: null };
+
+      if (feeType === "percent" && includeFees) {
+        // With percentage fee: (S*A + B + B*r/100) / (S + B/p) = t
+        // B(1 + r/100) + S*A = t*(S + B/p)
+        // B(1 + r/100 - t/p) = t*S - S*A = S(t - A)
+        // But t < A so S(t-A) < 0, we need denominator < 0 too
+        const r = feeValue / 100;
+        const num = S * (A - t); // positive
+        const den = 1 + r - t / p;
+        if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+        // Actually: (S*A + B + B*r) / (S + x) = t where x = B/p
+        // S*A + B(1+r) = t(S + B/p)
+        // S*A + B(1+r) = tS + tB/p
+        // B(1+r - t/p) = S(t - A)
+        // Since t < A, numerator is negative. We need denominator negative too.
+        // B = S(t - A) / (1 + r - t/p)
+        const numB = S * (t - A); // negative
+        const denB = 1 + r - t / p;
+        if (denB === 0) return { ok: false, error: "Invalid inputs", level: "error" };
+        const B = numB / denB;
+        if (B <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+        const x = B / p;
+        const f = computeFee(feeType, feeValue, B);
+        const newAvg = (S * A + B + f) / (S + x);
+        return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
+      } else {
+        // Flat fee or no fees
+        const f = includeFees ? computeFee(feeType, feeValue, 0) : 0;
+        const den = t - p;
+        if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+        const x = (S * (A - t) + f) / den;
+        if (x <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
+        const B = x * p;
+        const newAvg = (S * A + B + f) / (S + x);
+        return { ok: true, x, budget: B, feeApplied: f, totalSpend: B + f, totalShares: S + x, newAvg, effectivePrice: null };
+      }
     }
     case "budget_target": {
       const B = i1, t = i2;
       if (B <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
       if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
-      const den = S * (A - t) + f;
+      const f = includeFees ? computeFee(feeType, feeValue, B) : 0;
+      // (S*A + B + f) / (S + x) = t, x = B/p
+      // S*A + B + f = t*S + t*B/p
+      // t*B/p = S*A + B + f - t*S = S(A-t) + B + f
+      // p = t*B / (S(A-t) + B + f)
+      const den = S * (A - t) + B + f;
       if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
       const p = (t * B) / den;
       if (p <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
@@ -138,8 +189,9 @@ export default function DcaCalculator() {
     const n1 = parseFloat(val1);
     const n2 = parseFloat(method === "price_budget" ? effectiveVal2 : val2);
     if (isNaN(n1) || isNaN(n2)) return null;
-    const fee = includeFees ? Number(holding.fee) : 0;
-    return compute(method, Number(holding.shares), Number(holding.avg_cost), fee, n1, n2);
+    const feeType = (holding as any).fee_type || "flat";
+    const feeValue = Number((holding as any).fee_value ?? holding.fee ?? 0);
+    return compute(method, Number(holding.shares), Number(holding.avg_cost), feeType, feeValue, includeFees, n1, n2);
   }, [method, val1, val2, effectiveVal2, holding, includeFees]);
 
   const handleMethodChange = (v: Method) => {
@@ -165,9 +217,7 @@ export default function DcaCalculator() {
     const flds = FIELD_CONFIG[method];
     const n1 = parseFloat(val1);
     const n2 = parseFloat(val2);
-    const feeUsed = includeFees ? Number(holding.fee) : 0;
 
-    // Determine buy_price
     let buyPrice: number | null = null;
     if (method === "price_shares" || method === "price_budget" || method === "price_target") {
       buyPrice = n1;
@@ -175,7 +225,6 @@ export default function DcaCalculator() {
       buyPrice = r.effectivePrice;
     }
 
-    // Extra fields for price_budget (recommended target)
     const isRecommended = method === "price_budget";
 
     setSaving(true);
@@ -188,7 +237,7 @@ export default function DcaCalculator() {
       input2_label: flds[1].label,
       input2_value: n2,
       include_fees: includeFees,
-      fee_amount: feeUsed,
+      fee_amount: r.feeApplied,
       buy_price: buyPrice,
       shares_to_buy: r.x,
       budget_invested: r.budget,
@@ -229,7 +278,9 @@ export default function DcaCalculator() {
 
   const S = Number(holding.shares);
   const A = Number(holding.avg_cost);
-  const f = Number(holding.fee);
+  const feeType = (holding as any).fee_type || "flat";
+  const feeValue = Number((holding as any).fee_value ?? holding.fee ?? 0);
+  const feeLabel = feeType === "percent" ? `${feeValue}%` : `$${feeValue.toFixed(2)}`;
 
   const hasInputs = val1 !== "" && val2 !== "";
   const isError = result !== null && !result.ok;
@@ -258,7 +309,7 @@ export default function DcaCalculator() {
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares (S)" value={S.toFixed(4)} />
             <Stat label="Avg Cost (A)" value={`$${A.toFixed(2)}`} />
-            <Stat label="Fee (f)" value={`$${f.toFixed(2)}`} />
+            <Stat label={`Fee (${feeType})`} value={feeLabel} />
           </div>
         </div>
 

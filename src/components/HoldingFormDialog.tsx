@@ -8,12 +8,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Holding } from "@/lib/supabase-holdings";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Holding, FeeType } from "@/lib/supabase-holdings";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { ticker: string; shares: number; avg_cost: number; fee: number }) => void;
+  onSubmit: (data: { ticker: string; shares: number; avg_cost: number; fee: number; fee_type: FeeType; fee_value: number }) => void;
   initial?: Holding | null;
   loading?: boolean;
 };
@@ -22,29 +29,35 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
   const [avgCost, setAvgCost] = useState("");
-  const [fee, setFee] = useState("0");
+  const [feeType, setFeeType] = useState<FeeType>("flat");
+  const [feeValue, setFeeValue] = useState("0");
 
   useEffect(() => {
     if (initial) {
       setTicker(initial.ticker);
       setShares(String(initial.shares));
       setAvgCost(String(initial.avg_cost));
-      setFee(String(initial.fee));
+      setFeeType((initial.fee_type as FeeType) || "flat");
+      setFeeValue(String(initial.fee_value ?? initial.fee ?? 0));
     } else {
       setTicker("");
       setShares("");
       setAvgCost("");
-      setFee("0");
+      setFeeType("flat");
+      setFeeValue("0");
     }
   }, [initial, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const fv = Number(feeValue);
     onSubmit({
       ticker: ticker.toUpperCase().trim(),
       shares: Number(shares),
       avg_cost: Number(avgCost),
-      fee: Number(fee),
+      fee: feeType === "flat" ? fv : 0, // keep legacy fee field in sync for flat
+      fee_type: feeType,
+      fee_value: fv,
     });
   };
 
@@ -96,18 +109,42 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
               />
             </div>
           </div>
+
+          {/* Fee type + value */}
           <div className="space-y-2">
-            <Label htmlFor="fee">Fee ($)</Label>
-            <Input
-              id="fee"
-              type="number"
-              step="any"
-              min="0"
-              placeholder="0"
-              value={fee}
-              onChange={(e) => setFee(e.target.value)}
-            />
+            <Label>Trading fee type</Label>
+            <Select value={feeType} onValueChange={(v) => setFeeType(v as FeeType)}>
+              <SelectTrigger className="w-full bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="flat">Flat fee ($)</SelectItem>
+                <SelectItem value="percent">Percentage (%)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="fee_value">Trading fee value</Label>
+            <div className="relative">
+              {feeType === "flat" && (
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+              )}
+              <Input
+                id="fee_value"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="0"
+                value={feeValue}
+                onChange={(e) => setFeeValue(e.target.value)}
+                className={feeType === "flat" ? "pl-7" : "pr-7"}
+              />
+              {feeType === "percent" && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+              )}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
