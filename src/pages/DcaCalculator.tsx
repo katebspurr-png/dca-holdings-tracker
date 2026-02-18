@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle, Info, Save, Target } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save, Target, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { getHolding, addScenario } from "@/lib/storage";
+import { fetchStockPrice } from "@/lib/stock-price";
+import { canLookup, lookupsRemaining, isPro, FREE_LIMIT } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
 
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
@@ -134,7 +136,23 @@ export default function DcaCalculator() {
   const [includeFees, setIncludeFees] = useState(true);
   const [budgetPercent, setBudgetPercent] = useState(100);
   const [tick, setTick] = useState(0);
+  const [fetchingPrice, setFetchingPrice] = useState(false);
   const { toast } = useToast();
+
+  // Whether input1 is a "buy price" field (supports live price fill)
+  const input1IsPrice = method !== "budget_target";
+
+  const handleUseCurrentPrice = async () => {
+    if (!holding) return;
+    setFetchingPrice(true);
+    const result = await fetchStockPrice(holding.ticker);
+    setFetchingPrice(false);
+    if (result.ok) {
+      setVal1(String(result.quote.price));
+    } else {
+      toast({ title: "Price unavailable", description: result.ok === false ? "Could not fetch price" : "", variant: "destructive" });
+    }
+  };
 
   const holding = id ? getHolding(id) : undefined;
   const fields = FIELD_CONFIG[method];
@@ -277,7 +295,22 @@ export default function DcaCalculator() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="input1">{fields[0].label}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="input1">{fields[0].label}</Label>
+                {input1IsPrice && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs"
+                    disabled={fetchingPrice || !canLookup()}
+                    onClick={handleUseCurrentPrice}
+                  >
+                    <Zap className={`mr-1 h-3 w-3 ${fetchingPrice ? "animate-pulse" : ""}`} />
+                    Use current price
+                  </Button>
+                )}
+              </div>
               <Input id="input1" type="number" step="any" placeholder="0" value={val1} onChange={(e) => setVal1(e.target.value)} />
             </div>
             <div className="space-y-2">
