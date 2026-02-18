@@ -99,6 +99,8 @@ export type Database = {
           avg_cost: number
           created_at: string
           fee: number
+          fee_type: string
+          fee_value: number
           id: string
           shares: number
           ticker: string
@@ -107,6 +109,8 @@ export type Database = {
           avg_cost: number
           created_at?: string
           fee?: number
+          fee_type?: string
+          fee_value?: number
           id?: string
           shares: number
           ticker: string
@@ -115,6 +119,8 @@ export type Database = {
           avg_cost?: number
           created_at?: string
           fee?: number
+          fee_type?: string
+          fee_value?: number
           id?: string
           shares?: number
           ticker?: string
