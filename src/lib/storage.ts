@@ -225,3 +225,9 @@ export function addWhatIfComparison(c: Omit<WhatIfComparison, "id" | "created_at
   write(data);
   return comp;
 }
+
+export function removeWhatIfComparison(id: string) {
+  const data = read();
+  data.whatIfComparisons = (data.whatIfComparisons ?? []).filter((c) => c.id !== id);
+  write(data);
+}

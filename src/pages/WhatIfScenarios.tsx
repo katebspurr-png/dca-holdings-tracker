@@ -1,14 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Shuffle, BarChart3, Scale } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Shuffle, BarChart3, Scale, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
-  getHoldings, addWhatIfComparison,
-  type Holding, type WhatIfScenarioTab, type WhatIfAllocation,
+  getHoldings, addWhatIfComparison, getWhatIfComparisons, removeWhatIfComparison,
+  type Holding, type WhatIfScenarioTab, type WhatIfAllocation, type WhatIfComparison,
 } from "@/lib/storage";
 import { toast } from "sonner";
 
@@ -42,6 +42,9 @@ export default function WhatIfScenarios() {
   ]);
   const [activeTab, setActiveTab] = useState(0);
   const [inputMode, setInputMode] = useState<"dollar" | "percent">("dollar");
+  const [savedRefresh, setSavedRefresh] = useState(0);
+
+  const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh]);
 
   const budget = parseFloat(totalBudget) || 0;
 
@@ -149,6 +152,35 @@ export default function WhatIfScenarios() {
     }
     addWhatIfComparison({ totalBudget: budget, scenarios });
     toast.success("Comparison saved");
+    setSavedRefresh((r) => r + 1);
+  };
+
+  const handleDeleteSaved = (id: string) => {
+    removeWhatIfComparison(id);
+    toast.success("Scenario deleted");
+    setSavedRefresh((r) => r + 1);
+  };
+
+  // Helper to compute results for a saved comparison
+  const computeSavedResults = (comp: WhatIfComparison) => {
+    return comp.scenarios.map((s) => {
+      const rows = s.allocations.map((a) => {
+        if (!a.buyPrice || a.buyPrice <= 0 || a.allocated <= 0) {
+          return { ...a, sharesBought: 0, newAvg: a.currentAvg, reduction: 0, reductionPct: 0 };
+        }
+        const sharesBought = a.allocated / a.buyPrice;
+        const newTotalShares = a.currentShares + sharesBought;
+        const newAvg = (a.currentShares * a.currentAvg + a.allocated) / newTotalShares;
+        const reduction = a.currentAvg - newAvg;
+        const reductionPct = a.currentAvg > 0 ? (reduction / a.currentAvg) * 100 : 0;
+        return { ...a, sharesBought, newAvg, reduction, reductionPct };
+      });
+      const totalAllocated = s.allocations.reduce((sum, a) => sum + a.allocated, 0);
+      const weightedReduction = rows.reduce((sum, r) => sum + r.reduction * r.currentShares, 0);
+      const totalWeight = rows.reduce((sum, r) => sum + r.currentShares, 0);
+      const avgReduction = totalWeight > 0 ? weightedReduction / totalWeight : 0;
+      return { name: s.name, rows, totalAllocated, avgReduction };
+    });
   };
 
   return (
@@ -429,6 +461,80 @@ export default function WhatIfScenarios() {
             <Save className="mr-1.5 h-4 w-4" />
             Save Comparison
           </Button>
+        </div>
+
+        {/* Saved Scenarios */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Recent Scenarios
+          </h2>
+          {savedComparisons.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground">No saved scenarios yet. Build a comparison above and click Save.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {savedComparisons.map((comp) => {
+                const results = computeSavedResults(comp);
+                const bestIdx = results.reduce((best, r, i) => (r.avgReduction > (results[best]?.avgReduction ?? 0) ? i : best), 0);
+                const date = new Date(comp.created_at);
+                return (
+                  <div key={comp.id} className="rounded-lg border border-border bg-card p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        <span className="font-mono font-semibold text-foreground text-sm ml-2">
+                          Budget: ${fmt(comp.totalBudget)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSaved(comp.id)}
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Delete scenario"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {results.map((sr, si) => {
+                        const isBest = results.length > 1 && si === bestIdx && sr.avgReduction > 0;
+                        return (
+                          <div
+                            key={si}
+                            className={`rounded-md border p-3 text-sm space-y-1.5 ${
+                              isBest ? "border-primary bg-primary/5" : "border-border bg-muted/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-xs">{sr.name}</span>
+                              {isBest && <Badge variant="default" className="text-[10px] px-1.5 py-0">Best</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Allocated: <span className="font-mono">${fmt(sr.totalAllocated)}</span>
+                            </p>
+                            <div className="space-y-0.5">
+                              {sr.rows.filter((r) => r.allocated > 0).map((r) => (
+                                <div key={r.holdingId} className="flex justify-between text-xs font-mono">
+                                  <span>{r.ticker}: ${fmt(r.allocated)}</span>
+                                  <span className="text-primary">
+                                    ${fmt(r.newAvg)} (−{r.reductionPct.toFixed(1)}%)
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs border-t border-border pt-1 mt-1">
+                              Avg reduction: <span className="font-mono text-primary font-semibold">−${fmt(sr.avgReduction)}</span>
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Disclaimer */}
