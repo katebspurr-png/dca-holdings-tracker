@@ -393,7 +393,7 @@ export default function Holdings() {
                   <div className="p-4 pr-10 space-y-2">
                     {/* Header row: ticker + price */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                         <span className="text-lg font-bold font-mono tracking-tight">{h.ticker}</span>
                         <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
                           {exchangeLabel(ex)}
@@ -406,7 +406,7 @@ export default function Holdings() {
                           <button
                             onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
                             disabled={isFetching}
-                            className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+                            className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium whitespace-nowrap flex-shrink-0"
                           >
                             {isFetching ? "…" : "Get Price"}
                           </button>
