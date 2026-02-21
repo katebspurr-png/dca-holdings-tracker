@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Shuffle, BarChart3, Scale, X, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Shuffle, BarChart3, Scale, X, Clock, RefreshCw, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,20 +10,43 @@ import {
   getHoldings, addWhatIfComparison, getWhatIfComparisons, removeWhatIfComparison,
   type Holding, type WhatIfScenarioTab, type WhatIfAllocation, type WhatIfComparison,
 } from "@/lib/storage";
+import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { toast } from "sonner";
 
 const MAX_SCENARIOS = 3;
 const DEFAULT_NAMES = ["Scenario A", "Scenario B", "Scenario C"];
+const CACHE_KEY = "dca-price-cache";
+
+/** Read the shared price cache from localStorage */
+function readPriceCache(): Record<string, StockQuote> {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getCachedPrice(ticker: string): number | null {
+  const cache = readPriceCache();
+  const entry = cache[ticker.toUpperCase()];
+  if (!entry) return null;
+  // Still valid within 5-minute TTL? Return regardless — user can refresh if stale
+  return entry.price;
+}
 
 function makeAllocations(holdings: Holding[]): WhatIfAllocation[] {
-  return holdings.map((h) => ({
-    holdingId: h.id,
-    ticker: h.ticker,
-    currentShares: h.shares,
-    currentAvg: h.avg_cost,
-    buyPrice: null,
-    allocated: 0,
-  }));
+  return holdings.map((h) => {
+    const cachedPrice = getCachedPrice(h.ticker);
+    return {
+      holdingId: h.id,
+      ticker: h.ticker,
+      currentShares: h.shares,
+      currentAvg: h.avg_cost,
+      buyPrice: cachedPrice,
+      allocated: 0,
+    };
+  });
 }
 
 function makeScenario(name: string, holdings: Holding[]): WhatIfScenarioTab {
@@ -43,10 +66,79 @@ export default function WhatIfScenarios() {
   const [activeTab, setActiveTab] = useState(0);
   const [inputMode, setInputMode] = useState<"dollar" | "percent">("dollar");
   const [savedRefresh, setSavedRefresh] = useState(0);
+  const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
+  const [refreshingAll, setRefreshingAll] = useState(false);
+
+  // Map of ticker → live price for display
+  const [livePrices, setLivePrices] = useState<Record<string, number>>(() => {
+    const prices: Record<string, number> = {};
+    holdings.forEach((h) => {
+      const p = getCachedPrice(h.ticker);
+      if (p) prices[h.ticker] = p;
+    });
+    return prices;
+  });
 
   const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh]);
 
   const budget = parseFloat(totalBudget) || 0;
+
+  // ── Fetch single ticker price ──────────────────────────────
+
+  const fetchPrice = useCallback(async (ticker: string) => {
+    setFetchingTickers((prev) => new Set(prev).add(ticker));
+    const result = await fetchStockPrice(ticker);
+    setFetchingTickers((prev) => {
+      const next = new Set(prev);
+      next.delete(ticker);
+      return next;
+    });
+    if (result.ok) {
+      const price = result.quote.price;
+      setLivePrices((prev) => ({ ...prev, [ticker]: price }));
+      // Update buyPrice in ALL scenarios for this ticker
+      setScenarios((prev) =>
+        prev.map((s) => ({
+          ...s,
+          allocations: s.allocations.map((a) =>
+            a.ticker === ticker ? { ...a, buyPrice: price } : a
+          ),
+        }))
+      );
+    } else {
+      toast.error(`${ticker}: ${'error' in result ? result.error : "Price unavailable"}`);
+    }
+  }, []);
+
+  // ── Refresh all prices ─────────────────────────────────────
+
+  const refreshAllPrices = useCallback(async () => {
+    setRefreshingAll(true);
+    const tickers = holdings.map((h) => h.ticker);
+    const results = await Promise.allSettled(
+      tickers.map((t) => fetchStockPrice(t))
+    );
+    const newPrices: Record<string, number> = { ...livePrices };
+    let fetched = 0;
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled" && r.value.ok) {
+        newPrices[tickers[i]] = r.value.quote.price;
+        fetched++;
+      }
+    });
+    setLivePrices(newPrices);
+    // Update all scenarios
+    setScenarios((prev) =>
+      prev.map((s) => ({
+        ...s,
+        allocations: s.allocations.map((a) =>
+          newPrices[a.ticker] != null ? { ...a, buyPrice: newPrices[a.ticker] } : a
+        ),
+      }))
+    );
+    setRefreshingAll(false);
+    toast.success(`Fetched prices for ${fetched} of ${tickers.length} stocks`);
+  }, [holdings, livePrices]);
 
   // ── Helpers ────────────────────────────────────────────────
 
@@ -161,7 +253,6 @@ export default function WhatIfScenarios() {
     setSavedRefresh((r) => r + 1);
   };
 
-  // Helper to compute results for a saved comparison
   const computeSavedResults = (comp: WhatIfComparison) => {
     return comp.scenarios.map((s) => {
       const rows = s.allocations.map((a) => {
@@ -272,8 +363,8 @@ export default function WhatIfScenarios() {
             )}
           </div>
 
-          {/* Quick-fill buttons */}
-          <div className="flex items-center gap-2">
+          {/* Quick-fill & Refresh All buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" variant="outline" onClick={splitEvenly} disabled={!budget}>
               <Scale className="mr-1.5 h-3.5 w-3.5" />
               Split Evenly
@@ -285,6 +376,11 @@ export default function WhatIfScenarios() {
             <Button size="sm" variant="outline" onClick={clearAllocations}>
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Clear
+            </Button>
+            <div className="flex-1" />
+            <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
+              {refreshingAll ? "Fetching…" : "Refresh All Prices"}
             </Button>
           </div>
 
@@ -309,16 +405,36 @@ export default function WhatIfScenarios() {
                 {scenarios[activeTab].allocations.map((alloc, ai) => {
                   const row = activeResult?.rows[ai];
                   const hasBuyPrice = alloc.buyPrice && alloc.buyPrice > 0;
+                  const livePrice = livePrices[alloc.ticker];
+                  const isFetching = fetchingTickers.has(alloc.ticker);
                   return (
                     <tr key={alloc.holdingId} className={`border-t border-border ${!hasBuyPrice ? "opacity-50" : ""}`}>
-                      <td className="px-3 py-2 font-mono font-semibold">{alloc.ticker}</td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-semibold">{alloc.ticker}</span>
+                          {livePrice ? (
+                            <span className="text-xs text-muted-foreground font-mono">${fmt(livePrice)}</span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-5 px-1.5 text-[10px]"
+                              disabled={isFetching}
+                              onClick={() => fetchPrice(alloc.ticker)}
+                            >
+                              <Zap className={`h-3 w-3 mr-0.5 ${isFetching ? "animate-pulse" : ""}`} />
+                              {isFetching ? "…" : "Get Price"}
+                            </Button>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-right font-mono">{fmt(alloc.currentShares)}</td>
                       <td className="px-3 py-2 text-right font-mono">${fmt(alloc.currentAvg)}</td>
                       <td className="px-3 py-2 text-right">
                         <Input
                           type="number"
                           step="any"
-                          placeholder="Price"
+                          placeholder={livePrice ? `${livePrice.toFixed(2)}` : "Price"}
                           className="w-24 ml-auto text-right font-mono h-8 text-sm"
                           value={alloc.buyPrice ?? ""}
                           onChange={(e) => {
@@ -329,7 +445,9 @@ export default function WhatIfScenarios() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         {!hasBuyPrice ? (
-                          <span className="text-xs text-muted-foreground italic">Enter price</span>
+                          <span className="text-xs text-muted-foreground italic">
+                            {livePrice ? "Enter price" : "Fetch price or enter manually"}
+                          </span>
                         ) : (
                           <Input
                             type="number"
