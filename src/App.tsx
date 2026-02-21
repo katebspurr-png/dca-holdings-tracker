@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,17 +10,29 @@ import HoldingDetail from "./pages/HoldingDetail";
 import Scenarios from "./pages/Scenarios";
 import ScenarioDetail from "./pages/ScenarioDetail";
 import WhatIfScenarios from "./pages/WhatIfScenarios";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import ThemeToggle from "./components/ThemeToggle";
+import BottomTabBar from "./components/BottomTabBar";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+function useInitTheme() {
+  useEffect(() => {
+    const stored = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (stored === "dark" || (!stored && prefersDark)) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+}
+
+const App = () => {
+  useInitTheme();
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ThemeToggle />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Holdings />} />
@@ -28,11 +41,14 @@ const App = () => (
           <Route path="/scenarios" element={<Scenarios />} />
           <Route path="/scenarios/:id" element={<ScenarioDetail />} />
           <Route path="/what-if" element={<WhatIfScenarios />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <BottomTabBar />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

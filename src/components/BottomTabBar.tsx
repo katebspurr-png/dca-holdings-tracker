@@ -1,0 +1,46 @@
+import { useNavigate, useLocation } from "react-router-dom";
+import { Briefcase, Calculator, Layers, Settings } from "lucide-react";
+
+const TABS = [
+  { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/" },
+  { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/") },
+  { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings" },
+] as const;
+
+export default function BottomTabBar() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // On calculator pages, highlight nothing special — the back nav handles it
+  // But we still show the tab bar
+
+  return (
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="mx-auto flex max-w-4xl items-stretch">
+        {TABS.map((tab) => {
+          const active = tab.match(pathname);
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.path}
+              onClick={() => navigate(tab.path)}
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
