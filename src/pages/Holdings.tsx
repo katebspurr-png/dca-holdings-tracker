@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload, X, TrendingDown, DollarSign, BarChart3, FileSpreadsheet } from "lucide-react";
+import { Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload, X, TrendingDown, DollarSign, BarChart3, FileSpreadsheet, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -111,6 +111,10 @@ export default function Holdings() {
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
           <div className="flex items-center gap-1">
+            <Button onClick={() => navigate("/what-if")} size="sm" variant="ghost">
+              <Shuffle className="mr-1.5 h-4 w-4" />
+              What-If
+            </Button>
             <Button onClick={() => navigate("/scenarios")} size="sm" variant="ghost">
               <BarChart3 className="mr-1.5 h-4 w-4" />
               All Scenarios

@@ -40,10 +40,32 @@ export type Scenario = {
   created_at: string;
 };
 
+export type WhatIfAllocation = {
+  holdingId: string;
+  ticker: string;
+  currentShares: number;
+  currentAvg: number;
+  buyPrice: number | null;
+  allocated: number; // dollar amount
+};
+
+export type WhatIfScenarioTab = {
+  name: string;
+  allocations: WhatIfAllocation[];
+};
+
+export type WhatIfComparison = {
+  id: string;
+  totalBudget: number;
+  scenarios: WhatIfScenarioTab[];
+  created_at: string;
+};
+
 export interface AppData {
   version: 1;
   holdings: Holding[];
   scenarios: Scenario[];
+  whatIfComparisons?: WhatIfComparison[];
 }
 
 const STORAGE_KEY = "dca-down-data";
@@ -187,4 +209,19 @@ export function importData(json: string) {
     throw new Error("Invalid backup file");
   }
   write(parsed as AppData);
+}
+
+// ── What-If Comparisons ─────────────────────────────────────
+
+export function getWhatIfComparisons(): WhatIfComparison[] {
+  return (read().whatIfComparisons ?? []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function addWhatIfComparison(c: Omit<WhatIfComparison, "id" | "created_at">): WhatIfComparison {
+  const data = read();
+  const comp: WhatIfComparison = { ...c, id: uid(), created_at: new Date().toISOString() };
+  if (!data.whatIfComparisons) data.whatIfComparisons = [];
+  data.whatIfComparisons.push(comp);
+  write(data);
+  return comp;
 }
