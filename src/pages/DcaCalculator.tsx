@@ -9,9 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { getHolding, addScenario } from "@/lib/storage";
+import { getHolding, addScenario, currencyPrefix, apiTicker } from "@/lib/storage";
 import { fetchStockPrice } from "@/lib/stock-price";
-import { canLookup, lookupsRemaining, isPro, FREE_LIMIT } from "@/lib/pro";
+import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
 
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
@@ -139,22 +139,24 @@ export default function DcaCalculator() {
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const { toast } = useToast();
 
-  // Whether input1 is a "buy price" field (supports live price fill)
   const input1IsPrice = method !== "budget_target";
+
+  const holding = id ? getHolding(id) : undefined;
+  const exchange = holding?.exchange ?? "US";
+  const cp = currencyPrefix(exchange);
 
   const handleUseCurrentPrice = async () => {
     if (!holding) return;
     setFetchingPrice(true);
-    const result = await fetchStockPrice(holding.ticker);
+    const result = await fetchStockPrice(apiTicker(holding.ticker, exchange));
     setFetchingPrice(false);
     if (result.ok) {
       setVal1(String(result.quote.price));
     } else {
-      toast({ title: "Price unavailable", description: result.ok === false ? "Could not fetch price" : "", variant: "destructive" });
+      toast({ title: "Price unavailable", description: "Could not fetch price", variant: "destructive" });
     }
   };
 
-  const holding = id ? getHolding(id) : undefined;
   const fields = FIELD_CONFIG[method];
 
   const effectiveVal2 = useMemo(() => {
@@ -244,7 +246,8 @@ export default function DcaCalculator() {
 
   const S = Number(holding.shares);
   const A = Number(holding.avg_cost);
-  const feeLabel = holding.fee_type === "percent" ? `${holding.fee_value}%` : `$${Number(holding.fee_value).toFixed(2)}`;
+  const feeLabel = holding.fee_type === "percent" ? `${holding.fee_value}%` : `${cp}${Number(holding.fee_value).toFixed(2)}`;
+  const exLabel = exchange === "TSX" ? "TSX" : "US";
 
   const hasInputs = val1 !== "" && val2 !== "";
   const isError = result !== null && !result.ok;
@@ -262,6 +265,9 @@ export default function DcaCalculator() {
           <h1 className="text-2xl font-bold tracking-tight">
             DCA Calculator —{" "}
             <span className="text-primary font-mono">{holding.ticker}</span>
+            <span className="text-xs font-medium text-muted-foreground ml-2 bg-muted px-2 py-0.5 rounded-full">
+              {exLabel}
+            </span>
           </h1>
         </div>
       </header>
@@ -272,7 +278,7 @@ export default function DcaCalculator() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares (S)" value={S.toFixed(4)} />
-            <Stat label="Avg Cost (A)" value={`$${A.toFixed(2)}`} />
+            <Stat label="Avg Cost (A)" value={`${cp}${A.toFixed(2)}`} />
             <Stat label={`Fee (${holding.fee_type})`} value={feeLabel} />
           </div>
         </div>
@@ -358,14 +364,14 @@ export default function DcaCalculator() {
           {isValid ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {isPriceBudget && <Stat label="Achievable Target Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
+                {isPriceBudget && <Stat label="Achievable Target Avg Cost" value={`${cp}${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
                 <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
-                <Stat label="Budget Invested" value={`$${(result as ResultOk).budget.toFixed(2)}`} />
-                <Stat label="Fee Applied" value={`$${(result as ResultOk).feeApplied.toFixed(2)}`} />
-                <Stat label="Total Spend" value={`$${(result as ResultOk).totalSpend.toFixed(2)}`} />
+                <Stat label="Budget Invested" value={`${cp}${(result as ResultOk).budget.toFixed(2)}`} />
+                <Stat label="Fee Applied" value={`${cp}${(result as ResultOk).feeApplied.toFixed(2)}`} />
+                <Stat label="Total Spend" value={`${cp}${(result as ResultOk).totalSpend.toFixed(2)}`} />
                 <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
-                {!isPriceBudget && <Stat label="New Avg Cost" value={`$${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
-                {(result as ResultOk).effectivePrice !== null && <Stat label="Effective Buy Price" value={`$${(result as ResultOk).effectivePrice!.toFixed(2)}`} />}
+                {!isPriceBudget && <Stat label="New Avg Cost" value={`${cp}${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
+                {(result as ResultOk).effectivePrice !== null && <Stat label="Effective Buy Price" value={`${cp}${(result as ResultOk).effectivePrice!.toFixed(2)}`} />}
               </div>
             </>
           ) : (

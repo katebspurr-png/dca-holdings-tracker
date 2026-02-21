@@ -14,7 +14,7 @@ import CsvImportDialog from "@/components/CsvImportDialog";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
   getScenariosForHolding, getScenarios, resetAll, exportData, importData,
-  type Holding, type FeeType, type Scenario,
+  type Holding, type FeeType, type Scenario, currencyPrefix, exchangeLabel,
 } from "@/lib/storage";
 import { toast } from "sonner";
 
@@ -32,7 +32,6 @@ export default function Holdings() {
 
   const holdings = getHoldings();
 
-  // Auto-select first holding if none selected or selected was deleted
   const selected = holdings.find((h) => h.id === selectedId) ?? holdings[0] ?? null;
   const selectedScenarios = selected ? getScenariosForHolding(selected.id) : [];
 
@@ -41,7 +40,11 @@ export default function Holdings() {
 
   // ── Portfolio summary ──────────────────────────────────────
   const totalStocks = holdings.length;
-  const totalInvested = holdings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+  const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
+  const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
+  const totalUsd = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+  const totalCad = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+  const hasMixed = totalUsd > 0 && totalCad > 0;
 
   // ── Handlers ───────────────────────────────────────────────
   const handleCreate = (data: Omit<Holding, "id" | "created_at">) => {
@@ -106,6 +109,9 @@ export default function Holdings() {
     e.target.value = "";
   }, []);
 
+  const cp = selected ? currencyPrefix(selected.exchange ?? "US") : "$";
+  const exLabel = selected ? exchangeLabel(selected.exchange ?? "US") : "US";
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
@@ -129,17 +135,33 @@ export default function Holdings() {
         {/* Portfolio summary card */}
         {holdings.length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-6 text-sm flex-wrap">
               <div className="flex items-center gap-1.5">
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">Stocks:</span>
                 <span className="font-semibold">{totalStocks}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Total Invested:</span>
-                <span className="font-mono font-semibold">${fmt(totalInvested)}</span>
-              </div>
+              {hasMixed ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">US:</span>
+                    <span className="font-mono font-semibold">${fmt(totalUsd)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">CAD:</span>
+                    <span className="font-mono font-semibold">C${fmt(totalCad)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Total Invested:</span>
+                  <span className="font-mono font-semibold">
+                    {totalCad > 0 ? "C$" : "$"}{fmt(totalUsd + totalCad)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -159,10 +181,14 @@ export default function Holdings() {
                   }`}
               >
                 {h.ticker}
+                {(h.exchange ?? "US") === "TSX" && (
+                  <span className={`text-[10px] font-normal ${isActive ? "text-primary-foreground/60" : "text-muted-foreground/50"}`}>
+                    TSX
+                  </span>
+                )}
                 <span className={`text-xs font-normal ${isActive ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
                   {h.shares}sh
                 </span>
-                {/* Delete x button */}
                 <span
                   role="button"
                   aria-label={`Delete ${h.ticker}`}
@@ -179,7 +205,6 @@ export default function Holdings() {
             );
           })}
 
-          {/* + Add Stock chip */}
           <button
             onClick={() => { setEditing(null); setFormOpen(true); }}
             className="flex items-center gap-1 rounded-full border-2 border-dashed border-border px-4 py-2 text-sm font-medium text-muted-foreground whitespace-nowrap transition-colors hover:border-primary hover:text-primary"
@@ -192,12 +217,16 @@ export default function Holdings() {
         {/* Selected stock detail */}
         {selected ? (
           <div className="space-y-6">
-            {/* Holding stats card */}
             <div className="rounded-lg border border-border bg-card p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="space-y-2">
-                  <h2 className="text-xl font-bold font-mono text-primary">{selected.ticker}</h2>
-                  <LivePriceDisplay ticker={selected.ticker} />
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold font-mono text-primary">{selected.ticker}</h2>
+                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                      {exLabel}
+                    </span>
+                  </div>
+                  <LivePriceDisplay ticker={selected.ticker} exchange={selected.exchange ?? "US"} />
                 </div>
                 <div className="flex items-center gap-1">
                   <Button size="sm" variant="ghost" onClick={() => { setEditing(selected); setFormOpen(true); }} aria-label="Edit">
@@ -211,13 +240,13 @@ export default function Holdings() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <Stat label="Shares" value={fmt(selected.shares)} />
-                <Stat label="Avg Cost" value={`$${fmt(selected.avg_cost)}`} />
-                <Stat label="Position Value" value={`$${fmt(selected.shares * selected.avg_cost)}`} />
+                <Stat label="Avg Cost" value={`${cp}${fmt(selected.avg_cost)}`} />
+                <Stat label="Position Value" value={`${cp}${fmt(selected.shares * selected.avg_cost)}`} />
                 <Stat
                   label={`Fee (${selected.fee_type})`}
                   value={selected.fee_type === "percent"
                     ? `${Number(selected.fee_value).toFixed(2)}%`
-                    : `$${Number(selected.fee_value ?? selected.fee).toFixed(2)}`}
+                    : `${cp}${Number(selected.fee_value ?? selected.fee).toFixed(2)}`}
                 />
               </div>
             </div>
@@ -259,8 +288,8 @@ export default function Holdings() {
                         </span>
                       </div>
                       <p className="mt-1 text-sm font-mono">
-                        {Number(s.shares_to_buy).toFixed(4)} shares · ${Number(s.total_spend).toFixed(2)} total ·{" "}
-                        <span className="text-primary font-semibold">New avg ${Number(s.new_avg_cost).toFixed(2)}</span>
+                        {Number(s.shares_to_buy).toFixed(4)} shares · {cp}{Number(s.total_spend).toFixed(2)} total ·{" "}
+                        <span className="text-primary font-semibold">New avg {cp}{Number(s.new_avg_cost).toFixed(2)}</span>
                       </p>
                     </div>
                   ))}

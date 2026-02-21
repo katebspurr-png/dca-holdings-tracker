@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { getHolding, getScenariosForHolding, getRecommendedTargets } from "@/lib/storage";
+import { getHolding, getScenariosForHolding, getRecommendedTargets, currencyPrefix, exchangeLabel } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -29,9 +29,10 @@ export default function HoldingDetail() {
     );
   }
 
+  const cp = currencyPrefix(holding.exchange ?? "US");
   const feeLabel = holding.fee_type === "percent"
     ? `${Number(holding.fee_value).toFixed(2)}%`
-    : `$${Number(holding.fee_value ?? holding.fee).toFixed(2)}`;
+    : `${cp}${Number(holding.fee_value ?? holding.fee).toFixed(2)}`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,6 +44,9 @@ export default function HoldingDetail() {
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
             <span className="text-primary font-mono">{holding.ticker}</span>
+            <span className="text-xs font-medium text-muted-foreground ml-2 bg-muted px-2 py-0.5 rounded-full">
+              {exchangeLabel(holding.exchange ?? "US")}
+            </span>
           </h1>
         </div>
       </header>
@@ -52,7 +56,7 @@ export default function HoldingDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
             <Stat label="Ticker" value={holding.ticker} />
             <Stat label="Shares" value={Number(holding.shares).toFixed(4)} />
-            <Stat label="Avg Cost" value={`$${Number(holding.avg_cost).toFixed(2)}`} />
+            <Stat label="Avg Cost" value={`${cp}${Number(holding.avg_cost).toFixed(2)}`} />
             <Stat label="Fee" value={feeLabel} />
           </div>
           <Button size="sm" onClick={() => navigate(`/holdings/${id}/dca`)}>

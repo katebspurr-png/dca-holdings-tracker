@@ -3,18 +3,19 @@ import { RefreshCw, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { canLookup, lookupsRemaining, isPro, FREE_LIMIT, ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
+import { type Exchange, currencyPrefix, apiTicker } from "@/lib/storage";
 
 interface Props {
   ticker: string;
+  exchange?: Exchange;
   onPriceFetched?: (price: number) => void;
 }
 
-export default function LivePriceDisplay({ ticker, onPriceFetched }: Props) {
+export default function LivePriceDisplay({ ticker, exchange = "US", onPriceFetched }: Props) {
   const [quote, setQuote] = useState<StockQuote | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset when ticker changes
   useEffect(() => {
     setQuote(null);
     setError(null);
@@ -23,7 +24,7 @@ export default function LivePriceDisplay({ ticker, onPriceFetched }: Props) {
   const handleFetch = async () => {
     setLoading(true);
     setError(null);
-    const result = await fetchStockPrice(ticker);
+    const result = await fetchStockPrice(apiTicker(ticker, exchange));
     setLoading(false);
     if (result.ok) {
       setQuote(result.quote);
@@ -36,6 +37,7 @@ export default function LivePriceDisplay({ ticker, onPriceFetched }: Props) {
   const remaining = lookupsRemaining();
   const pro = isPro();
   const allowed = canLookup();
+  const cp = currencyPrefix(exchange);
 
   const timeAgo = quote
     ? Math.round((Date.now() - quote.fetchedAt) / 60000)
@@ -45,13 +47,13 @@ export default function LivePriceDisplay({ ticker, onPriceFetched }: Props) {
     <div className="space-y-2">
       {quote ? (
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-2xl font-mono font-bold">${quote.price.toFixed(2)}</span>
+          <span className="text-2xl font-mono font-bold">{cp}{quote.price.toFixed(2)}</span>
           <span
             className={`text-sm font-mono font-semibold ${
               quote.change >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
             }`}
           >
-            {quote.change >= 0 ? "+" : ""}${quote.change.toFixed(2)} ({quote.change >= 0 ? "+" : ""}
+            {quote.change >= 0 ? "+" : ""}{cp}{Math.abs(quote.change).toFixed(2)} ({quote.change >= 0 ? "+" : ""}
             {quote.changePercent.toFixed(1)}%)
           </span>
           <Button
