@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { RefreshCw, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
-import { canLookup, lookupsRemaining, isPro, FREE_LIMIT } from "@/lib/pro";
+import { canLookup, lookupsRemaining, isPro, FREE_LIMIT, ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 
 interface Props {
   ticker: string;
@@ -87,7 +87,7 @@ export default function LivePriceDisplay({ ticker, onPriceFetched }: Props) {
         </p>
       )}
 
-      {!pro && (
+      {ENABLE_LOOKUP_LIMIT && !pro && (
         <p className="text-xs text-muted-foreground">
           {allowed
             ? `${remaining} of ${FREE_LIMIT} free lookups remaining`

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import LivePriceDisplay from "@/components/LivePriceDisplay";
+import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 import ProSettings from "@/components/ProSettings";
 import CsvImportDialog from "@/components/CsvImportDialog";
 import {
@@ -119,7 +120,7 @@ export default function Holdings() {
               <BarChart3 className="mr-1.5 h-4 w-4" />
               All Scenarios
             </Button>
-            <ProSettings onChanged={refresh} />
+            {ENABLE_LOOKUP_LIMIT && <ProSettings onChanged={refresh} />}
           </div>
         </div>
       </header>
