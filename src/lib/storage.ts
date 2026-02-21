@@ -256,3 +256,20 @@ export function removeWhatIfComparison(id: string) {
   data.whatIfComparisons = (data.whatIfComparisons ?? []).filter((c) => c.id !== id);
   write(data);
 }
+
+/** Apply scenario trades to holdings: add shares and recalculate avg cost */
+export function applyScenarioToHoldings(
+  trades: { holdingId: string; sharesBought: number; buyPrice: number }[]
+) {
+  const data = read();
+  for (const trade of trades) {
+    const idx = data.holdings.findIndex((h) => h.id === trade.holdingId);
+    if (idx === -1) continue;
+    const h = data.holdings[idx];
+    const newTotalShares = h.shares + trade.sharesBought;
+    const newAvg =
+      (h.shares * h.avg_cost + trade.sharesBought * trade.buyPrice) / newTotalShares;
+    data.holdings[idx] = { ...h, shares: newTotalShares, avg_cost: newAvg };
+  }
+  write(data);
+}

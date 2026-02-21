@@ -1,13 +1,19 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   getHoldings, addWhatIfComparison, getWhatIfComparisons, removeWhatIfComparison,
+  applyScenarioToHoldings,
   type Holding, type WhatIfScenarioTab, type WhatIfAllocation, type WhatIfComparison,
   type Exchange, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
@@ -70,6 +76,8 @@ export default function WhatIfScenarios() {
   const [savedRefresh, setSavedRefresh] = useState(0);
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
   const [refreshingAll, setRefreshingAll] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   const [livePrices, setLivePrices] = useState<Record<string, number>>(() => {
     const prices: Record<string, number> = {};
@@ -244,6 +252,83 @@ export default function WhatIfScenarios() {
   const activeResult = scenarioResults[activeTab];
   const unallocated = budget - (activeResult?.totalAllocated ?? 0);
 
+  // ── Row selection ──────────────────────────────────────────
+
+  const toggleRow = (idx: number) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  const selectableIndices = useMemo(() => {
+    if (!activeResult) return [];
+    return activeResult.rows
+      .map((r, i) => (r.sharesBought > 0 ? i : -1))
+      .filter((i) => i >= 0);
+  }, [activeResult]);
+
+  const allSelected = selectableIndices.length > 0 && selectableIndices.every((i) => selectedRows.has(i));
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(selectableIndices));
+    }
+  };
+
+  const selectedCount = selectableIndices.filter((i) => selectedRows.has(i)).length;
+
+  // ── Apply to holdings ──────────────────────────────────────
+
+  const selectedTrades = useMemo(() => {
+    if (!activeResult) return [];
+    return Array.from(selectedRows)
+      .filter((i) => activeResult.rows[i]?.sharesBought > 0)
+      .map((i) => {
+        const r = activeResult.rows[i];
+        return {
+          holdingId: r.holdingId,
+          ticker: r.ticker,
+          exchange: r.exchange,
+          sharesBought: r.sharesBought,
+          buyPrice: r.buyPrice!,
+          newAvg: r.newAvg,
+          currentAvg: r.currentAvg,
+        };
+      });
+  }, [activeResult, selectedRows]);
+
+  const handleApplyConfirm = () => {
+    applyScenarioToHoldings(
+      selectedTrades.map((t) => ({
+        holdingId: t.holdingId,
+        sharesBought: t.sharesBought,
+        buyPrice: t.buyPrice,
+      }))
+    );
+    // Save scenario with "Applied" tag
+    const now = new Date();
+    const label = `Applied on ${now.toLocaleDateString()}`;
+    addWhatIfComparison({
+      totalBudget: budget,
+      scenarios: scenarios.map((s) => ({
+        ...s,
+        name: `${s.name} — ${label}`,
+      })),
+    });
+    const tickers = selectedTrades.map((t) => t.ticker).join(", ");
+    toast.success(`Updated holdings for ${tickers}`);
+    setShowApplyDialog(false);
+    setSelectedRows(new Set());
+    setSavedRefresh((r) => r + 1);
+    navigate("/");
+  };
+
+
+
   // ── Save comparison ────────────────────────────────────────
 
   const handleSave = () => {
@@ -405,6 +490,13 @@ export default function WhatIfScenarios() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted text-muted-foreground">
+                  <th className="px-3 py-2.5 text-center w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all"
+                    />
+                  </th>
                   <th className="px-3 py-2.5 text-left font-medium">Ticker</th>
                   <th className="px-3 py-2.5 text-right font-medium">Shares</th>
                   <th className="px-3 py-2.5 text-right font-medium">Avg Cost</th>
@@ -425,8 +517,18 @@ export default function WhatIfScenarios() {
                   const livePrice = livePrices[apiSym];
                   const isFetching = fetchingTickers.has(alloc.ticker);
                   const cp = currencyPrefix(alloc.exchange);
+                  const isRowSelectable = row && row.sharesBought > 0;
+                  const isSelected = selectedRows.has(ai);
                   return (
-                    <tr key={alloc.holdingId} className={`border-t border-border ${!hasBuyPrice ? "opacity-50" : ""}`}>
+                    <tr key={alloc.holdingId} className={`border-t border-border ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-primary/5" : ""}`}>
+                      <td className="px-3 py-2 text-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleRow(ai)}
+                          disabled={!isRowSelectable}
+                          aria-label={`Select ${alloc.ticker}`}
+                        />
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-semibold">{alloc.ticker}</span>
@@ -597,13 +699,69 @@ export default function WhatIfScenarios() {
           </div>
         )}
 
-        {/* Save button */}
-        <div className="flex justify-end">
+        {/* Selection count + Apply + Save buttons */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {selectedCount > 0 && (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  {selectedCount} of {selectableIndices.length} stocks selected
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowApplyDialog(true)}
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  <CheckSquare className="mr-1.5 h-4 w-4" />
+                  Apply to Holdings
+                </Button>
+              </>
+            )}
+          </div>
           <Button onClick={handleSave} disabled={!budget}>
             <Save className="mr-1.5 h-4 w-4" />
             Save Comparison
           </Button>
         </div>
+
+        {/* Apply Confirmation Dialog */}
+        <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+          <AlertDialogContent className="max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply Scenario to Holdings</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>The following changes will be made to your holdings:</p>
+                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2 text-sm">
+                    {selectedTrades.map((t) => {
+                      const cp = currencyPrefix(t.exchange);
+                      return (
+                        <div key={t.holdingId} className="font-mono">
+                          <span className="font-semibold">{t.ticker}:</span>{" "}
+                          +{fmt(t.sharesBought)} shares at {cp}{fmt(t.buyPrice)} →{" "}
+                          new avg {cp}{fmt(t.newAvg)}{" "}
+                          <span className="text-muted-foreground">(was {cp}{fmt(t.currentAvg)})</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-destructive font-medium">
+                    This will update your holdings as if you executed these trades. This cannot be undone.
+                  </p>
+                  <p className="text-xs text-muted-foreground italic">
+                    Make sure you've actually executed these trades with your broker before updating your holdings here.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleApplyConfirm}>
+                Confirm & Update
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Saved Scenarios */}
         <div className="space-y-3">
