@@ -1,56 +1,195 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload, X, TrendingDown, DollarSign, BarChart3, FileSpreadsheet, Shuffle } from "lucide-react";
+import {
+  Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload,
+  TrendingDown, TrendingUp, DollarSign, BarChart3, FileSpreadsheet, Shuffle,
+  ChevronRight, RefreshCw, Briefcase, ArrowDownAZ, ArrowUpDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
-import LivePriceDisplay from "@/components/LivePriceDisplay";
 import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 import ProSettings from "@/components/ProSettings";
 import CsvImportDialog from "@/components/CsvImportDialog";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
-  getScenariosForHolding, getScenarios, resetAll, exportData, importData,
-  type Holding, type FeeType, type Scenario, currencyPrefix, exchangeLabel,
+  getScenariosForHolding, resetAll, exportData, importData,
+  type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
+import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { toast } from "sonner";
+
+const SORT_KEY = "dca-holdings-sort";
+type SortMode = "az" | "position" | "loss" | "gain";
+
+const SORT_LABELS: Record<SortMode, string> = {
+  az: "A → Z",
+  position: "Largest Position",
+  loss: "Biggest Loss",
+  gain: "Biggest Gain",
+};
+
+const CACHE_KEY = "dca-price-cache";
+
+function readPriceCache(): Record<string, StockQuote> {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getCachedPrice(ticker: string, exchange: string): number | null {
+  const cache = readPriceCache();
+  const key = apiTicker(ticker, exchange as any).toUpperCase();
+  const entry = cache[key];
+  return entry ? entry.price : null;
+}
+
+const fmt = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function Holdings() {
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Holding | null>(null);
   const [deleting, setDeleting] = useState<Holding | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [refreshingAll, setRefreshingAll] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>(() => {
+    return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
+  });
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => setTick((t) => t + 1);
 
   const holdings = getHoldings();
 
-  const selected = holdings.find((h) => h.id === selectedId) ?? holdings[0] ?? null;
-  const selectedScenarios = selected ? getScenariosForHolding(selected.id) : [];
+  // Live prices from cache
+  const livePrices = useMemo(() => {
+    const prices: Record<string, number | null> = {};
+    holdings.forEach((h) => {
+      prices[h.id] = getCachedPrice(h.ticker, h.exchange ?? "US");
+    });
+    return prices;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdings, tick]);
 
-  const fmt = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Latest DCA scenario per holding
+  const latestDca = useMemo(() => {
+    const map: Record<string, Scenario | null> = {};
+    holdings.forEach((h) => {
+      const scenarios = getScenariosForHolding(h.id);
+      map[h.id] = scenarios.length > 0 ? scenarios[0] : null;
+    });
+    return map;
+  }, [holdings, tick]);
+
+  // P&L calculation
+  const getPnl = (h: Holding) => {
+    const price = livePrices[h.id];
+    if (price == null) return null;
+    const pnl = (price - h.avg_cost) * h.shares;
+    const pnlPct = h.avg_cost > 0 ? ((price - h.avg_cost) / h.avg_cost) * 100 : 0;
+    return { pnl, pnlPct, price };
+  };
+
+  // Sorting
+  const sortedHoldings = useMemo(() => {
+    const sorted = [...holdings];
+    switch (sortMode) {
+      case "az":
+        sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
+        break;
+      case "position":
+        sorted.sort((a, b) => (b.shares * b.avg_cost) - (a.shares * a.avg_cost));
+        break;
+      case "loss": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pa?.pnl ?? 0) - (pb?.pnl ?? 0);
+        });
+        break;
+      }
+      case "gain": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pb?.pnl ?? 0) - (pa?.pnl ?? 0);
+        });
+        break;
+      }
+    }
+    return sorted;
+  }, [holdings, sortMode, livePrices]);
+
+  const handleSortChange = (mode: SortMode) => {
+    setSortMode(mode);
+    localStorage.setItem(SORT_KEY, mode);
+  };
 
   // ── Portfolio summary ──────────────────────────────────────
-  const totalStocks = holdings.length;
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
-  const totalUsd = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
-  const totalCad = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
-  const hasMixed = totalUsd > 0 && totalCad > 0;
+  const totalUsdInvested = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+  const totalCadInvested = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+  const hasMixed = totalUsdInvested > 0 && totalCadInvested > 0;
+
+  const usdValue = usdHoldings.reduce((sum, h) => {
+    const p = livePrices[h.id];
+    return sum + (p != null ? h.shares * p : h.shares * h.avg_cost);
+  }, 0);
+  const cadValue = cadHoldings.reduce((sum, h) => {
+    const p = livePrices[h.id];
+    return sum + (p != null ? h.shares * p : h.shares * h.avg_cost);
+  }, 0);
+  const usdPnl = usdValue - totalUsdInvested;
+  const cadPnl = cadValue - totalCadInvested;
+  const usdPnlPct = totalUsdInvested > 0 ? (usdPnl / totalUsdInvested) * 100 : 0;
+  const cadPnlPct = totalCadInvested > 0 ? (cadPnl / totalCadInvested) * 100 : 0;
+  const hasAnyPrice = holdings.some((h) => livePrices[h.id] != null);
+
+  // ── Refresh all prices ─────────────────────────────────────
+  const refreshAllPrices = useCallback(async () => {
+    setRefreshingAll(true);
+    const symbols = holdings.map((h) => apiTicker(h.ticker, (h.exchange ?? "US") as any));
+    const results = await Promise.allSettled(symbols.map((t) => fetchStockPrice(t)));
+    let fetched = 0;
+    results.forEach((r) => {
+      if (r.status === "fulfilled" && r.value.ok) fetched++;
+    });
+    setRefreshingAll(false);
+    toast.success(`Fetched prices for ${fetched} of ${symbols.length} stocks`);
+    refresh();
+  }, [holdings]);
+
+  // ── Single price fetch ─────────────────────────────────────
+  const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
+  const fetchPrice = useCallback(async (ticker: string, exchange: string) => {
+    const sym = apiTicker(ticker, exchange as any);
+    setFetchingTickers((prev) => new Set(prev).add(ticker));
+    const result = await fetchStockPrice(sym);
+    setFetchingTickers((prev) => { const n = new Set(prev); n.delete(ticker); return n; });
+    if (result.ok) {
+      refresh();
+    } else {
+      toast.error(`${ticker}: ${'error' in result ? result.error : "Price unavailable"}`);
+    }
+  }, []);
 
   // ── Handlers ───────────────────────────────────────────────
   const handleCreate = (data: Omit<Holding, "id" | "created_at">) => {
-    const h = addHolding(data);
+    addHolding(data);
     setFormOpen(false);
-    setSelectedId(h.id);
     toast.success("Stock added");
     refresh();
   };
@@ -67,14 +206,12 @@ export default function Holdings() {
   const handleDelete = (id: string) => {
     removeHolding(id);
     setDeleting(null);
-    if (selectedId === id) setSelectedId(null);
     toast.success("Stock deleted");
     refresh();
   };
 
   const handleReset = useCallback(() => {
     resetAll();
-    setSelectedId(null);
     toast.success("Reset to demo data");
     refresh();
   }, []);
@@ -98,7 +235,6 @@ export default function Holdings() {
     reader.onload = () => {
       try {
         importData(reader.result as string);
-        setSelectedId(null);
         toast.success("Data imported");
         refresh();
       } catch {
@@ -108,9 +244,6 @@ export default function Holdings() {
     reader.readAsText(file);
     e.target.value = "";
   }, []);
-
-  const cp = selected ? currencyPrefix(selected.exchange ?? "US") : "$";
-  const exLabel = selected ? exchangeLabel(selected.exchange ?? "US") : "US";
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,178 +264,211 @@ export default function Holdings() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
-        {/* Portfolio summary card */}
+      <main className="mx-auto max-w-4xl px-6 py-8 space-y-5">
+        {/* ── Portfolio Summary Card ── */}
         {holdings.length > 0 && (
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex items-center gap-6 text-sm flex-wrap">
-              <div className="flex items-center gap-1.5">
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Stocks:</span>
-                <span className="font-semibold">{totalStocks}</span>
+          <div className="rounded-xl border border-border bg-gradient-to-br from-card to-muted/30 p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" />
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  Portfolio Summary
+                </h2>
               </div>
-              {hasMixed ? (
-                <>
-                  <div className="flex items-center gap-1.5">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">US:</span>
-                    <span className="font-mono font-semibold">${fmt(totalUsd)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">CAD:</span>
-                    <span className="font-mono font-semibold">C${fmt(totalCad)}</span>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Total Invested:</span>
-                  <span className="font-mono font-semibold">
-                    {totalCad > 0 ? "C$" : "$"}{fmt(totalUsd + totalCad)}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{holdings.length} stock{holdings.length !== 1 ? "s" : ""}</span>
+                <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
+                  <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
+                  {refreshingAll ? "Fetching…" : "Refresh All"}
+                </Button>
+              </div>
+            </div>
+
+            {hasMixed ? (
+              <div className="space-y-2">
+                <SummaryRow
+                  label="USD"
+                  prefix="$"
+                  invested={totalUsdInvested}
+                  value={hasAnyPrice ? usdValue : null}
+                  pnl={hasAnyPrice ? usdPnl : null}
+                  pnlPct={hasAnyPrice ? usdPnlPct : null}
+                />
+                <SummaryRow
+                  label="CAD"
+                  prefix="C$"
+                  invested={totalCadInvested}
+                  value={hasAnyPrice ? cadValue : null}
+                  pnl={hasAnyPrice ? cadPnl : null}
+                  pnlPct={hasAnyPrice ? cadPnlPct : null}
+                />
+              </div>
+            ) : (
+              <SummaryRow
+                label=""
+                prefix={totalCadInvested > 0 ? "C$" : "$"}
+                invested={totalUsdInvested + totalCadInvested}
+                value={hasAnyPrice ? usdValue + cadValue : null}
+                pnl={hasAnyPrice ? usdPnl + cadPnl : null}
+                pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
+              />
+            )}
+          </div>
+        )}
+
+        {/* ── Sort + Add Stock row ── */}
+        {holdings.length > 0 && (
+          <div className="flex items-center justify-between">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="text-muted-foreground">
+                  <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
+                  Sort: {SORT_LABELS[sortMode]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="bg-popover border border-border shadow-lg z-50">
+                {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                  <DropdownMenuItem
+                    key={mode}
+                    onClick={() => handleSortChange(mode)}
+                    className={sortMode === mode ? "font-semibold text-primary" : ""}
+                  >
+                    {SORT_LABELS[mode]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)}>
+                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                CSV
+              </Button>
+              <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add Stock
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Stock chips / pills selector */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          {holdings.map((h) => {
-            const isActive = selected?.id === h.id;
-            return (
-              <button
-                key={h.id}
-                onClick={() => setSelectedId(h.id)}
-                className={`group relative flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold font-mono whitespace-nowrap transition-all
-                  ${isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-              >
-                {h.ticker}
-                {(h.exchange ?? "US") === "TSX" && (
-                  <span className={`text-[10px] font-normal ${isActive ? "text-primary-foreground/60" : "text-muted-foreground/50"}`}>
-                    TSX
-                  </span>
-                )}
-                <span className={`text-xs font-normal ${isActive ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
-                  {h.shares}sh
-                </span>
-                <span
-                  role="button"
-                  aria-label={`Delete ${h.ticker}`}
-                  onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                  className={`ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity
-                    ${isActive
-                      ? "hover:bg-primary-foreground/20 text-primary-foreground"
-                      : "hover:bg-foreground/10 text-muted-foreground"
-                    }`}
+        {/* ── Stock Cards ── */}
+        {sortedHoldings.length > 0 ? (
+          <div className="space-y-3">
+            {sortedHoldings.map((h) => {
+              const ex = (h.exchange ?? "US") as any;
+              const cp = currencyPrefix(ex);
+              const price = livePrices[h.id];
+              const pnlData = getPnl(h);
+              const dca = latestDca[h.id];
+              const invested = h.shares * h.avg_cost;
+              const isFetching = fetchingTickers.has(h.ticker);
+
+              // Border accent color
+              const borderColor = pnlData
+                ? pnlData.pnl >= 0
+                  ? "border-l-primary"
+                  : "border-l-destructive"
+                : "border-l-border";
+
+              return (
+                <div
+                  key={h.id}
+                  className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative`}
+                  onClick={() => navigate(`/holdings/${h.id}/dca`)}
                 >
-                  <X className="h-3 w-3" />
-                </span>
-              </button>
-            );
-          })}
-
-          <button
-            onClick={() => { setEditing(null); setFormOpen(true); }}
-            className="flex items-center gap-1 rounded-full border-2 border-dashed border-border px-4 py-2 text-sm font-medium text-muted-foreground whitespace-nowrap transition-colors hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Stock
-          </button>
-        </div>
-
-        {/* Selected stock detail */}
-        {selected ? (
-          <div className="space-y-6">
-            <div className="rounded-lg border border-border bg-card p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold font-mono text-primary">{selected.ticker}</h2>
-                    <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                      {exLabel}
-                    </span>
-                  </div>
-                  <LivePriceDisplay ticker={selected.ticker} exchange={selected.exchange ?? "US"} />
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => { setEditing(selected); setFormOpen(true); }} aria-label="Edit">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/holdings/${selected.id}/dca`)}>
-                    <Calculator className="mr-1 h-4 w-4" />
-                    DCA Calculator
-                  </Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Stat label="Shares" value={fmt(selected.shares)} />
-                <Stat label="Avg Cost" value={`${cp}${fmt(selected.avg_cost)}`} />
-                <Stat label="Position Value" value={`${cp}${fmt(selected.shares * selected.avg_cost)}`} />
-                <Stat
-                  label={`Fee (${selected.fee_type})`}
-                  value={selected.fee_type === "percent"
-                    ? `${Number(selected.fee_value).toFixed(2)}%`
-                    : `${cp}${Number(selected.fee_value ?? selected.fee).toFixed(2)}`}
-                />
-              </div>
-            </div>
-
-            {/* Recent calculations for this stock */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Saved Calculations — {selected.ticker}
-                </h2>
-                {selectedScenarios.length > 0 && (
-                  <Button size="sm" variant="ghost" onClick={() => navigate(`/holdings/${selected.id}`)}>
-                    View all →
-                  </Button>
-                )}
-              </div>
-              {selectedScenarios.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                  <p className="text-sm text-muted-foreground mb-3">No calculations saved for {selected.ticker} yet.</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/holdings/${selected.id}/dca`)}>
-                    <Calculator className="mr-1.5 h-4 w-4" />
-                    Run DCA Calculator
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {selectedScenarios.slice(0, 5).map((s) => (
-                    <div
-                      key={s.id}
-                      className="rounded-lg border border-border bg-card p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => navigate(`/scenarios/${s.id}`)}
-                    >
-                      <div className="flex items-baseline justify-between gap-4">
-                        <span className="text-sm text-muted-foreground">
-                          {s.method.replace(/_/g, " ")}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(s.created_at).toLocaleDateString()}
+                  <div className="p-4 pr-10 space-y-2">
+                    {/* Header row: ticker + price */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold font-mono tracking-tight">{h.ticker}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
+                          {exchangeLabel(ex)}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm font-mono">
-                        {Number(s.shares_to_buy).toFixed(4)} shares · {cp}{Number(s.total_spend).toFixed(2)} total ·{" "}
-                        <span className="text-primary font-semibold">New avg {cp}{Number(s.new_avg_cost).toFixed(2)}</span>
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {price != null ? (
+                          <span className="text-base font-bold font-mono">{cp}{fmt(price)}</span>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
+                            disabled={isFetching}
+                            className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+                          >
+                            {isFetching ? "…" : "Get Price"}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ))}
+
+                    {/* Holdings row */}
+                    <p className="text-xs text-muted-foreground">
+                      {fmt(h.shares)} shares · Avg {cp}{fmt(h.avg_cost)} · Invested {cp}{fmt(invested)}
+                    </p>
+
+                    {/* P&L row */}
+                    {pnlData ? (
+                      <p className={`text-sm font-mono font-semibold ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
+                        {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)} ({pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%)
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground/60 italic">Fetch price to see P&L</p>
+                    )}
+
+                    {/* DCA summary row */}
+                    <div className="rounded-md bg-muted/50 px-3 py-1.5 -mx-1">
+                      {dca ? (
+                        <p className="text-xs font-mono text-muted-foreground">
+                          <span className="font-semibold text-foreground/80">DCA:</span>{" "}
+                          Buy {Number(dca.shares_to_buy).toFixed(1)} shares at {cp}{Number(dca.buy_price ?? dca.input1_value).toFixed(2)} →{" "}
+                          avg {cp}{Number(dca.new_avg_cost).toFixed(2)}{" "}
+                          <span className="text-primary">(↓{cp}{fmt(h.avg_cost - dca.new_avg_cost)} / {((h.avg_cost - dca.new_avg_cost) / h.avg_cost * 100).toFixed(1)}%)</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/60 italic">No DCA plan — tap to calculate</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chevron */}
+                  <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+
+                  {/* Action buttons (on hover) */}
+                  <div className="absolute right-8 top-3 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted transition-colors"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-destructive/10 transition-colors"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  </div>
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-muted-foreground mb-4">No stocks in your portfolio yet.</p>
-            <Button onClick={() => setFormOpen(true)} variant="outline" size="sm">
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add your first stock
+          /* ── Empty state ── */
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+            <div className="rounded-full bg-muted p-4">
+              <TrendingDown className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold">Add your first stock to get started</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Track your positions, calculate DCA targets, and run What-If scenarios to optimize your portfolio.
+              </p>
+            </div>
+            <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Stock
             </Button>
           </div>
         )}
@@ -320,10 +486,6 @@ export default function Holdings() {
           <Button onClick={() => fileRef.current?.click()} size="sm" variant="outline">
             <Upload className="mr-1.5 h-4 w-4" />
             Import Data
-          </Button>
-          <Button onClick={() => setCsvOpen(true)} size="sm" variant="outline">
-            <FileSpreadsheet className="mr-1.5 h-4 w-4" />
-            Import from CSV
           </Button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
         </div>
@@ -360,17 +522,50 @@ export default function Holdings() {
       <CsvImportDialog
         open={csvOpen}
         onOpenChange={setCsvOpen}
-        onImported={(firstId) => { setSelectedId(firstId); refresh(); }}
+        onImported={() => refresh()}
       />
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function SummaryRow({
+  label,
+  prefix,
+  invested,
+  value,
+  pnl,
+  pnlPct,
+}: {
+  label: string;
+  prefix: string;
+  invested: number;
+  value: number | null;
+  pnl: number | null;
+  pnlPct: number | null;
+}) {
+  const fmt = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return (
-    <div>
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className="text-lg font-mono font-semibold">{value}</p>
+    <div className="flex items-center gap-4 flex-wrap text-sm">
+      {label && (
+        <span className="text-xs font-semibold uppercase text-muted-foreground w-8">{label}</span>
+      )}
+      <div className="flex items-center gap-1">
+        <span className="text-muted-foreground">Invested:</span>
+        <span className="font-mono font-semibold">{prefix}{fmt(invested)}</span>
+      </div>
+      {value != null && (
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground">Value:</span>
+          <span className="font-mono font-semibold">{prefix}{fmt(value)}</span>
+        </div>
+      )}
+      {pnl != null && pnlPct != null && (
+        <span className={`font-mono font-semibold ${pnl >= 0 ? "text-primary" : "text-destructive"}`}>
+          {pnl >= 0 ? "+" : ""}{prefix}{fmt(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
+        </span>
+      )}
     </div>
   );
 }
