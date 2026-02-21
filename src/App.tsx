@@ -8,6 +8,7 @@ import DcaCalculator from "./pages/DcaCalculator";
 import HoldingDetail from "./pages/HoldingDetail";
 import Scenarios from "./pages/Scenarios";
 import ScenarioDetail from "./pages/ScenarioDetail";
+import WhatIfScenarios from "./pages/WhatIfScenarios";
 import NotFound from "./pages/NotFound";
 import ThemeToggle from "./components/ThemeToggle";
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/holdings/:id/dca" element={<DcaCalculator />} />
           <Route path="/scenarios" element={<Scenarios />} />
           <Route path="/scenarios/:id" element={<ScenarioDetail />} />
+          <Route path="/what-if" element={<WhatIfScenarios />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
