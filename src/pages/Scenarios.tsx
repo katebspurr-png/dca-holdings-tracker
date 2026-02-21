@@ -34,7 +34,7 @@ export default function Scenarios() {
   }, [scenarios, tickerFilter, methodFilter]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-5">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>

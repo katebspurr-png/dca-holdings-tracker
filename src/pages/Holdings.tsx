@@ -1,9 +1,9 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload,
-  TrendingDown, TrendingUp, DollarSign, BarChart3, FileSpreadsheet, Shuffle,
-  ChevronRight, RefreshCw, Briefcase, ArrowDownAZ, ArrowUpDown,
+  Plus, Pencil, Trash2,
+  TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
+  ChevronRight, RefreshCw, Briefcase, ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,12 +14,10 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
-import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
-import ProSettings from "@/components/ProSettings";
 import CsvImportDialog from "@/components/CsvImportDialog";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
-  getScenariosForHolding, resetAll, exportData, importData,
+  getScenariosForHolding,
   type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
 import { fetchStockPrice, getCachedQuote, type StockQuote } from "@/lib/stock-price";
@@ -80,7 +78,7 @@ export default function Holdings() {
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
-  const fileRef = useRef<HTMLInputElement>(null);
+  
 
   const refresh = () => setTick((t) => t + 1);
 
@@ -223,57 +221,12 @@ export default function Holdings() {
     refresh();
   };
 
-  const handleReset = useCallback(() => {
-    resetAll();
-    toast.success("Reset to demo data");
-    refresh();
-  }, []);
-
-  const handleExport = useCallback(() => {
-    const json = exportData();
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dca-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Data exported");
-  }, []);
-
-  const handleImport = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        importData(reader.result as string);
-        toast.success("Data imported");
-        refresh();
-      } catch {
-        toast.error("Invalid backup file");
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
-          <div className="flex items-center gap-1">
-            <Button onClick={() => navigate("/what-if")} size="sm" variant="ghost">
-              <Shuffle className="mr-1.5 h-4 w-4" />
-              What-If
-            </Button>
-            <Button onClick={() => navigate("/scenarios")} size="sm" variant="ghost">
-              <BarChart3 className="mr-1.5 h-4 w-4" />
-              All Scenarios
-            </Button>
-            {ENABLE_LOOKUP_LIMIT && <ProSettings onChanged={refresh} />}
-          </div>
         </div>
       </header>
 
@@ -524,22 +477,7 @@ export default function Holdings() {
           </div>
         )}
 
-        {/* Data management buttons */}
-        <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-          <Button onClick={handleReset} size="sm" variant="outline">
-            <RotateCcw className="mr-1.5 h-4 w-4" />
-            Reset Everything
-          </Button>
-          <Button onClick={handleExport} size="sm" variant="outline">
-            <Download className="mr-1.5 h-4 w-4" />
-            Export Data
-          </Button>
-          <Button onClick={() => fileRef.current?.click()} size="sm" variant="outline">
-            <Upload className="mr-1.5 h-4 w-4" />
-            Import Data
-          </Button>
-          <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-        </div>
+        {/* Data management moved to Settings tab */}
       </main>
 
       <HoldingFormDialog
