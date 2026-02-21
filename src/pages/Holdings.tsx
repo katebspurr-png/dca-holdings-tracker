@@ -22,7 +22,8 @@ import {
   getScenariosForHolding, resetAll, exportData, importData,
   type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
-import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
+import { fetchStockPrice, getCachedQuote, type StockQuote } from "@/lib/stock-price";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const SORT_KEY = "dca-holdings-sort";
@@ -51,6 +52,18 @@ function getCachedPrice(ticker: string, exchange: string): number | null {
   const key = apiTicker(ticker, exchange as any).toUpperCase();
   const entry = cache[key];
   return entry ? entry.price : null;
+}
+
+function getCachedQuoteForHolding(ticker: string, exchange: string): StockQuote | null {
+  const key = apiTicker(ticker, exchange as any).toUpperCase();
+  return getCachedQuote(key);
+}
+
+function formatVolume(vol: number): string {
+  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
+  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
+  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
+  return vol.toFixed(0);
 }
 
 const fmt = (n: number) =>
@@ -414,6 +427,44 @@ export default function Holdings() {
                     ) : (
                       <p className="text-xs text-muted-foreground/60 italic">Fetch price to see P&L</p>
                     )}
+
+                    {/* 52-Week Range Bar */}
+                    {(() => {
+                      const q = getCachedQuoteForHolding(h.ticker, ex);
+                      if (!q || q.week52High == null || q.week52Low == null) return null;
+                      const range = q.week52High - q.week52Low;
+                      if (range <= 0) return null;
+                      const pct = ((q.price - q.week52Low) / range) * 100;
+                      const clampedPct = Math.max(0, Math.min(100, pct));
+                      const nearLow = pct < 25;
+                      const nearHigh = pct > 75;
+                      const barColor = nearLow ? "bg-primary" : nearHigh ? "bg-orange-500" : "bg-muted-foreground/40";
+                      const dotColor = nearLow ? "bg-primary" : nearHigh ? "bg-orange-500" : "bg-foreground";
+                      return (
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
+                            <span>{cp}{fmt(q.week52Low)}</span>
+                            <div className="flex-1 relative h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div className={`absolute inset-y-0 left-0 rounded-full ${barColor} opacity-40`} style={{ width: `${clampedPct}%` }} />
+                              <div className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${dotColor} border-2 border-card shadow-sm`} style={{ left: `calc(${clampedPct}% - 5px)` }} />
+                            </div>
+                            <span>{cp}{fmt(q.week52High)}</span>
+                          </div>
+                          {nearLow && <span className="text-[10px] font-medium text-primary">Near 52w low</span>}
+                          {nearHigh && <span className="text-[10px] font-medium text-orange-500">Near 52w high</span>}
+                        </div>
+                      );
+                    })()}
+
+                    {/* High Volume badge */}
+                    {(() => {
+                      const q = getCachedQuoteForHolding(h.ticker, ex);
+                      if (!q || q.todayVolume == null || q.avgVolume == null || q.avgVolume <= 0) return null;
+                      if (q.todayVolume > q.avgVolume * 2) {
+                        return <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/40 w-fit">High Volume</Badge>;
+                      }
+                      return null;
+                    })()}
 
                     {/* DCA summary row */}
                     <div className="rounded-md bg-muted/50 px-3 py-1.5 -mx-1">
