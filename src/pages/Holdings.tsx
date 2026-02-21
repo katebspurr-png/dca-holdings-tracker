@@ -387,7 +387,7 @@ export default function Holdings() {
               return (
                 <div
                   key={h.id}
-                  className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative`}
+                  className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative overflow-visible`}
                   onClick={() => navigate(`/holdings/${h.id}/dca`)}
                 >
                   <div className="p-4 pr-10 space-y-2">
@@ -484,18 +484,18 @@ export default function Holdings() {
                   {/* Chevron */}
                   <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
 
-                  {/* Action buttons (on hover) */}
-                  <div className="absolute right-8 top-3 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Action buttons — always visible on mobile, hover on desktop */}
+                  <div className="absolute right-8 top-3 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted transition-colors"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
                       aria-label="Edit"
                     >
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-destructive/10 transition-colors"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
                       aria-label="Delete"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
