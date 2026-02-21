@@ -2,6 +2,9 @@
  * Pro / freemium utilities.
  */
 
+// Set to true to re-enable freemium lookup limits and Pro upgrade flow
+export const ENABLE_LOOKUP_LIMIT = false;
+
 const PRO_KEY = "isPro";
 const LOOKUP_KEY = "dca-price-lookups";
 
@@ -47,10 +50,12 @@ export function lookupsRemaining(): number {
 }
 
 export function canLookup(): boolean {
+  if (!ENABLE_LOOKUP_LIMIT) return true;
   return isPro() || lookupsRemaining() > 0;
 }
 
 export function recordLookup() {
+  if (!ENABLE_LOOKUP_LIMIT) return;
   if (isPro()) return;
   const usage = getUsage();
   usage.count += 1;
