@@ -4,10 +4,12 @@
  */
 
 export type FeeType = "flat" | "percent";
+export type Exchange = "US" | "TSX";
 
 export type Holding = {
   id: string;
   ticker: string;
+  exchange: Exchange;
   shares: number;
   avg_cost: number;
   fee: number;
@@ -43,6 +45,7 @@ export type Scenario = {
 export type WhatIfAllocation = {
   holdingId: string;
   ticker: string;
+  exchange: Exchange;
   currentShares: number;
   currentAvg: number;
   buyPrice: number | null;
@@ -72,9 +75,9 @@ const STORAGE_KEY = "dca-down-data";
 
 // ── Demo data ────────────────────────────────────────────────
 const DEMO_HOLDINGS: Holding[] = [
-  { id: "demo-aapl", ticker: "AAPL", shares: 75, avg_cost: 198.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-nvda", ticker: "NVDA", shares: 30, avg_cost: 142.8, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-tsla", ticker: "TSLA", shares: 20, avg_cost: 385, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
 ];
 
 const DEMO_SCENARIOS: Scenario[] = [
@@ -87,11 +90,11 @@ const DEMO_SCENARIOS: Scenario[] = [
     budget_percent_used: null, notes: null, created_at: new Date().toISOString(),
   },
   {
-    id: "demo-calc-2", holding_id: "demo-tsla", ticker: "TSLA", method: "price_budget",
-    input1_label: "Buy price", input1_value: 340, input2_label: "Max budget", input2_value: 1000,
-    include_fees: false, fee_amount: 0, buy_price: 340, shares_to_buy: 2.94,
+    id: "demo-calc-2", holding_id: "demo-shop", ticker: "SHOP", method: "price_budget",
+    input1_label: "Buy price", input1_value: 115, input2_label: "Max budget", input2_value: 1000,
+    include_fees: false, fee_amount: 0, buy_price: 115, shares_to_buy: 8.7,
     budget_invested: 1000, fee_applied: 0, total_spend: 1000,
-    new_total_shares: 22.94, new_avg_cost: 380.91, recommended_target: 380.91,
+    new_total_shares: 23.7, new_avg_cost: 125.38, recommended_target: 125.38,
     budget_percent_used: 100, notes: null, created_at: new Date().toISOString(),
   },
   {
@@ -116,10 +119,32 @@ function read(): AppData {
     if (!raw) return demoData();
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.version !== 1) return demoData();
+    // Migrate: add exchange field if missing
+    if (Array.isArray(parsed.holdings)) {
+      parsed.holdings = parsed.holdings.map((h: any) => ({
+        ...h,
+        exchange: h.exchange ?? "US",
+      }));
+    }
     return parsed as AppData;
   } catch {
     return demoData();
   }
+}
+
+// ── Currency helpers ─────────────────────────────────────────
+
+export function currencyPrefix(exchange: Exchange): string {
+  return exchange === "TSX" ? "C$" : "$";
+}
+
+export function exchangeLabel(exchange: Exchange): string {
+  return exchange === "TSX" ? "TSX" : "US";
+}
+
+/** The ticker symbol used for API lookups (appends .TO for TSX) */
+export function apiTicker(ticker: string, exchange: Exchange): string {
+  return exchange === "TSX" ? `${ticker}.TO` : ticker;
 }
 
 function write(data: AppData) {

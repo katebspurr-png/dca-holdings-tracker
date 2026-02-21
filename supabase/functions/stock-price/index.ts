@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const ticker = url.searchParams.get("ticker")?.toUpperCase();
 
-    if (!ticker || !/^[A-Z]{1,5}$/.test(ticker)) {
+    if (!ticker || !/^[A-Z]{1,5}(\.[A-Z]{1,4})?$/.test(ticker)) {
       return new Response(JSON.stringify({ error: "Invalid ticker" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

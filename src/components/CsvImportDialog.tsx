@@ -187,6 +187,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
       } else {
         const h = addHolding({
           ticker: row.ticker,
+          exchange: "US",
           shares: row.shares,
           avg_cost: row.avg_cost,
           fee: 0,

@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Shuffle, BarChart3, Scale, X, Clock, RefreshCw, Zap } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   getHoldings, addWhatIfComparison, getWhatIfComparisons, removeWhatIfComparison,
   type Holding, type WhatIfScenarioTab, type WhatIfAllocation, type WhatIfComparison,
+  type Exchange, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
 import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { toast } from "sonner";
@@ -17,7 +18,6 @@ const MAX_SCENARIOS = 3;
 const DEFAULT_NAMES = ["Scenario A", "Scenario B", "Scenario C"];
 const CACHE_KEY = "dca-price-cache";
 
-/** Read the shared price cache from localStorage */
 function readPriceCache(): Record<string, StockQuote> {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -27,20 +27,22 @@ function readPriceCache(): Record<string, StockQuote> {
   }
 }
 
-function getCachedPrice(ticker: string): number | null {
+function getCachedPrice(ticker: string, exchange: Exchange): number | null {
   const cache = readPriceCache();
-  const entry = cache[ticker.toUpperCase()];
+  const key = apiTicker(ticker, exchange).toUpperCase();
+  const entry = cache[key];
   if (!entry) return null;
-  // Still valid within 5-minute TTL? Return regardless — user can refresh if stale
   return entry.price;
 }
 
 function makeAllocations(holdings: Holding[]): WhatIfAllocation[] {
   return holdings.map((h) => {
-    const cachedPrice = getCachedPrice(h.ticker);
+    const ex = h.exchange ?? "US";
+    const cachedPrice = getCachedPrice(h.ticker, ex);
     return {
       holdingId: h.id,
       ticker: h.ticker,
+      exchange: ex,
       currentShares: h.shares,
       currentAvg: h.avg_cost,
       buyPrice: cachedPrice,
@@ -69,12 +71,12 @@ export default function WhatIfScenarios() {
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
   const [refreshingAll, setRefreshingAll] = useState(false);
 
-  // Map of ticker → live price for display
   const [livePrices, setLivePrices] = useState<Record<string, number>>(() => {
     const prices: Record<string, number> = {};
     holdings.forEach((h) => {
-      const p = getCachedPrice(h.ticker);
-      if (p) prices[h.ticker] = p;
+      const ex = h.exchange ?? "US";
+      const p = getCachedPrice(h.ticker, ex);
+      if (p) prices[apiTicker(h.ticker, ex)] = p;
     });
     return prices;
   });
@@ -83,11 +85,18 @@ export default function WhatIfScenarios() {
 
   const budget = parseFloat(totalBudget) || 0;
 
+  // Check if portfolio has mixed currencies
+  const hasMixedCurrency = useMemo(() => {
+    const exchanges = new Set(holdings.map((h) => h.exchange ?? "US"));
+    return exchanges.has("US") && exchanges.has("TSX");
+  }, [holdings]);
+
   // ── Fetch single ticker price ──────────────────────────────
 
-  const fetchPrice = useCallback(async (ticker: string) => {
+  const fetchPrice = useCallback(async (ticker: string, exchange: Exchange) => {
+    const apiSym = apiTicker(ticker, exchange);
     setFetchingTickers((prev) => new Set(prev).add(ticker));
-    const result = await fetchStockPrice(ticker);
+    const result = await fetchStockPrice(apiSym);
     setFetchingTickers((prev) => {
       const next = new Set(prev);
       next.delete(ticker);
@@ -95,8 +104,7 @@ export default function WhatIfScenarios() {
     });
     if (result.ok) {
       const price = result.quote.price;
-      setLivePrices((prev) => ({ ...prev, [ticker]: price }));
-      // Update buyPrice in ALL scenarios for this ticker
+      setLivePrices((prev) => ({ ...prev, [apiSym]: price }));
       setScenarios((prev) =>
         prev.map((s) => ({
           ...s,
@@ -114,30 +122,31 @@ export default function WhatIfScenarios() {
 
   const refreshAllPrices = useCallback(async () => {
     setRefreshingAll(true);
-    const tickers = holdings.map((h) => h.ticker);
+    const pairs = holdings.map((h) => ({ ticker: h.ticker, exchange: (h.exchange ?? "US") as Exchange }));
+    const apiSymbols = pairs.map((p) => apiTicker(p.ticker, p.exchange));
     const results = await Promise.allSettled(
-      tickers.map((t) => fetchStockPrice(t))
+      apiSymbols.map((t) => fetchStockPrice(t))
     );
     const newPrices: Record<string, number> = { ...livePrices };
     let fetched = 0;
     results.forEach((r, i) => {
       if (r.status === "fulfilled" && r.value.ok) {
-        newPrices[tickers[i]] = r.value.quote.price;
+        newPrices[apiSymbols[i]] = r.value.quote.price;
         fetched++;
       }
     });
     setLivePrices(newPrices);
-    // Update all scenarios
     setScenarios((prev) =>
       prev.map((s) => ({
         ...s,
-        allocations: s.allocations.map((a) =>
-          newPrices[a.ticker] != null ? { ...a, buyPrice: newPrices[a.ticker] } : a
-        ),
+        allocations: s.allocations.map((a) => {
+          const key = apiTicker(a.ticker, a.exchange);
+          return newPrices[key] != null ? { ...a, buyPrice: newPrices[key] } : a;
+        }),
       }))
     );
     setRefreshingAll(false);
-    toast.success(`Fetched prices for ${fetched} of ${tickers.length} stocks`);
+    toast.success(`Fetched prices for ${fetched} of ${pairs.length} stocks`);
   }, [holdings, livePrices]);
 
   // ── Helpers ────────────────────────────────────────────────
@@ -334,6 +343,13 @@ export default function WhatIfScenarios() {
           )}
         </div>
 
+        {/* Mixed currency note */}
+        {hasMixedCurrency && (
+          <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 border border-border">
+            Note: Allocations include stocks in both USD and CAD. Totals are shown per currency.
+          </p>
+        )}
+
         {/* Scenario tabs */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -405,22 +421,27 @@ export default function WhatIfScenarios() {
                 {scenarios[activeTab].allocations.map((alloc, ai) => {
                   const row = activeResult?.rows[ai];
                   const hasBuyPrice = alloc.buyPrice && alloc.buyPrice > 0;
-                  const livePrice = livePrices[alloc.ticker];
+                  const apiSym = apiTicker(alloc.ticker, alloc.exchange);
+                  const livePrice = livePrices[apiSym];
                   const isFetching = fetchingTickers.has(alloc.ticker);
+                  const cp = currencyPrefix(alloc.exchange);
                   return (
                     <tr key={alloc.holdingId} className={`border-t border-border ${!hasBuyPrice ? "opacity-50" : ""}`}>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-semibold">{alloc.ticker}</span>
+                          <span className="text-[10px] text-muted-foreground/60">
+                            {exchangeLabel(alloc.exchange)}
+                          </span>
                           {livePrice ? (
-                            <span className="text-xs text-muted-foreground font-mono">${fmt(livePrice)}</span>
+                            <span className="text-xs text-muted-foreground font-mono">{cp}{fmt(livePrice)}</span>
                           ) : (
                             <Button
                               size="sm"
                               variant="ghost"
                               className="h-5 px-1.5 text-[10px]"
                               disabled={isFetching}
-                              onClick={() => fetchPrice(alloc.ticker)}
+                              onClick={() => fetchPrice(alloc.ticker, alloc.exchange)}
                             >
                               <Zap className={`h-3 w-3 mr-0.5 ${isFetching ? "animate-pulse" : ""}`} />
                               {isFetching ? "…" : "Get Price"}
@@ -429,7 +450,7 @@ export default function WhatIfScenarios() {
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right font-mono">{fmt(alloc.currentShares)}</td>
-                      <td className="px-3 py-2 text-right font-mono">${fmt(alloc.currentAvg)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{cp}{fmt(alloc.currentAvg)}</td>
                       <td className="px-3 py-2 text-right">
                         <Input
                           type="number"
@@ -470,12 +491,12 @@ export default function WhatIfScenarios() {
                         {row && row.sharesBought > 0 ? fmt(row.sharesBought) : "—"}
                       </td>
                       <td className="px-3 py-2 text-right font-mono">
-                        {row && row.allocated > 0 ? `$${fmt(row.newAvg)}` : "—"}
+                        {row && row.allocated > 0 ? `${cp}${fmt(row.newAvg)}` : "—"}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {row && row.reduction > 0 ? (
                           <span className="text-primary font-mono font-semibold">
-                            -${fmt(row.reduction)} ({row.reductionPct.toFixed(1)}%)
+                            -{cp}{fmt(row.reduction)} ({row.reductionPct.toFixed(1)}%)
                           </span>
                         ) : "—"}
                       </td>
@@ -532,16 +553,20 @@ export default function WhatIfScenarios() {
                   {holdings.map((h, hi) => {
                     const reductions = scenarioResults.map((sr) => sr.rows[hi]?.reduction ?? 0);
                     const maxReduction = Math.max(...reductions);
+                    const cp = currencyPrefix(h.exchange ?? "US");
                     return (
                       <tr key={h.id} className="border-t border-border">
-                        <td className="px-3 py-2 font-mono font-semibold">{h.ticker}</td>
+                        <td className="px-3 py-2 font-mono font-semibold">
+                          {h.ticker}
+                          <span className="text-[10px] text-muted-foreground/60 ml-1">{exchangeLabel(h.exchange ?? "US")}</span>
+                        </td>
                         {scenarioResults.map((sr, si) => {
                           const row = sr.rows[hi];
                           const isBest = maxReduction > 0 && row && row.reduction === maxReduction;
                           return (
                             <td key={si} className={`px-3 py-2 text-center font-mono ${isBest ? "text-primary font-semibold" : ""}`}>
                               {row && row.reduction > 0
-                                ? `$${fmt(row.newAvg)} (−${row.reductionPct.toFixed(1)}%)`
+                                ? `${cp}${fmt(row.newAvg)} (−${row.reductionPct.toFixed(1)}%)`
                                 : "—"
                               }
                             </td>
@@ -550,7 +575,6 @@ export default function WhatIfScenarios() {
                       </tr>
                     );
                   })}
-                  {/* Summary row */}
                   <tr className="border-t-2 border-border bg-muted/50">
                     <td className="px-3 py-2 font-semibold">Portfolio Impact</td>
                     {scenarioResults.map((sr, si) => {
@@ -632,14 +656,17 @@ export default function WhatIfScenarios() {
                               Allocated: <span className="font-mono">${fmt(sr.totalAllocated)}</span>
                             </p>
                             <div className="space-y-0.5">
-                              {sr.rows.filter((r) => r.allocated > 0).map((r) => (
-                                <div key={r.holdingId} className="flex justify-between text-xs font-mono">
-                                  <span>{r.ticker}: ${fmt(r.allocated)}</span>
-                                  <span className="text-primary">
-                                    ${fmt(r.newAvg)} (−{r.reductionPct.toFixed(1)}%)
-                                  </span>
-                                </div>
-                              ))}
+                              {sr.rows.filter((r) => r.allocated > 0).map((r) => {
+                                const rcp = currencyPrefix((r as any).exchange ?? "US");
+                                return (
+                                  <div key={r.holdingId} className="flex justify-between text-xs font-mono">
+                                    <span>{r.ticker}: {rcp}{fmt(r.allocated)}</span>
+                                    <span className="text-primary">
+                                      {rcp}{fmt(r.newAvg)} (−{r.reductionPct.toFixed(1)}%)
+                                    </span>
+                                  </div>
+                                );
+                              })}
                             </div>
                             <p className="text-xs border-t border-border pt-1 mt-1">
                               Avg reduction: <span className="font-mono text-primary font-semibold">−${fmt(sr.avgReduction)}</span>
