@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload, X, TrendingDown, DollarSign, BarChart3 } from "lucide-react";
+import { Plus, Pencil, Trash2, Calculator, RotateCcw, Download, Upload, X, TrendingDown, DollarSign, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -9,6 +9,7 @@ import {
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import LivePriceDisplay from "@/components/LivePriceDisplay";
 import ProSettings from "@/components/ProSettings";
+import CsvImportDialog from "@/components/CsvImportDialog";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
   getScenariosForHolding, getScenarios, resetAll, exportData, importData,
@@ -23,6 +24,7 @@ export default function Holdings() {
   const [deleting, setDeleting] = useState<Holding | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [csvOpen, setCsvOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => setTick((t) => t + 1);
@@ -285,6 +287,10 @@ export default function Holdings() {
             <Upload className="mr-1.5 h-4 w-4" />
             Import Data
           </Button>
+          <Button onClick={() => setCsvOpen(true)} size="sm" variant="outline">
+            <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+            Import from CSV
+          </Button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
         </div>
       </main>
@@ -316,6 +322,12 @@ export default function Holdings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CsvImportDialog
+        open={csvOpen}
+        onOpenChange={setCsvOpen}
+        onImported={(firstId) => { setSelectedId(firstId); refresh(); }}
+      />
     </div>
   );
 }
