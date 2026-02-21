@@ -250,7 +250,9 @@ export default function WhatIfScenarios() {
   }, [scenarios]);
 
   const activeResult = scenarioResults[activeTab];
-  const unallocated = budget - (activeResult?.totalAllocated ?? 0);
+  const rawUnallocated = budget - (activeResult?.totalAllocated ?? 0);
+  const unallocated = Math.round(rawUnallocated * 100) / 100;
+  const displayUnallocated = Math.abs(unallocated) < 0.01 ? 0 : unallocated;
 
   // ── Row selection ──────────────────────────────────────────
 
@@ -420,10 +422,11 @@ export default function WhatIfScenarios() {
           {budget > 0 && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Unallocated:</span>
-              <span className={`font-mono font-semibold ${unallocated < 0 ? "text-destructive" : unallocated === 0 ? "text-primary" : ""}`}>
-                ${fmt(unallocated)}
+              <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-primary" : ""}`}>
+                ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
               </span>
-              {unallocated < 0 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
+              {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
+              {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
             </div>
           )}
         </div>
