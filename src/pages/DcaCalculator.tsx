@@ -10,9 +10,16 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { getHolding, addScenario, currencyPrefix, apiTicker } from "@/lib/storage";
-import { fetchStockPrice } from "@/lib/stock-price";
+import { fetchStockPrice, getCachedQuote } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
+
+function formatVolume(vol: number): string {
+  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
+  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
+  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
+  return vol.toFixed(0);
+}
 
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
 
@@ -281,6 +288,19 @@ export default function DcaCalculator() {
             <Stat label="Avg Cost (A)" value={`${cp}${A.toFixed(2)}`} />
             <Stat label={`Fee (${holding.fee_type})`} value={feeLabel} />
           </div>
+          {/* Today's Trading row */}
+          {(() => {
+            const q = getCachedQuote(apiTicker(holding.ticker, exchange).toUpperCase());
+            if (!q || q.todayOpen == null) return null;
+            return (
+              <p className="text-xs text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+                Open: {cp}{q.todayOpen.toFixed(2)}
+                {q.todayLow != null && <> · Low: {cp}{q.todayLow.toFixed(2)}</>}
+                {q.todayHigh != null && <> · High: {cp}{q.todayHigh.toFixed(2)}</>}
+                {q.todayVolume != null && <> · Vol: {formatVolume(q.todayVolume)}</>}
+              </p>
+            );
+          })()}
         </div>
 
         {/* Method + Inputs */}

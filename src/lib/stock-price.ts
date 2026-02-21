@@ -12,6 +12,14 @@ export interface StockQuote {
   change: number;
   changePercent: number;
   fetchedAt: number; // timestamp ms
+  // Extended market data
+  week52High: number | null;
+  week52Low: number | null;
+  todayOpen: number | null;
+  todayHigh: number | null;
+  todayLow: number | null;
+  todayVolume: number | null;
+  avgVolume: number | null;
 }
 
 const CACHE_KEY = "dca-price-cache";
@@ -87,6 +95,13 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
       change: result.change,
       changePercent: result.changePercent,
       fetchedAt: Date.now(),
+      week52High: result.week52High ?? null,
+      week52Low: result.week52Low ?? null,
+      todayOpen: result.todayOpen ?? null,
+      todayHigh: result.todayHigh ?? null,
+      todayLow: result.todayLow ?? null,
+      todayVolume: result.todayVolume ?? null,
+      avgVolume: result.avgVolume ?? null,
     };
 
     setCache(quote);
@@ -95,4 +110,10 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
   } catch {
     return { ok: false, error: "Network error — price unavailable" };
   }
+}
+
+/** Read a cached quote without fetching */
+export function getCachedQuote(ticker: string): StockQuote | null {
+  const cache = readCache();
+  return cache[ticker.toUpperCase()] ?? null;
 }
