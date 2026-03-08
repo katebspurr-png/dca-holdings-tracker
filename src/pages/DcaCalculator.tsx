@@ -181,6 +181,7 @@ export default function DcaCalculator() {
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [applying, setApplying] = useState(false);
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [scenarioToApply, setScenarioToApply] = useState<Scenario | null>(null);
   const [holdingVersion, setHoldingVersion] = useState(0);
   const { toast } = useToast();
 
