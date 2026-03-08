@@ -181,6 +181,7 @@ export default function DcaCalculator() {
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [applying, setApplying] = useState(false);
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [scenarioToApply, setScenarioToApply] = useState<Scenario | null>(null);
   const [holdingVersion, setHoldingVersion] = useState(0);
   const { toast } = useToast();
 
@@ -326,6 +327,39 @@ export default function DcaCalculator() {
       setApplying(false);
     }
   };
+
+  const handleApplyScenario = (s: Scenario) => {
+    if (!holding || applying) return;
+    setScenarioToApply(s);
+  };
+
+  const confirmApplyScenario = () => {
+    if (!holding || !scenarioToApply || applying) return;
+    const s = scenarioToApply;
+    setApplying(true);
+    setScenarioToApply(null);
+    try {
+      applyBuyToHolding({
+        holdingId: holding.id,
+        buyPrice: s.buy_price ?? s.input1_value,
+        sharesBought: s.shares_to_buy,
+        budgetInvested: s.budget_invested,
+        feeApplied: s.fee_applied,
+        totalSpend: s.total_spend,
+        includeFees: s.include_fees,
+        newTotalShares: s.new_total_shares,
+        newAvgCost: s.new_avg_cost,
+        method: s.method,
+      });
+      toast({ title: "Buy applied successfully" });
+      setHoldingVersion((v) => v + 1);
+      setTick((t) => t + 1);
+    } catch (e: any) {
+      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setApplying(false);
+    }
+  }
 
   if (!holding) {
     return (
@@ -701,7 +735,24 @@ export default function DcaCalculator() {
             if (s.budget_percent_used != null) setBudgetPercent(s.budget_percent_used);
             setIncludeFees(s.include_fees);
           }}
+          onApplyBuy={handleApplyScenario}
         />
+
+        {/* Scenario apply confirmation */}
+        <AlertDialog open={!!scenarioToApply} onOpenChange={(o) => !o && setScenarioToApply(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply this scenario to {holding.ticker}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will update the holding's shares and average cost based on the saved scenario. A transaction record will be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmApplyScenario}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

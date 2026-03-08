@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign } from "lucide-react";
+import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign, GitCompareArrows, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { getScenariosForHolding, removeScenario, type Scenario, type Exchange } from "@/lib/storage";
+import ScenarioCompare from "@/components/ScenarioCompare";
 import { toast } from "sonner";
 
 const METHOD_LABELS: Record<string, string> = {
@@ -26,16 +27,19 @@ interface Props {
   holdingId: string;
   exchange: Exchange;
   onUseScenario: (s: Scenario) => void;
+  onApplyBuy: (s: Scenario) => void;
   refreshKey: number;
   currentAvg: number;
   currencyPrefix: string;
 }
 
-export default function SavedScenarios({ holdingId, exchange, onUseScenario, refreshKey, currentAvg, currencyPrefix: cp }: Props) {
+export default function SavedScenarios({ holdingId, exchange, onUseScenario, onApplyBuy, refreshKey, currentAvg, currencyPrefix: cp }: Props) {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState<Scenario | null>(null);
   const [localTick, setLocalTick] = useState(0);
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const allScenarios = getScenariosForHolding(holdingId);
@@ -58,7 +62,11 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
     return sorted.slice(0, 5);
   }, [allScenarios, filter]);
 
-  // Find best avg (lowest new_avg_cost)
+  const selectedScenarios = useMemo(() =>
+    allScenarios.filter((s) => selectedIds.has(s.id)),
+    [allScenarios, selectedIds]
+  );
+
   const bestId = allScenarios.length > 1
     ? allScenarios.reduce((best, s) => s.new_avg_cost < best.new_avg_cost ? s : best, allScenarios[0]).id
     : null;
@@ -67,8 +75,30 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
     if (!deleting) return;
     removeScenario(deleting.id);
     setDeleting(null);
+    setSelectedIds((prev) => { const next = new Set(prev); next.delete(deleting.id); return next; });
     setLocalTick((t) => t + 1);
     toast.success("Scenario deleted");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        if (next.size >= 3) {
+          toast.error("You can compare up to 3 scenarios at a time.");
+          return prev;
+        }
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setSelectedIds(new Set());
   };
 
   const filters: { key: FilterMode; label: string; icon: React.ReactNode }[] = [
@@ -80,22 +110,60 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
 
   return (
     <div className="space-y-3">
+      {/* Compare panel */}
+      {compareMode && selectedScenarios.length >= 2 && (
+        <ScenarioCompare
+          scenarios={selectedScenarios}
+          currentAvg={currentAvg}
+          cp={cp}
+          onUseScenario={(s) => { exitCompareMode(); onUseScenario(s); }}
+          onApplyBuy={(s) => { exitCompareMode(); onApplyBuy(s); }}
+        />
+      )}
+
       <div className="flex items-end justify-between gap-2">
         <div>
           <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Saved Scenarios
           </h2>
           <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-            Compare previously saved DCA plans for this holding.
+            {compareMode
+              ? `Select 2–3 scenarios to compare. ${selectedIds.size}/3 selected.`
+              : "Compare previously saved DCA plans for this holding."}
           </p>
         </div>
-        {allScenarios.length > 0 && (
-          <span className="text-[10px] text-muted-foreground/50 tabular-nums">{allScenarios.length} total</span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {allScenarios.length >= 2 && (
+            compareMode ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-[10px] px-2.5 gap-1"
+                onClick={exitCompareMode}
+              >
+                <X className="h-3 w-3" />
+                Exit Compare
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-[10px] px-2.5 gap-1"
+                onClick={() => setCompareMode(true)}
+              >
+                <GitCompareArrows className="h-3 w-3" />
+                Compare
+              </Button>
+            )
+          )}
+          {allScenarios.length > 0 && !compareMode && (
+            <span className="text-[10px] text-muted-foreground/50 tabular-nums">{allScenarios.length} total</span>
+          )}
+        </div>
       </div>
 
       {/* Filter chips */}
-      {allScenarios.length > 1 && (
+      {allScenarios.length > 1 && !compareMode && (
         <div className="flex gap-1.5 flex-wrap">
           {filters.map((f) => (
             <button
@@ -132,17 +200,32 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
               const avgDiff = currentAvg - s.new_avg_cost;
               const improves = avgDiff > 0.005;
               const worsens = avgDiff < -0.005;
+              const isSelected = selectedIds.has(s.id);
 
               return (
                 <div
                   key={s.id}
-                  className={`group rounded-xl border bg-card p-3.5 transition-all hover:border-primary/20 ${
-                    isBest ? "border-primary/30 bg-primary/[0.02]" : "border-border"
+                  onClick={compareMode ? () => toggleSelect(s.id) : undefined}
+                  className={`group rounded-xl border bg-card p-3.5 transition-all ${
+                    compareMode ? "cursor-pointer" : ""
+                  } ${
+                    isSelected
+                      ? "border-primary/50 bg-primary/[0.04] ring-1 ring-primary/20"
+                      : isBest
+                        ? "border-primary/30 bg-primary/[0.02] hover:border-primary/20"
+                        : "border-border hover:border-primary/20"
                   }`}
                 >
                   {/* Top line */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
+                      {compareMode && (
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
+                        }`}>
+                          {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                        </div>
+                      )}
                       <span className="text-[11px] font-medium text-foreground/80">
                         {METHOD_LABELS[s.method] ?? s.method}
                       </span>
@@ -177,7 +260,6 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
                       <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Shares</span>
                       <p className="text-xs font-mono font-medium">{s.shares_to_buy.toFixed(4)}</p>
                     </div>
-                    {/* Improvement indicator */}
                     <div className="ml-auto">
                       {improves ? (
                         <span className="text-[10px] font-medium text-primary flex items-center gap-0.5">
@@ -194,22 +276,24 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, ref
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-1.5 pt-1.5 border-t border-border/50">
-                    <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => onUseScenario(s)}>
-                      <ArrowRight className="mr-1 h-2.5 w-2.5" />
-                      Use Scenario
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-muted-foreground hover:text-destructive" onClick={() => setDeleting(s)}>
-                      <Trash2 className="mr-1 h-2.5 w-2.5" />
-                      Delete
-                    </Button>
-                  </div>
+                  {!compareMode && (
+                    <div className="flex gap-1.5 pt-1.5 border-t border-border/50">
+                      <Button size="sm" variant="outline" className="h-6 text-[10px] px-2" onClick={() => onUseScenario(s)}>
+                        <ArrowRight className="mr-1 h-2.5 w-2.5" />
+                        Use Scenario
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-muted-foreground hover:text-destructive" onClick={() => setDeleting(s)}>
+                        <Trash2 className="mr-1 h-2.5 w-2.5" />
+                        Delete
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          {allScenarios.length > 5 && (
+          {allScenarios.length > 5 && !compareMode && (
             <Button
               variant="link"
               size="sm"
