@@ -3,9 +3,10 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight,
   Trash2, Eye, Target as TargetIcon, Calculator, History, AlertCircle, Info,
-  Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users,
+  Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users, Pencil,
 } from "lucide-react";
 import GoalLadder from "@/components/GoalLadder";
+import HoldingFormDialog from "@/components/HoldingFormDialog";
 import SavedScenarios from "@/components/SavedScenarios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +24,7 @@ import {
 import {
   getHolding, getScenariosForHolding, getTransactionsForHolding,
   undoLastBuy, removeScenario, currencyPrefix, exchangeLabel, apiTicker,
-  addScenario, applyBuyToHolding, type Scenario,
+  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding,
 } from "@/lib/storage";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
@@ -170,6 +171,7 @@ export default function HoldingDetail() {
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
   const [showUndoConfirm, setShowUndoConfirm] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Active tab
   const tabParam = searchParams.get("tab") as WorkspaceTab | null;
@@ -461,7 +463,12 @@ export default function HoldingDetail() {
         {activeTab === "overview" && (
           <>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Position Overview</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Position Overview</h2>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-1 h-3 w-3" /> Edit
+                </Button>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                 <MiniStat label="Shares" value={fmt4(S)} />
                 <MiniStat label="Avg Cost" value={`${cp}${fmt2(A)}`} accent />
@@ -795,6 +802,19 @@ export default function HoldingDetail() {
           />
         )}
       </main>
+
+      {/* Edit holding dialog */}
+      <HoldingFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        initial={holding}
+        onSubmit={(data) => {
+          editHolding(holding.id, data);
+          setEditOpen(false);
+          setVersion((v) => v + 1);
+          sonnerToast.success("Holding updated");
+        }}
+      />
 
       {/* Undo confirmation */}
       <AlertDialog open={showUndoConfirm} onOpenChange={setShowUndoConfirm}>
