@@ -90,6 +90,7 @@ export interface AppData {
   version: 1;
   holdings: Holding[];
   scenarios: Scenario[];
+  transactions?: Transaction[];
   whatIfComparisons?: WhatIfComparison[];
 }
 
