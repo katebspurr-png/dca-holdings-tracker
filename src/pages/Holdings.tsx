@@ -618,3 +618,12 @@ function SummaryRow({
     </div>
   );
 }
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-mono font-semibold mt-1">{value}</p>
+    </div>
+  );
+}
