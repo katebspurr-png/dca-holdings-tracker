@@ -148,6 +148,19 @@ export default function Holdings() {
     localStorage.setItem(SORT_KEY, mode);
   };
 
+  // ── Portfolio dashboard metrics ──────────────────────────────
+  const totalHoldingsCount = holdings.length;
+  const totalShares = holdings.reduce((sum, h) => sum + Number(h.shares), 0);
+  const totalCostBasis = holdings.reduce((sum, h) => sum + Number(h.shares) * Number(h.avg_cost), 0);
+  const weightedAvgCost = totalShares > 0 ? totalCostBasis / totalShares : 0;
+
+  // Holdings sorted by cost basis for summary table
+  const holdingsByCostBasis = useMemo(() => {
+    return [...holdings]
+      .map((h) => ({ ...h, costBasis: Number(h.shares) * Number(h.avg_cost) }))
+      .sort((a, b) => b.costBasis - a.costBasis);
+  }, [holdings]);
+
   // ── Portfolio summary ──────────────────────────────────────
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
