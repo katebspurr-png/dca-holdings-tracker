@@ -938,11 +938,18 @@ function InsightsTab({ holding, marketPrice, cp, onUseInCalculator, onSaved }: {
   }, [S, A, marketPrice, holding]);
 
   // ── DCA Efficiency Score ────────────────────────────────────
-  const efficiencyScore = useMemo(() => {
+  const TEST_INVESTMENT = 500;
+  const efficiencyData = useMemo(() => {
     if (marketPrice == null || A <= 0) return null;
-    const raw = ((A - marketPrice) / A) * 100;
-    return Math.max(0, Math.min(100, Math.round(raw)));
-  }, [A, marketPrice]);
+    if (marketPrice >= A) return { score: 0, improvement: 0 };
+    const sharesBought = TEST_INVESTMENT / marketPrice;
+    const newAvg = (S * A + TEST_INVESTMENT) / (S + sharesBought);
+    const improvement = Math.max(0, A - newAvg);
+    // Normalize: cap at $5 improvement mapping to 100 for single-holding context
+    const score = Math.max(0, Math.min(100, Math.round((improvement / Math.max(improvement, 0.01)) * Math.min(100, (improvement / A) * 1000))));
+    return { score, improvement };
+  }, [S, A, marketPrice]);
+  const efficiencyScore = efficiencyData?.score ?? null;
 
   const getEfficiencyBand = (score: number) => {
     if (score >= 80) return { label: "Very strong opportunity", color: "text-primary" };
