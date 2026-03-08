@@ -11,6 +11,7 @@ import Scenarios from "./pages/Scenarios";
 import ScenarioDetail from "./pages/ScenarioDetail";
 import WhatIfScenarios from "./pages/WhatIfScenarios";
 import Settings from "./pages/Settings";
+import UpdatePrices from "./pages/UpdatePrices";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 
