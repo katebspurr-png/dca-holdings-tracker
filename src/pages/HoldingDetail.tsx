@@ -1089,6 +1089,7 @@ function InsightsTab({ holding, marketPrice, cp, onUseInCalculator, onSaved }: {
 }
 
 
+function MiniStat({ label, value, accent, sub, positive, negative }: {
   label: string; value: string; accent?: boolean; sub?: string; positive?: boolean; negative?: boolean;
 }) {
   return (
