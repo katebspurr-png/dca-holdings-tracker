@@ -339,10 +339,15 @@ export default function Holdings() {
                   </Table>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll}>
+                <div className="flex items-center justify-between">
+                  {lastRefreshed && (
+                    <span className="text-[11px] text-muted-foreground opacity-70">
+                      Last refreshed {formatLastRefreshed(lastRefreshed)}
+                    </span>
+                  )}
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll} className="ml-auto">
                     <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                    {refreshingAll ? "Fetching…" : "Refresh All"}
+                    {refreshingAll ? "Refreshing…" : "Refresh Prices"}
                   </Button>
                 </div>
               </>
