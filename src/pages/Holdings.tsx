@@ -81,7 +81,7 @@ export default function Holdings() {
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
-  
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
 
   const refresh = () => setTick((t) => t + 1);
 
