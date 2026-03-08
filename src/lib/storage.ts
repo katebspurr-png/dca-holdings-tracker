@@ -42,6 +42,28 @@ export type Scenario = {
   created_at: string;
 };
 
+export type Transaction = {
+  id: string;
+  holding_id: string;
+  ticker: string;
+  transaction_type: string;
+  buy_price: number;
+  shares_bought: number;
+  budget_invested: number;
+  fee_applied: number;
+  total_spend: number;
+  include_fees: boolean;
+  fee_type_snapshot: string;
+  fee_value_snapshot: number;
+  previous_shares: number;
+  previous_avg_cost: number;
+  new_total_shares: number;
+  new_avg_cost: number;
+  method: string;
+  notes: string | null;
+  created_at: string;
+};
+
 export type WhatIfAllocation = {
   holdingId: string;
   ticker: string;
