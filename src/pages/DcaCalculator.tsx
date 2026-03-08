@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding } from "@/lib/storage";
+import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding, type Scenario } from "@/lib/storage";
 import { fetchStockPrice, getCachedQuote } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
