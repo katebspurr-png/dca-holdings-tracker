@@ -345,6 +345,8 @@ export function applyBuyToHolding(params: {
     new_avg_cost: params.newAvgCost,
     method: params.method,
     notes: params.notes ?? null,
+    is_undone: false,
+    undone_at: null,
     created_at: new Date().toISOString(),
   };
 
