@@ -12,6 +12,7 @@ export type Holding = {
   exchange: Exchange;
   shares: number;
   avg_cost: number;
+  initial_avg_cost: number;
   fee: number;
   fee_type: FeeType;
   fee_value: number;
