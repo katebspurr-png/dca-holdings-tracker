@@ -452,20 +452,40 @@ export default function DcaCalculator() {
             </p>
           )}
           {isValid && (
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
               {isPriceBudget && (
                 <Button variant="outline" size="sm" onClick={handleUseAsTarget}>
                   <Target className="mr-1.5 h-4 w-4" />
                   Use as target
                 </Button>
               )}
-              <Button onClick={handleSave} size="sm">
+              <Button onClick={handleSave} size="sm" variant="outline">
                 <Save className="mr-1.5 h-4 w-4" />
                 Save scenario
+              </Button>
+              <Button onClick={handleApplyBuy} size="sm" disabled={applying}>
+                <CheckCircle className="mr-1.5 h-4 w-4" />
+                {applying ? "Applying…" : "Apply this buy"}
               </Button>
             </div>
           )}
         </div>
+
+        {/* Apply confirmation dialog */}
+        <AlertDialog open={showApplyConfirm} onOpenChange={setShowApplyConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply this buy to {holding.ticker}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will update the holding's shares and average cost. A transaction record will be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmApplyBuy}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
