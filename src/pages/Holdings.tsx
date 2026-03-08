@@ -80,6 +80,9 @@ export default function Holdings() {
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const refresh = () => setTick((t) => t + 1);
 
