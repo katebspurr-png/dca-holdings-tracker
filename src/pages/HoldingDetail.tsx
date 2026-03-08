@@ -20,6 +20,7 @@ export default function HoldingDetail() {
   const holding = id ? getHolding(id) : undefined;
   const scenarios = id ? getScenariosForHolding(id) : [];
   const recommendedTargets = id ? getRecommendedTargets(id) : [];
+  const transactions = id ? getTransactionsForHolding(id) : [];
 
   if (!holding) {
     return (
