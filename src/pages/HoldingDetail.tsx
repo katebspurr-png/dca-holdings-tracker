@@ -30,13 +30,14 @@ import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 
-type WorkspaceTab = "overview" | "strategy" | "calculator" | "history";
+type WorkspaceTab = "overview" | "strategy" | "calculator" | "history" | "insights";
 
 const WORKSPACE_TABS: { key: WorkspaceTab; label: string; icon: React.ElementType }[] = [
   { key: "overview", label: "Overview", icon: Eye },
   { key: "strategy", label: "Strategy", icon: TargetIcon },
   { key: "calculator", label: "Calculator", icon: Calculator },
   { key: "history", label: "History", icon: History },
+  { key: "insights", label: "Insights", icon: Lightbulb },
 ];
 
 const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
