@@ -116,9 +116,9 @@ const STORAGE_KEY = "dca-down-data";
 
 // ── Demo data ────────────────────────────────────────────────
 const DEMO_HOLDINGS: Holding[] = [
-  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, initial_avg_cost: 210, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, initial_avg_cost: 155, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, initial_avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
 ];
 
 const DEMO_SCENARIOS: Scenario[] = [
