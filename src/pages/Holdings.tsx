@@ -661,17 +661,28 @@ function DcaOpportunities({
   const fmt = (n: number) =>
     n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  const TEST_INVESTMENT = 500;
+
   const scored = useMemo(() => {
-    return holdings
+    // Compute improvement for each holding, then normalize to 0–100
+    const raw = holdings
       .map((h) => {
         const price = livePrices[h.id];
         if (price == null || price <= 0) return null;
-        const raw = h.avg_cost > 0 ? ((h.avg_cost - price) / h.avg_cost) * 100 : 0;
-        const score = Math.max(0, Math.min(100, Math.round(raw)));
-        return { holding: h, price, score };
+        if (price >= h.avg_cost) return { holding: h, price, improvement: 0, score: 0 };
+        const sharesBought = TEST_INVESTMENT / price;
+        const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
+        const improvement = h.avg_cost - newAvg;
+        return { holding: h, price, improvement: Math.max(0, improvement), score: 0 };
       })
-      .filter(Boolean)
-      .sort((a, b) => b!.score - a!.score) as { holding: Holding; price: number; score: number }[];
+      .filter(Boolean) as { holding: Holding; price: number; improvement: number; score: number }[];
+
+    // Normalize: best improvement maps to 100
+    const maxImprovement = Math.max(...raw.map((r) => r.improvement), 0.001);
+    for (const r of raw) {
+      r.score = Math.round((r.improvement / maxImprovement) * 100);
+    }
+    return raw.sort((a, b) => b.score - a.score);
   }, [holdings, livePrices]);
 
   if (holdings.length === 0) return null;
