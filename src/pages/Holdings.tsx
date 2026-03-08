@@ -222,6 +222,36 @@ export default function Holdings() {
     refresh();
   };
 
+  const handleBulkDelete = () => {
+    selected.forEach((id) => removeHolding(id));
+    toast.success(`Deleted ${selected.size} holding${selected.size !== 1 ? "s" : ""}`);
+    setSelected(new Set());
+    setSelectMode(false);
+    setBulkDeleting(false);
+    refresh();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === holdings.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(holdings.map((h) => h.id)));
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
