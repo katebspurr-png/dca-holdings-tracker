@@ -184,19 +184,6 @@ export default function UpdatePrices() {
     );
   }
 
-  const handleRefreshAll = useCallback(async () => {
-    const result = await refreshAll(() => setTick((t) => t + 1));
-    if (result.failed.length === 0) {
-      toast({ title: "Market prices refreshed" });
-    } else if (result.success > 0) {
-      toast({
-        title: "Some prices were refreshed, but a few tickers could not be updated",
-        description: `Failed: ${result.failed.join(", ")}`,
-      });
-    } else {
-      toast({ title: "Could not refresh prices", variant: "destructive" });
-    }
-  }, [refreshAll, toast]);
 
   return (
     <div className="min-h-screen bg-background pb-28">
