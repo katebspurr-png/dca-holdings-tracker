@@ -385,3 +385,39 @@ export function applyScenarioToHoldings(
   }
   write(data);
 }
+
+/**
+ * Undo the most recent applied buy for a holding.
+ * Restores previous shares/avg_cost and marks the transaction as undone.
+ */
+export function undoLastBuy(holdingId: string): void {
+  const data = read();
+  const txs = (data.transactions ?? [])
+    .filter((t) => t.holding_id === holdingId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const latest = txs[0];
+  if (!latest) throw new Error("No transactions found");
+  if (latest.transaction_type !== "buy") throw new Error("Latest transaction is not a buy");
+  if (latest.is_undone) throw new Error("Latest transaction is already undone");
+
+  // Restore holding
+  const hIdx = data.holdings.findIndex((h) => h.id === holdingId);
+  if (hIdx === -1) throw new Error("Holding not found");
+  data.holdings[hIdx] = {
+    ...data.holdings[hIdx],
+    shares: latest.previous_shares,
+    avg_cost: latest.previous_avg_cost,
+  };
+
+  // Mark transaction as undone
+  const tIdx = (data.transactions ?? []).findIndex((t) => t.id === latest.id);
+  if (tIdx === -1) throw new Error("Transaction not found");
+  data.transactions![tIdx] = {
+    ...data.transactions![tIdx],
+    is_undone: true,
+    undone_at: new Date().toISOString(),
+  };
+
+  write(data);
+}
