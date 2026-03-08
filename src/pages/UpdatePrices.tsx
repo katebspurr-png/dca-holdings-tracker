@@ -150,6 +150,22 @@ export default function UpdatePrices() {
 
   const handleReset = () => setTick((t) => t + 1);
 
+  const { refreshing, refreshAll, lastRefreshed } = useRefreshPrices();
+
+  const handleRefreshAll = useCallback(async () => {
+    const result = await refreshAll(() => setTick((t) => t + 1));
+    if (result.failed.length === 0) {
+      toast({ title: "Market prices refreshed" });
+    } else if (result.success > 0) {
+      toast({
+        title: "Some prices were refreshed, but a few tickers could not be updated",
+        description: `Failed: ${result.failed.join(", ")}`,
+      });
+    } else {
+      toast({ title: "Could not refresh prices", variant: "destructive" });
+    }
+  }, [refreshAll, toast]);
+
   /* ── Empty state ─────────────────────────────────────── */
   if (holdings.length === 0) {
     return (
@@ -167,8 +183,6 @@ export default function UpdatePrices() {
       </div>
     );
   }
-
-  const { refreshing, refreshAll, lastRefreshed } = useRefreshPrices();
 
   const handleRefreshAll = useCallback(async () => {
     const result = await refreshAll(() => setTick((t) => t + 1));
