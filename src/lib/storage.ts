@@ -217,7 +217,12 @@ export function getHolding(id: string): Holding | undefined {
 
 export function addHolding(h: Omit<Holding, "id" | "created_at">): Holding {
   const data = read();
-  const holding: Holding = { ...h, id: uid(), created_at: new Date().toISOString() };
+  const holding: Holding = {
+    ...h,
+    initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
+    id: uid(),
+    created_at: new Date().toISOString(),
+  };
   data.holdings.push(holding);
   write(data);
   return holding;
