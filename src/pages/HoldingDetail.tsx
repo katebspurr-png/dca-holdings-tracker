@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calculator } from "lucide-react";
+import { ArrowLeft, Calculator, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { getHolding, getScenariosForHolding, getRecommendedTargets, getTransactionsForHolding, currencyPrefix, exchangeLabel } from "@/lib/storage";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getHolding, getScenariosForHolding, getRecommendedTargets, getTransactionsForHolding, undoLastBuy, currencyPrefix, exchangeLabel } from "@/lib/storage";
+import { useToast } from "@/hooks/use-toast";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -16,11 +22,37 @@ const METHOD_LABELS: Record<string, string> = {
 export default function HoldingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [version, setVersion] = useState(0);
+  const [undoing, setUndoing] = useState(false);
+  const [showUndoConfirm, setShowUndoConfirm] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const holding = id ? getHolding(id) : undefined;
   const scenarios = id ? getScenariosForHolding(id) : [];
   const recommendedTargets = id ? getRecommendedTargets(id) : [];
   const transactions = id ? getTransactionsForHolding(id) : [];
+
+  // Force re-read when version changes
+  void version;
+
+  const latestTx = transactions[0];
+  const canUndo = latestTx && latestTx.transaction_type === "buy" && !latestTx.is_undone;
+
+  const confirmUndo = () => {
+    if (!id || undoing) return;
+    setUndoing(true);
+    setShowUndoConfirm(false);
+    try {
+      undoLastBuy(id);
+      toast({ title: "Last buy undone successfully" });
+      setVersion((v) => v + 1);
+    } catch (e: any) {
+      toast({ title: "Failed to undo", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setUndoing(false);
+    }
+  };
 
   if (!holding) {
     return (
@@ -144,9 +176,22 @@ export default function HoldingDetail() {
 
         {/* Transaction history */}
         <div className="rounded-lg border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Transaction History
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Transaction History
+            </h2>
+            {canUndo && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={undoing}
+                onClick={() => setShowUndoConfirm(true)}
+              >
+                <Undo2 className="mr-1.5 h-4 w-4" />
+                {undoing ? "Undoing…" : "Undo last applied buy"}
+              </Button>
+            )}
+          </div>
           {transactions.length === 0 ? (
             <p className="text-sm text-muted-foreground">No transactions yet. Use "Apply this buy" in the DCA Calculator to record trades.</p>
           ) : (
@@ -156,6 +201,7 @@ export default function HoldingDetail() {
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Buy Price</TableHead>
                     <TableHead className="text-right">Shares</TableHead>
                     <TableHead className="text-right">Budget</TableHead>
@@ -167,9 +213,16 @@ export default function HoldingDetail() {
                 </TableHeader>
                 <TableBody>
                   {transactions.map((t) => (
-                    <TableRow key={t.id}>
+                    <TableRow key={t.id} className={t.is_undone ? "opacity-50" : ""}>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(t.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-sm capitalize">{t.transaction_type}</TableCell>
+                      <TableCell className="text-sm">
+                        {t.is_undone ? (
+                          <span className="text-muted-foreground italic">Undone</span>
+                        ) : (
+                          <span className="text-primary font-medium">Applied</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right font-mono">{cp}{Number(t.buy_price).toFixed(2)}</TableCell>
                       <TableCell className="text-right font-mono">{Number(t.shares_bought).toFixed(4)}</TableCell>
                       <TableCell className="text-right font-mono">{cp}{Number(t.budget_invested).toFixed(2)}</TableCell>
@@ -184,6 +237,22 @@ export default function HoldingDetail() {
             </div>
           )}
         </div>
+
+        {/* Undo confirmation dialog */}
+        <AlertDialog open={showUndoConfirm} onOpenChange={setShowUndoConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Undo the last applied buy for {holding.ticker}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will restore the previous shares and average cost. The transaction will be marked as undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmUndo}>Undo</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
