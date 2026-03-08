@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Save, TrendingDown } from "lucide-react";
+import { ArrowRight, Save, TrendingDown, ChevronDown, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type Holding, type Scenario, addScenario, currencyPrefix } from "@/lib/storage";
 import { getCachedQuote } from "@/lib/stock-price";
