@@ -4,6 +4,8 @@ import {
   Sparkles, Save, CheckCircle, ArrowRight, TrendingDown, TrendingUp,
   AlertCircle, Zap, Info, Calculator
 } from "lucide-react";
+import { hasFeature } from "@/lib/feature-access";
+import PremiumGate from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
