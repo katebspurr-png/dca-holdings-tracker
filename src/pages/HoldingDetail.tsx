@@ -6,6 +6,7 @@ import {
   Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users, Pencil,
 } from "lucide-react";
 import GoalLadder from "@/components/GoalLadder";
+import HoldingFormDialog from "@/components/HoldingFormDialog";
 import SavedScenarios from "@/components/SavedScenarios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
