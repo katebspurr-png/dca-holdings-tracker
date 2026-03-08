@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { getHoldings, currencyPrefix, apiTicker, type Holding } from "@/lib/storage";
 import { getCachedQuote, type StockQuote } from "@/lib/stock-price";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Save, AlertCircle } from "lucide-react";
+import { RotateCcw, Save } from "lucide-react";
 
 const CACHE_KEY = "dca-price-cache";
 
@@ -32,6 +32,28 @@ function getCachedPriceForHolding(h: Holding): number | null {
   return q ? q.price : null;
 }
 
+/* ── Computed row data ─────────────────────────────────── */
+function computeRow(h: Holding, priceStr: string) {
+  const shares = Number(h.shares);
+  const avgCost = Number(h.avg_cost);
+  const costBasis = shares * avgCost;
+  const priceVal = parseFloat(priceStr || "");
+  const hasPrice = !isNaN(priceVal) && priceVal > 0;
+  const marketValue = hasPrice ? shares * priceVal : null;
+  const gainLoss = marketValue != null ? marketValue - costBasis : null;
+  const gainLossPct =
+    gainLoss != null && costBasis > 0 ? (gainLoss / costBasis) * 100 : null;
+  return { shares, avgCost, costBasis, priceVal, hasPrice, marketValue, gainLoss, gainLossPct };
+}
+
+function glColor(val: number | null) {
+  if (val == null) return "text-muted-foreground";
+  if (val > 0) return "text-primary";
+  if (val < 0) return "text-destructive";
+  return "text-muted-foreground";
+}
+
+/* ── Page ──────────────────────────────────────────────── */
 export default function UpdatePrices() {
   const { toast } = useToast();
   const [tick, setTick] = useState(0);
@@ -59,14 +81,41 @@ export default function UpdatePrices() {
     setLastInitial(initialPrices);
   }
 
-  const setPrice = (id: string, val: string) => {
+  const setPrice = useCallback((id: string, val: string) => {
     setPrices((prev) => ({ ...prev, [id]: val }));
-  };
+  }, []);
 
-  const hasChanges = useMemo(() => {
-    return holdings.some((h) => prices[h.id] !== initialPrices[h.id]);
-  }, [holdings, prices, initialPrices]);
+  const hasChanges = useMemo(
+    () => holdings.some((h) => prices[h.id] !== initialPrices[h.id]),
+    [holdings, prices, initialPrices]
+  );
 
+  const editedCount = useMemo(
+    () => holdings.filter((h) => prices[h.id] !== initialPrices[h.id]).length,
+    [holdings, prices, initialPrices]
+  );
+
+  /* ── Totals ──────────────────────────────────────────── */
+  const totals = useMemo(() => {
+    let totalMV = 0;
+    let totalCost = 0;
+    let hasMV = false;
+    holdings.forEach((h) => {
+      const r = computeRow(h, prices[h.id]);
+      totalCost += r.costBasis;
+      if (r.marketValue != null) {
+        totalMV += r.marketValue;
+        hasMV = true;
+      } else {
+        totalMV += r.costBasis;
+      }
+    });
+    const pnl = hasMV ? totalMV - totalCost : null;
+    const pnlPct = pnl != null && totalCost > 0 ? (pnl / totalCost) * 100 : null;
+    return { totalMV: hasMV ? totalMV : null, pnl, pnlPct };
+  }, [holdings, prices]);
+
+  /* ── Save / Reset ────────────────────────────────────── */
   const handleSave = () => {
     const cache = readPriceCache();
     holdings.forEach((h) => {
@@ -79,9 +128,10 @@ export default function UpdatePrices() {
         price: val,
         previousClose: existing?.previousClose ?? val,
         change: existing ? val - existing.previousClose : 0,
-        changePercent: existing && existing.previousClose > 0
-          ? ((val - existing.previousClose) / existing.previousClose) * 100
-          : 0,
+        changePercent:
+          existing && existing.previousClose > 0
+            ? ((val - existing.previousClose) / existing.previousClose) * 100
+            : 0,
         fetchedAt: Date.now(),
         week52High: existing?.week52High ?? null,
         week52Low: existing?.week52Low ?? null,
@@ -97,47 +147,77 @@ export default function UpdatePrices() {
     setTick((t) => t + 1);
   };
 
-  const handleReset = () => {
-    setTick((t) => t + 1);
-  };
+  const handleReset = () => setTick((t) => t + 1);
 
+  /* ── Empty state ─────────────────────────────────────── */
   if (holdings.length === 0) {
     return (
       <div className="min-h-screen bg-background pb-24">
-        <div className="mx-auto max-w-2xl px-4 pt-6">
-          <h1 className="text-lg font-semibold tracking-tight font-[family-name:var(--font-heading)]">Update Prices</h1>
+        <div className="mx-auto max-w-[1080px] px-5 pt-8">
+          <h1 className="text-xl font-bold tracking-tight font-[family-name:var(--font-heading)]">
+            Update Market Prices
+          </h1>
         </div>
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
-          <p className="text-sm text-muted-foreground">No holdings yet. Add a holding before updating prices.</p>
+        <main className="mx-auto max-w-[1080px] px-5 py-20 text-center">
+          <p className="text-sm text-muted-foreground">
+            No holdings yet. Add a holding before updating prices.
+          </p>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      {/* Header */}
-      <div className="mx-auto max-w-2xl px-4 pt-5 pb-3">
-        <h1 className="text-lg font-semibold tracking-tight font-[family-name:var(--font-heading)]">Update Prices</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Edit current prices to update market value and gain/loss.
-        </p>
-      </div>
+    <div className="min-h-screen bg-background pb-28">
+      {/* ── Header ────────────────────────────────────────── */}
+      <div className="mx-auto max-w-[1080px] px-5 pt-7 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight font-[family-name:var(--font-heading)]">
+              Update Market Prices
+            </h1>
+            <p className="text-[13px] text-muted-foreground mt-0.5">
+              Quickly refresh the current price for your holdings.
+            </p>
+          </div>
 
-      {/* Unsaved indicator */}
-      {hasChanges && (
-        <div className="mx-auto max-w-2xl px-4 pb-2">
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-            <AlertCircle className="h-3 w-3" />
-            <span>Unsaved changes</span>
+          {/* Live totals */}
+          <div className="flex items-baseline gap-5 text-right">
+            {totals.totalMV != null && (
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                  Market Value
+                </span>
+                <span className="text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums">
+                  ${fmt(totals.totalMV)}
+                </span>
+              </div>
+            )}
+            {totals.pnl != null && (
+              <div>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                  Unrealized P/L
+                </span>
+                <span
+                  className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${glColor(totals.pnl)}`}
+                >
+                  {totals.pnl >= 0 ? "+" : ""}${fmt(totals.pnl)}
+                  {totals.pnlPct != null && (
+                    <span className="text-xs font-normal ml-1.5 opacity-70">
+                      {totals.pnlPct >= 0 ? "+" : ""}{fmtPct(totals.pnlPct)}%
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Desktop table */}
-      <div className="mx-auto max-w-2xl px-4 hidden md:block">
-        {/* Header row */}
-        <div className="grid grid-cols-[1fr_5rem_5rem_6.5rem_6.5rem_5rem] gap-x-3 px-1 pb-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border">
+      {/* ── Desktop watchlist ─────────────────────────────── */}
+      <div className="mx-auto max-w-[1080px] px-5 hidden md:block">
+        {/* Column headers */}
+        <div className="grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 px-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 border-b border-border">
           <span>Ticker</span>
           <span className="text-right">Shares</span>
           <span className="text-right">Avg Cost</span>
@@ -146,67 +226,74 @@ export default function UpdatePrices() {
           <span className="text-right">%</span>
         </div>
 
-        {/* Rows */}
         {holdings.map((h) => {
           const cp = currencyPrefix((h.exchange ?? "US") as any);
-          const shares = Number(h.shares);
-          const avgCost = Number(h.avg_cost);
-          const costBasis = shares * avgCost;
-          const priceVal = parseFloat(prices[h.id] || "");
-          const hasPrice = !isNaN(priceVal) && priceVal > 0;
-          const marketValue = hasPrice ? shares * priceVal : null;
-          const gainLoss = marketValue != null ? marketValue - costBasis : null;
-          const gainLossPct = gainLoss != null && costBasis > 0
-            ? (gainLoss / costBasis) * 100
-            : null;
+          const r = computeRow(h, prices[h.id]);
           const isEdited = prices[h.id] !== initialPrices[h.id];
-
-          const glColor = gainLoss != null
-            ? gainLoss > 0
-              ? "text-primary"
-              : gainLoss < 0
-                ? "text-destructive"
-                : "text-muted-foreground"
-            : "text-muted-foreground";
+          const color = glColor(r.gainLoss);
 
           return (
             <div
               key={h.id}
-              className={`grid grid-cols-[1fr_5rem_5rem_6.5rem_6.5rem_5rem] gap-x-3 items-center px-1 py-2 border-b border-border/50 transition-colors ${isEdited ? "bg-accent/40" : ""}`}
+              className={`group grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 items-center px-2 py-[9px] border-b border-border/40 transition-colors hover:bg-muted/30 ${
+                isEdited ? "bg-accent/30" : ""
+              }`}
             >
-              <div>
-                <span className="font-semibold text-sm font-[family-name:var(--font-mono)]">{h.ticker}</span>
-                {marketValue != null && (
-                  <span className="ml-2 text-[11px] text-muted-foreground">
-                    MV {cp}{fmt(marketValue)}
+              {/* Ticker + MV */}
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="text-[15px] font-bold font-[family-name:var(--font-mono)] tracking-tight truncate">
+                  {h.ticker}
+                </span>
+                {r.marketValue != null && (
+                  <span className="text-[10px] text-muted-foreground/60 font-[family-name:var(--font-mono)] tabular-nums whitespace-nowrap">
+                    {cp}{fmt(r.marketValue)}
+                  </span>
+                )}
+                {isEdited && (
+                  <span className="text-[9px] text-accent-foreground/60 bg-accent rounded px-1 py-px">
+                    edited
                   </span>
                 )}
               </div>
-              <span className="text-right text-xs text-muted-foreground font-[family-name:var(--font-mono)]">
-                {shares.toFixed(4)}
+
+              {/* Shares */}
+              <span className="text-right text-[12px] text-muted-foreground font-[family-name:var(--font-mono)] tabular-nums">
+                {r.shares.toFixed(4)}
               </span>
-              <span className="text-right text-xs text-muted-foreground font-[family-name:var(--font-mono)]">
-                {cp}{fmt(avgCost)}
+
+              {/* Avg cost */}
+              <span className="text-right text-[12px] text-muted-foreground font-[family-name:var(--font-mono)] tabular-nums">
+                {cp}{fmt(r.avgCost)}
               </span>
+
+              {/* Editable price */}
               <div className="flex justify-end">
                 <input
                   type="number"
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-full text-right text-sm font-[family-name:var(--font-mono)] bg-transparent border-b border-input focus:border-ring focus:outline-none py-0.5 px-1 transition-colors placeholder:text-muted-foreground/50"
+                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-muted/40 rounded-md border border-border/60 focus:border-ring focus:ring-1 focus:ring-ring/30 focus:bg-background outline-none py-1 px-2 transition-all placeholder:text-muted-foreground/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
               </div>
-              <span className={`text-right text-xs font-[family-name:var(--font-mono)] font-medium ${glColor}`}>
-                {gainLoss != null
-                  ? `${gainLoss >= 0 ? "+" : ""}${cp}${fmt(gainLoss)}`
+
+              {/* Gain/loss $ */}
+              <span
+                className={`text-right text-[12px] font-medium font-[family-name:var(--font-mono)] tabular-nums ${color}`}
+              >
+                {r.gainLoss != null
+                  ? `${r.gainLoss >= 0 ? "+" : ""}${cp}${fmt(r.gainLoss)}`
                   : "—"}
               </span>
-              <span className={`text-right text-[11px] font-[family-name:var(--font-mono)] ${glColor}`}>
-                {gainLossPct != null
-                  ? `${gainLossPct >= 0 ? "+" : ""}${fmtPct(gainLossPct)}%`
+
+              {/* Gain/loss % */}
+              <span
+                className={`text-right text-[11px] font-[family-name:var(--font-mono)] tabular-nums ${color} opacity-80`}
+              >
+                {r.gainLossPct != null
+                  ? `${r.gainLossPct >= 0 ? "+" : ""}${fmtPct(r.gainLossPct)}%`
                   : "—"}
               </span>
             </div>
@@ -214,65 +301,71 @@ export default function UpdatePrices() {
         })}
       </div>
 
-      {/* Mobile cards */}
-      <div className="mx-auto max-w-2xl px-4 md:hidden space-y-1">
+      {/* ── Mobile cards ──────────────────────────────────── */}
+      <div className="mx-auto max-w-[1080px] px-4 md:hidden space-y-px">
         {holdings.map((h) => {
           const cp = currencyPrefix((h.exchange ?? "US") as any);
-          const shares = Number(h.shares);
-          const avgCost = Number(h.avg_cost);
-          const costBasis = shares * avgCost;
-          const priceVal = parseFloat(prices[h.id] || "");
-          const hasPrice = !isNaN(priceVal) && priceVal > 0;
-          const marketValue = hasPrice ? shares * priceVal : null;
-          const gainLoss = marketValue != null ? marketValue - costBasis : null;
-          const gainLossPct = gainLoss != null && costBasis > 0
-            ? (gainLoss / costBasis) * 100
-            : null;
+          const r = computeRow(h, prices[h.id]);
           const isEdited = prices[h.id] !== initialPrices[h.id];
-
-          const glColor = gainLoss != null
-            ? gainLoss > 0
-              ? "text-primary"
-              : gainLoss < 0
-                ? "text-destructive"
-                : "text-muted-foreground"
-            : "text-muted-foreground";
+          const color = glColor(r.gainLoss);
 
           return (
             <div
               key={h.id}
-              className={`rounded-md px-3 py-2.5 border-b border-border/40 transition-colors ${isEdited ? "bg-accent/40" : ""}`}
+              className={`px-3 py-3 border-b border-border/30 transition-colors ${
+                isEdited ? "bg-accent/30" : ""
+              }`}
             >
+              {/* Top row: ticker + price input */}
               <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold text-sm font-[family-name:var(--font-mono)]">{h.ticker}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[15px] font-bold font-[family-name:var(--font-mono)] tracking-tight">
+                    {h.ticker}
+                  </span>
+                  {isEdited && (
+                    <span className="text-[9px] text-accent-foreground/60 bg-accent rounded px-1 py-px">
+                      edited
+                    </span>
+                  )}
+                </div>
                 <input
                   type="number"
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-28 text-right text-sm font-[family-name:var(--font-mono)] bg-transparent border-b border-input focus:border-ring focus:outline-none py-0.5 px-1 transition-colors placeholder:text-muted-foreground/50"
+                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-muted/40 rounded-md border border-border/60 focus:border-ring focus:ring-1 focus:ring-ring/30 focus:bg-background outline-none py-1 px-2 transition-all placeholder:text-muted-foreground/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
               </div>
-              <div className="flex items-center justify-between mt-1.5 text-[11px] text-muted-foreground font-[family-name:var(--font-mono)]">
-                <span>{shares.toFixed(4)} shares · avg {cp}{fmt(avgCost)}</span>
-                <div className={`flex gap-2 font-medium ${glColor}`}>
-                  {gainLoss != null ? (
+
+              {/* Secondary row */}
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[11px] text-muted-foreground/70 font-[family-name:var(--font-mono)] tabular-nums">
+                  {r.shares.toFixed(4)} shares · avg {cp}{fmt(r.avgCost)}
+                </span>
+                <div className={`flex items-baseline gap-1.5 ${color}`}>
+                  {r.gainLoss != null ? (
                     <>
-                      <span>{gainLoss >= 0 ? "+" : ""}{cp}{fmt(gainLoss)}</span>
-                      <span className="text-[10px]">
-                        {gainLossPct != null ? `${gainLossPct >= 0 ? "+" : ""}${fmtPct(gainLossPct)}%` : ""}
+                      <span className="text-[11px] font-medium font-[family-name:var(--font-mono)] tabular-nums">
+                        {r.gainLoss >= 0 ? "+" : ""}{cp}{fmt(r.gainLoss)}
+                      </span>
+                      <span className="text-[10px] font-[family-name:var(--font-mono)] tabular-nums opacity-70">
+                        {r.gainLossPct != null
+                          ? `${r.gainLossPct >= 0 ? "+" : ""}${fmtPct(r.gainLossPct)}%`
+                          : ""}
                       </span>
                     </>
                   ) : (
-                    <span>—</span>
+                    <span className="text-[11px] text-muted-foreground">—</span>
                   )}
                 </div>
               </div>
-              {marketValue != null && (
-                <div className="text-[10px] text-muted-foreground/70 mt-0.5 font-[family-name:var(--font-mono)]">
-                  MV {cp}{fmt(marketValue)}
+
+              {/* Market value */}
+              {r.marketValue != null && (
+                <div className="text-[10px] text-muted-foreground/50 mt-0.5 font-[family-name:var(--font-mono)] tabular-nums">
+                  MV {cp}{fmt(r.marketValue)}
                 </div>
               )}
             </div>
@@ -280,13 +373,21 @@ export default function UpdatePrices() {
         })}
       </div>
 
-      {/* Sticky bottom bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-30">
-        <div className="mx-auto max-w-2xl px-4">
-          <div className={`flex justify-end gap-2 py-2.5 px-3 rounded-lg transition-all ${hasChanges ? "bg-card/95 backdrop-blur border border-border shadow-lg" : ""}`}>
-            {hasChanges && (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 text-xs">
+      {/* ── Sticky save bar ───────────────────────────────── */}
+      {hasChanges && (
+        <div className="fixed bottom-16 left-0 right-0 z-30 animate-in slide-in-from-bottom-2 duration-200">
+          <div className="mx-auto max-w-[1080px] px-5">
+            <div className="flex items-center justify-between rounded-xl bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2.5">
+              <span className="text-xs text-muted-foreground">
+                {editedCount} price{editedCount !== 1 ? "s" : ""} edited
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                >
                   <RotateCcw className="mr-1 h-3 w-3" />
                   Reset
                 </Button>
@@ -294,11 +395,11 @@ export default function UpdatePrices() {
                   <Save className="mr-1 h-3 w-3" />
                   Save prices
                 </Button>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
