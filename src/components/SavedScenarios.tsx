@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign, GitCompareArrows, X, Check } from "lucide-react";
+import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign, GitCompareArrows, X, Check, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { getScenariosForHolding, removeScenario, type Scenario, type Exchange } from "@/lib/storage";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import { toast } from "sonner";
+import { hasFeature } from "@/lib/feature-access";
+import { PremiumBadge } from "@/components/PremiumGate";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
