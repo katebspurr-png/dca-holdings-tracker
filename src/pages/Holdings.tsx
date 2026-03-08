@@ -281,10 +281,16 @@ export default function Holdings() {
                 Add your first holding to start tracking your average cost and DCA scenarios.
               </p>
             </div>
-            <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Stock
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Stock
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => setCsvOpen(true)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Import CSV
+              </Button>
+            </div>
           </div>
         ) : (
           <>
