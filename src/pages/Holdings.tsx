@@ -650,13 +650,16 @@ function DcaOpportunities({
 
   const hasAnyPrice = scored.length > 0;
 
-  const getBand = (score: number) => {
-    if (score >= 80) return { label: "Strong opportunity", color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" };
-    if (score >= 60) return { label: "Good opportunity", color: "text-primary", bg: "bg-primary/5", border: "border-primary/10" };
-    if (score >= 40) return { label: "Neutral", color: "text-muted-foreground", bg: "bg-muted/30", border: "border-border" };
-    if (score >= 20) return { label: "Weak", color: "text-muted-foreground", bg: "bg-muted/20", border: "border-border" };
-    return { label: "Inefficient", color: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/10" };
+  const getBandLabel = (score: number) => {
+    if (score >= 80) return "Strong opportunity";
+    if (score >= 60) return "Good opportunity";
+    if (score >= 40) return "Neutral";
+    if (score >= 20) return "Weak";
+    return "Inefficient";
   };
+
+  const top = scored[0];
+  const rest = scored.slice(1);
 
   return (
     <div>
@@ -675,42 +678,65 @@ function DcaOpportunities({
           </p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {scored.map(({ holding: h, price, score, improvement }) => {
-            const band = getBand(score);
+        <div className="space-y-2">
+          {/* ── Best Opportunity — featured card ── */}
+          {top && top.score > 0 && (() => {
+            const h = top.holding;
             const cp = currencyPrefix((h.exchange ?? "US") as any);
             return (
               <button
                 key={h.id}
                 onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className={`w-full flex items-center gap-3 rounded-lg border ${band.border} ${band.bg} p-3 text-left hover:opacity-80 transition-opacity`}
+                className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left hover:bg-primary/10 transition-colors"
               >
-                {/* Score */}
-                <div className="flex flex-col items-center justify-center w-11 shrink-0">
-                  <span className={`text-lg font-mono font-bold leading-none ${band.color}`}>{score}</span>
-                  <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Gauge className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Best Opportunity</span>
                 </div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-sm">{h.ticker}</span>
-                    <span className={`text-[10px] font-medium ${band.color}`}>{band.label}</span>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-lg font-mono font-bold">{h.ticker}</span>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      ${TEST_INVESTMENT} → Avg drops {cp}{fmt(top.improvement)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
+                      Avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(top.price)}
+                    </p>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-mono">
-                    {improvement > 0
-                      ? `$${TEST_INVESTMENT} → Avg drops ${cp}${fmt(improvement)}`
-                      : `Price at or above avg — no benefit`}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
-                    Avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(price)}
-                  </p>
+                  <div className="flex flex-col items-center">
+                    <span className="text-2xl font-mono font-bold text-primary leading-none">{top.score}</span>
+                    <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
+                  </div>
                 </div>
-
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
               </button>
             );
-          })}
+          })()}
+
+          {/* ── Remaining opportunities — compact rows ── */}
+          {rest.length > 0 && (
+            <div className="space-y-0.5">
+              {rest.map(({ holding: h, price, score, improvement }) => {
+                const cp = currencyPrefix((h.exchange ?? "US") as any);
+                return (
+                  <button
+                    key={h.id}
+                    onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                    className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
+                  >
+                    <span className="text-sm font-mono font-bold text-muted-foreground w-8 text-right shrink-0">{score}</span>
+                    <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
+                    <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
+                      {improvement > 0
+                        ? `$${TEST_INVESTMENT} → avg drops ${cp}${fmt(improvement)}`
+                        : "No benefit at current price"}
+                    </span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground/30 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <p className="text-[9px] text-muted-foreground/40 text-center pt-1">
             Analytical indicator only — not financial advice
           </p>
