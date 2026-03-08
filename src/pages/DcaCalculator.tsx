@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle, Info, Save, Target, Zap } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,11 @@ import { Slider } from "@/components/ui/slider";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { getHolding, addScenario, currencyPrefix, apiTicker } from "@/lib/storage";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding } from "@/lib/storage";
 import { fetchStockPrice, getCachedQuote } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
@@ -144,11 +148,15 @@ export default function DcaCalculator() {
   const [budgetPercent, setBudgetPercent] = useState(100);
   const [tick, setTick] = useState(0);
   const [fetchingPrice, setFetchingPrice] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [holdingVersion, setHoldingVersion] = useState(0);
   const { toast } = useToast();
 
   const input1IsPrice = method !== "budget_target";
 
-  const holding = id ? getHolding(id) : undefined;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, holdingVersion]);
   const exchange = holding?.exchange ?? "US";
   const cp = currencyPrefix(exchange);
 
@@ -241,6 +249,50 @@ export default function DcaCalculator() {
     setVal2("");
     setBudgetPercent(100);
     setTick((t) => t + 1);
+  };
+
+  const getBuyPrice = (): number => {
+    if (!result || !result.ok) return 0;
+    const r = result as ResultOk;
+    const n1 = parseFloat(val1);
+    if (method === "budget_target" && r.effectivePrice !== null) return r.effectivePrice;
+    return n1;
+  };
+
+  const handleApplyBuy = () => {
+    if (!holding || !result || !result.ok || applying) return;
+    setShowApplyConfirm(true);
+  };
+
+  const confirmApplyBuy = () => {
+    if (!holding || !result || !result.ok || applying) return;
+    const r = result as ResultOk;
+    setApplying(true);
+    setShowApplyConfirm(false);
+    try {
+      applyBuyToHolding({
+        holdingId: holding.id,
+        buyPrice: getBuyPrice(),
+        sharesBought: r.x,
+        budgetInvested: r.budget,
+        feeApplied: r.feeApplied,
+        totalSpend: r.totalSpend,
+        includeFees: includeFees,
+        newTotalShares: r.totalShares,
+        newAvgCost: r.newAvg,
+        method,
+      });
+      toast({ title: "Buy applied successfully" });
+      setVal1("");
+      setVal2("");
+      setBudgetPercent(100);
+      setHoldingVersion((v) => v + 1);
+      setTick((t) => t + 1);
+    } catch (e: any) {
+      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (!holding) {
@@ -400,20 +452,40 @@ export default function DcaCalculator() {
             </p>
           )}
           {isValid && (
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex flex-wrap justify-end gap-2">
               {isPriceBudget && (
                 <Button variant="outline" size="sm" onClick={handleUseAsTarget}>
                   <Target className="mr-1.5 h-4 w-4" />
                   Use as target
                 </Button>
               )}
-              <Button onClick={handleSave} size="sm">
+              <Button onClick={handleSave} size="sm" variant="outline">
                 <Save className="mr-1.5 h-4 w-4" />
                 Save scenario
+              </Button>
+              <Button onClick={handleApplyBuy} size="sm" disabled={applying}>
+                <CheckCircle className="mr-1.5 h-4 w-4" />
+                {applying ? "Applying…" : "Apply this buy"}
               </Button>
             </div>
           )}
         </div>
+
+        {/* Apply confirmation dialog */}
+        <AlertDialog open={showApplyConfirm} onOpenChange={setShowApplyConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply this buy to {holding.ticker}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will update the holding's shares and average cost. A transaction record will be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmApplyBuy}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

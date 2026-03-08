@@ -42,6 +42,28 @@ export type Scenario = {
   created_at: string;
 };
 
+export type Transaction = {
+  id: string;
+  holding_id: string;
+  ticker: string;
+  transaction_type: string;
+  buy_price: number;
+  shares_bought: number;
+  budget_invested: number;
+  fee_applied: number;
+  total_spend: number;
+  include_fees: boolean;
+  fee_type_snapshot: string;
+  fee_value_snapshot: number;
+  previous_shares: number;
+  previous_avg_cost: number;
+  new_total_shares: number;
+  new_avg_cost: number;
+  method: string;
+  notes: string | null;
+  created_at: string;
+};
+
 export type WhatIfAllocation = {
   holdingId: string;
   ticker: string;
@@ -68,6 +90,7 @@ export interface AppData {
   version: 1;
   holdings: Holding[];
   scenarios: Scenario[];
+  transactions?: Transaction[];
   whatIfComparisons?: WhatIfComparison[];
 }
 
@@ -255,6 +278,83 @@ export function removeWhatIfComparison(id: string) {
   const data = read();
   data.whatIfComparisons = (data.whatIfComparisons ?? []).filter((c) => c.id !== id);
   write(data);
+}
+
+// ── Transactions ─────────────────────────────────────────────
+
+export function getTransactionsForHolding(holdingId: string): Transaction[] {
+  return (read().transactions ?? [])
+    .filter((t) => t.holding_id === holdingId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function addTransaction(t: Omit<Transaction, "id" | "created_at">): Transaction {
+  const data = read();
+  const tx: Transaction = { ...t, id: uid(), created_at: new Date().toISOString() };
+  if (!data.transactions) data.transactions = [];
+  data.transactions.push(tx);
+  write(data);
+  return tx;
+}
+
+/**
+ * Apply a DCA buy: create transaction record + update holding in one atomic write.
+ * Throws if holding not found or values invalid.
+ */
+export function applyBuyToHolding(params: {
+  holdingId: string;
+  buyPrice: number;
+  sharesBought: number;
+  budgetInvested: number;
+  feeApplied: number;
+  totalSpend: number;
+  includeFees: boolean;
+  newTotalShares: number;
+  newAvgCost: number;
+  method: string;
+  notes?: string | null;
+}): Transaction {
+  const data = read();
+  const idx = data.holdings.findIndex((h) => h.id === params.holdingId);
+  if (idx === -1) throw new Error("Holding not found");
+
+  const h = data.holdings[idx];
+
+  if (params.sharesBought <= 0 || params.budgetInvested <= 0) {
+    throw new Error("Shares and budget must be positive");
+  }
+
+  const tx: Transaction = {
+    id: uid(),
+    holding_id: h.id,
+    ticker: h.ticker,
+    transaction_type: "buy",
+    buy_price: params.buyPrice,
+    shares_bought: params.sharesBought,
+    budget_invested: params.budgetInvested,
+    fee_applied: params.feeApplied,
+    total_spend: params.totalSpend,
+    include_fees: params.includeFees,
+    fee_type_snapshot: h.fee_type,
+    fee_value_snapshot: h.fee_value,
+    previous_shares: h.shares,
+    previous_avg_cost: h.avg_cost,
+    new_total_shares: params.newTotalShares,
+    new_avg_cost: params.newAvgCost,
+    method: params.method,
+    notes: params.notes ?? null,
+    created_at: new Date().toISOString(),
+  };
+
+  // Update holding
+  data.holdings[idx] = { ...h, shares: params.newTotalShares, avg_cost: params.newAvgCost };
+
+  // Save transaction
+  if (!data.transactions) data.transactions = [];
+  data.transactions.push(tx);
+
+  write(data);
+  return tx;
 }
 
 /** Apply scenario trades to holdings: add shares and recalculate avg cost */
