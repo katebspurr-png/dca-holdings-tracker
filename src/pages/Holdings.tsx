@@ -525,9 +525,9 @@ export default function Holdings() {
               <TrendingDown className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Add your first stock to get started</h3>
+              <h3 className="text-lg font-semibold">No holdings yet</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Track your positions, calculate DCA targets, and run What-If scenarios to optimize your portfolio.
+                Add your first holding to start tracking your average cost and DCA scenarios.
               </p>
             </div>
             <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
