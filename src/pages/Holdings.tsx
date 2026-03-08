@@ -356,7 +356,10 @@ export default function Holdings() {
           </div>
         )}
 
-        {/* ── Sort + Add Stock row ── */}
+        {/* ── DCA Opportunities ── */}
+        <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
+
+
         {holdings.length > 0 && (
           <div className="flex items-center justify-between">
             <DropdownMenu>
