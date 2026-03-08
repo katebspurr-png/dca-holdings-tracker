@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight,
   Trash2, Eye, Target as TargetIcon, Calculator, History, AlertCircle, Info,
-  Save, Zap, CheckCircle, Minus,
+  Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users,
 } from "lucide-react";
 import GoalLadder from "@/components/GoalLadder";
 import SavedScenarios from "@/components/SavedScenarios";
