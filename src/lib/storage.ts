@@ -151,6 +151,14 @@ function read(): AppData {
         exchange: h.exchange ?? "US",
       }));
     }
+    // Migrate: add is_undone/undone_at to transactions if missing
+    if (Array.isArray(parsed.transactions)) {
+      parsed.transactions = parsed.transactions.map((t: any) => ({
+        ...t,
+        is_undone: t.is_undone ?? false,
+        undone_at: t.undone_at ?? null,
+      }));
+    }
     return parsed as AppData;
   } catch {
     return demoData();
