@@ -61,6 +61,8 @@ export type Transaction = {
   new_avg_cost: number;
   method: string;
   notes: string | null;
+  is_undone: boolean;
+  undone_at: string | null;
   created_at: string;
 };
 
