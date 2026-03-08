@@ -715,7 +715,7 @@ function DcaOpportunities({
         </p>
       ) : (
         <div className="space-y-1.5">
-          {scored.map(({ holding: h, price, score }) => {
+          {scored.map(({ holding: h, price, score, improvement }) => {
             const band = getBand(score);
             const cp = currencyPrefix((h.exchange ?? "US") as any);
             return (
@@ -737,7 +737,9 @@ function DcaOpportunities({
                     <span className={`text-[10px] font-medium ${band.color}`}>{band.label}</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground font-mono">
-                    Avg {cp}{fmt(h.avg_cost)} → Price {cp}{fmt(price)}
+                    {improvement > 0
+                      ? `$${TEST_INVESTMENT} → Avg drops ${cp}${fmt(improvement)}`
+                      : `Price at or above avg — no benefit`}
                   </p>
                 </div>
 
