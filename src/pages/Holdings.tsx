@@ -199,14 +199,14 @@ export default function Holdings() {
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────
-  const handleCreate = (data: Omit<Holding, "id" | "created_at">) => {
+  const handleCreate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     addHolding(data);
     setFormOpen(false);
     toast.success("Stock added");
     refresh();
   };
 
-  const handleUpdate = (data: Omit<Holding, "id" | "created_at">) => {
+  const handleUpdate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     if (!editing) return;
     editHolding(editing.id, data);
     setEditing(null);
@@ -347,6 +347,11 @@ export default function Holdings() {
             <section>
               <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
             </section>
+
+            {/* ════════════════════════════════════════════════
+                SECTION 2.5 — Strategy Impact
+               ════════════════════════════════════════════════ */}
+            <StrategyImpact holdings={holdings} />
 
             {/* Divider */}
             <div className="border-t border-border" />
@@ -815,6 +820,40 @@ function NextBestMove({
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
         </div>
       </button>
+    </section>
+  );
+}
+
+/* ── Strategy Impact ────────────────────────────────────── */
+function StrategyImpact({ holdings }: { holdings: Holding[] }) {
+  const improved = holdings.filter((h) => h.initial_avg_cost > h.avg_cost);
+  if (improved.length === 0) return null;
+
+  const totalReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
+  const avgReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost), 0) / improved.length;
+
+  return (
+    <section>
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingDown className="h-4 w-4 text-primary" />
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Strategy Impact
+        </h2>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Positions Improved</p>
+          <p className="text-lg font-mono font-bold mt-1">{improved.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Reduction</p>
+          <p className="text-lg font-mono font-bold text-primary mt-1">${fmt(avgReduction)}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Cost Reduction</p>
+          <p className="text-lg font-mono font-bold text-primary mt-1">${fmt(totalReduction)}</p>
+        </div>
+      </div>
     </section>
   );
 }

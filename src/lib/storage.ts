@@ -12,6 +12,7 @@ export type Holding = {
   exchange: Exchange;
   shares: number;
   avg_cost: number;
+  initial_avg_cost: number;
   fee: number;
   fee_type: FeeType;
   fee_value: number;
@@ -115,9 +116,9 @@ const STORAGE_KEY = "dca-down-data";
 
 // ── Demo data ────────────────────────────────────────────────
 const DEMO_HOLDINGS: Holding[] = [
-  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, initial_avg_cost: 210, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, initial_avg_cost: 155, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
+  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, initial_avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
 ];
 
 const DEMO_SCENARIOS: Scenario[] = [
@@ -164,6 +165,7 @@ function read(): AppData {
       parsed.holdings = parsed.holdings.map((h: any) => ({
         ...h,
         exchange: h.exchange ?? "US",
+        initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
       }));
     }
     // Migrate: add is_undone/undone_at to transactions if missing
@@ -213,9 +215,14 @@ export function getHolding(id: string): Holding | undefined {
   return read().holdings.find((h) => h.id === id);
 }
 
-export function addHolding(h: Omit<Holding, "id" | "created_at">): Holding {
+export function addHolding(h: Omit<Holding, "id" | "created_at" | "initial_avg_cost"> & { initial_avg_cost?: number }): Holding {
   const data = read();
-  const holding: Holding = { ...h, id: uid(), created_at: new Date().toISOString() };
+  const holding: Holding = {
+    ...h,
+    initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
+    id: uid(),
+    created_at: new Date().toISOString(),
+  };
   data.holdings.push(holding);
   write(data);
   return holding;
