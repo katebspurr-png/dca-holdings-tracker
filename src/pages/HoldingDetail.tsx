@@ -141,6 +141,49 @@ export default function HoldingDetail() {
             </div>
           )}
         </div>
+
+        {/* Transaction history */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Transaction History
+          </h2>
+          {transactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No transactions yet. Use "Apply this buy" in the DCA Calculator to record trades.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Buy Price</TableHead>
+                    <TableHead className="text-right">Shares</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                    <TableHead className="text-right">Fee</TableHead>
+                    <TableHead className="text-right">Total Spend</TableHead>
+                    <TableHead className="text-right">New Shares</TableHead>
+                    <TableHead className="text-right">New Avg</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(t.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-sm capitalize">{t.transaction_type}</TableCell>
+                      <TableCell className="text-right font-mono">{cp}{Number(t.buy_price).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{Number(t.shares_bought).toFixed(4)}</TableCell>
+                      <TableCell className="text-right font-mono">{cp}{Number(t.budget_invested).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{cp}{Number(t.fee_applied).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{cp}{Number(t.total_spend).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{Number(t.new_total_shares).toFixed(4)}</TableCell>
+                      <TableCell className="text-right font-mono text-primary font-semibold">{cp}{Number(t.new_avg_cost).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
