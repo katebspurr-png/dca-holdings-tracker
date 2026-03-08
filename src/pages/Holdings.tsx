@@ -270,46 +270,46 @@ export default function Holdings() {
               </div>
             </button>
 
+            {hasMixed ? (
+              <div className="space-y-2">
+                <SummaryRow
+                  label="USD"
+                  prefix="$"
+                  invested={totalUsdInvested}
+                  value={hasAnyPrice ? usdValue : null}
+                  pnl={hasAnyPrice ? usdPnl : null}
+                  pnlPct={hasAnyPrice ? usdPnlPct : null}
+                />
+                <SummaryRow
+                  label="CAD"
+                  prefix="C$"
+                  invested={totalCadInvested}
+                  value={hasAnyPrice ? cadValue : null}
+                  pnl={hasAnyPrice ? cadPnl : null}
+                  pnlPct={hasAnyPrice ? cadPnlPct : null}
+                />
+              </div>
+            ) : (
+              <SummaryRow
+                label=""
+                prefix={totalCadInvested > 0 ? "C$" : "$"}
+                invested={totalUsdInvested + totalCadInvested}
+                value={hasAnyPrice ? usdValue + cadValue : null}
+                pnl={hasAnyPrice ? usdPnl + cadPnl : null}
+                pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
+              />
+            )}
+
+            {/* Dashboard Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
+              <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
+              <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
+              <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
+            </div>
+
             {summaryExpanded && (
               <>
-                {hasMixed ? (
-                  <div className="space-y-2">
-                    <SummaryRow
-                      label="USD"
-                      prefix="$"
-                      invested={totalUsdInvested}
-                      value={hasAnyPrice ? usdValue : null}
-                      pnl={hasAnyPrice ? usdPnl : null}
-                      pnlPct={hasAnyPrice ? usdPnlPct : null}
-                    />
-                    <SummaryRow
-                      label="CAD"
-                      prefix="C$"
-                      invested={totalCadInvested}
-                      value={hasAnyPrice ? cadValue : null}
-                      pnl={hasAnyPrice ? cadPnl : null}
-                      pnlPct={hasAnyPrice ? cadPnlPct : null}
-                    />
-                  </div>
-                ) : (
-                  <SummaryRow
-                    label=""
-                    prefix={totalCadInvested > 0 ? "C$" : "$"}
-                    invested={totalUsdInvested + totalCadInvested}
-                    value={hasAnyPrice ? usdValue + cadValue : null}
-                    pnl={hasAnyPrice ? usdPnl + cadPnl : null}
-                    pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
-                  />
-                )}
-
-                {/* Dashboard Metrics */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
-                  <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
-                  <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
-                  <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
-                </div>
-
                 {/* Summary by Holding */}
                 <div className="overflow-x-auto">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
