@@ -803,6 +803,19 @@ export default function HoldingDetail() {
         )}
       </main>
 
+      {/* Edit holding dialog */}
+      <HoldingFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        initial={holding}
+        onSubmit={(data) => {
+          editHolding(holding.id, data);
+          setEditOpen(false);
+          setVersion((v) => v + 1);
+          sonnerToast.success("Holding updated");
+        }}
+      />
+
       {/* Undo confirmation */}
       <AlertDialog open={showUndoConfirm} onOpenChange={setShowUndoConfirm}>
         <AlertDialogContent>
