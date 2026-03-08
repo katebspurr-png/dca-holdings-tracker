@@ -1,9 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, TrendingDown, Layers, Sparkles, Settings } from "lucide-react";
+import { Briefcase, Layers, Sparkles, Settings, TrendingDown } from "lucide-react";
 
 const TABS = [
   { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/" },
-  { path: "#goal", label: "Goal Ladder", icon: TrendingDown, match: (p: string) => /^\/holdings\/[^/]+$/.test(p) },
   { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/") },
   { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p: string) => p === "/optimizer" },
   { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings" },
@@ -22,19 +21,10 @@ export default function BottomTabBar() {
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
-          // Goal Ladder tab is contextual — only navigable from holdings
-          const isGoalTab = tab.path === "#goal";
           return (
             <button
               key={tab.path}
-              onClick={() => {
-                if (isGoalTab) {
-                  // If already on a holding page, stay; otherwise go to holdings
-                  if (!active) navigate("/");
-                } else {
-                  navigate(tab.path);
-                }
-              }}
+              onClick={() => navigate(tab.path)}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
                 active
                   ? "text-primary"
