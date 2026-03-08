@@ -4,13 +4,10 @@ import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
-  Gauge,
+  Gauge, Activity, BarChart3, Wallet,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -83,7 +80,6 @@ export default function Holdings() {
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const refresh = () => setTick((t) => t + 1);
 
@@ -153,25 +149,13 @@ export default function Holdings() {
     localStorage.setItem(SORT_KEY, mode);
   };
 
-  // ── Portfolio dashboard metrics ──────────────────────────────
-  const totalHoldingsCount = holdings.length;
-  const totalShares = holdings.reduce((sum, h) => sum + Number(h.shares), 0);
-  const totalCostBasis = holdings.reduce((sum, h) => sum + Number(h.shares) * Number(h.avg_cost), 0);
-  const weightedAvgCost = totalShares > 0 ? totalCostBasis / totalShares : 0;
-
-  // Holdings sorted by cost basis for summary table
-  const holdingsByCostBasis = useMemo(() => {
-    return [...holdings]
-      .map((h) => ({ ...h, costBasis: Number(h.shares) * Number(h.avg_cost) }))
-      .sort((a, b) => b.costBasis - a.costBasis);
-  }, [holdings]);
-
-  // ── Portfolio summary ──────────────────────────────────────
+  // ── Portfolio metrics ──────────────────────────────────
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
   const totalUsdInvested = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
   const totalCadInvested = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
-  const hasMixed = totalUsdInvested > 0 && totalCadInvested > 0;
+  const totalCostBasis = totalUsdInvested + totalCadInvested;
+  const hasAnyPrice = holdings.some((h) => livePrices[h.id] != null);
 
   const usdValue = usdHoldings.reduce((sum, h) => {
     const p = livePrices[h.id];
@@ -181,11 +165,9 @@ export default function Holdings() {
     const p = livePrices[h.id];
     return sum + (p != null ? h.shares * p : h.shares * h.avg_cost);
   }, 0);
-  const usdPnl = usdValue - totalUsdInvested;
-  const cadPnl = cadValue - totalCadInvested;
-  const usdPnlPct = totalUsdInvested > 0 ? (usdPnl / totalUsdInvested) * 100 : 0;
-  const cadPnlPct = totalCadInvested > 0 ? (cadPnl / totalCadInvested) * 100 : 0;
-  const hasAnyPrice = holdings.some((h) => livePrices[h.id] != null);
+  const totalMarketValue = usdValue + cadValue;
+  const totalPnl = totalMarketValue - totalCostBasis;
+  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
 
   // ── Refresh all prices ─────────────────────────────────────
   const refreshAllPrices = useCallback(async () => {
@@ -237,309 +219,24 @@ export default function Holdings() {
     refresh();
   };
 
-
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
+          {holdings.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
+                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
+                {refreshingAll ? "…" : "Refresh"}
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8 space-y-5">
-        {/* ── Portfolio Summary (collapsible) ── */}
-        {holdings.length > 0 && (
-          <div className="rounded-xl border border-border bg-gradient-to-br from-card to-muted/30 p-5 space-y-4">
-            <button
-              className="flex items-center justify-between w-full"
-              onClick={() => setSummaryExpanded((v) => !v)}
-            >
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Portfolio Summary
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{holdings.length} stock{holdings.length !== 1 ? "s" : ""}</span>
-                {summaryExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-
-            {hasMixed ? (
-              <div className="space-y-2">
-                <SummaryRow
-                  label="USD"
-                  prefix="$"
-                  invested={totalUsdInvested}
-                  value={hasAnyPrice ? usdValue : null}
-                  pnl={hasAnyPrice ? usdPnl : null}
-                  pnlPct={hasAnyPrice ? usdPnlPct : null}
-                />
-                <SummaryRow
-                  label="CAD"
-                  prefix="C$"
-                  invested={totalCadInvested}
-                  value={hasAnyPrice ? cadValue : null}
-                  pnl={hasAnyPrice ? cadPnl : null}
-                  pnlPct={hasAnyPrice ? cadPnlPct : null}
-                />
-              </div>
-            ) : (
-              <SummaryRow
-                label=""
-                prefix={totalCadInvested > 0 ? "C$" : "$"}
-                invested={totalUsdInvested + totalCadInvested}
-                value={hasAnyPrice ? usdValue + cadValue : null}
-                pnl={hasAnyPrice ? usdPnl + cadPnl : null}
-                pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
-              />
-            )}
-
-            {/* Dashboard Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
-              <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
-              <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
-              <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
-            </div>
-
-            {summaryExpanded && (
-              <>
-                {/* Summary by Holding */}
-                <div className="overflow-x-auto">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                    By Holding
-                  </h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ticker</TableHead>
-                        <TableHead className="text-right">Shares</TableHead>
-                        <TableHead className="text-right">Avg Cost</TableHead>
-                        <TableHead className="text-right">Cost Basis</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {holdingsByCostBasis.map((h) => {
-                        const cp = currencyPrefix((h.exchange ?? "US") as any);
-                        return (
-                          <TableRow key={h.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/holdings/${h.id}`)}>
-                            <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
-                            <TableCell className="text-right font-mono">{Number(h.shares).toFixed(4)}</TableCell>
-                            <TableCell className="text-right font-mono">{cp}{fmt(Number(h.avg_cost))}</TableCell>
-                            <TableCell className="text-right font-mono font-semibold">{cp}{fmt(h.costBasis)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  {lastRefreshed && (
-                    <span className="text-[11px] text-muted-foreground opacity-70">
-                      Last refreshed {formatLastRefreshed(lastRefreshed)}
-                    </span>
-                  )}
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll} className="ml-auto">
-                    <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                    {refreshingAll ? "Refreshing…" : "Refresh Prices"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── DCA Opportunities ── */}
-        <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
-
-
-        {holdings.length > 0 && (
-          <div className="flex items-center justify-between">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" className="text-muted-foreground">
-                  <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
-                  Sort: {SORT_LABELS[sortMode]}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-popover border border-border shadow-lg z-50">
-                {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-                  <DropdownMenuItem
-                    key={mode}
-                    onClick={() => handleSortChange(mode)}
-                    className={sortMode === mode ? "font-semibold text-primary" : ""}
-                  >
-                    {SORT_LABELS[mode]}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll}>
-                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                {refreshingAll ? "Refreshing…" : "Refresh Prices"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)}>
-                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-                CSV
-              </Button>
-              <Button size="sm" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add Stock
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* ── Stock Cards ── */}
-        {sortedHoldings.length > 0 ? (
-          <div className="space-y-3">
-            {sortedHoldings.map((h) => {
-              const ex = (h.exchange ?? "US") as any;
-              const cp = currencyPrefix(ex);
-              const price = livePrices[h.id];
-              const pnlData = getPnl(h);
-              const dca = latestDca[h.id];
-              const invested = h.shares * h.avg_cost;
-              const isFetching = fetchingTickers.has(h.ticker);
-
-              // Border accent color
-              const borderColor = pnlData
-                ? pnlData.pnl >= 0
-                  ? "border-l-primary"
-                  : "border-l-destructive"
-                : "border-l-border";
-
-              return (
-                <div
-                  key={h.id}
-                  className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative overflow-visible`}
-                  onClick={() => navigate(`/holdings/${h.id}`)}
-                >
-                  <div className="p-4 pr-10 space-y-2">
-                    {/* Header row: ticker + price */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg font-bold font-mono tracking-tight">{h.ticker}</span>
-                        <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
-                          {exchangeLabel(ex)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {price != null ? (
-                          <span className="text-base font-bold font-mono">{cp}{fmt(price)}</span>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
-                            disabled={isFetching}
-                            className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium whitespace-nowrap flex-shrink-0"
-                          >
-                            {isFetching ? "…" : "Get Price"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Holdings row */}
-                    <p className="text-xs text-muted-foreground">
-                      {fmt(h.shares)} shares · Avg {cp}{fmt(h.avg_cost)} · Invested {cp}{fmt(invested)}
-                    </p>
-
-                    {/* P&L row */}
-                    {pnlData ? (
-                      <p className={`text-sm font-mono font-semibold ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-                        {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)} ({pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%)
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground/60 italic">Fetch price to see P&L</p>
-                    )}
-
-                    {/* 52-Week Range Bar */}
-                    {(() => {
-                      const q = getCachedQuoteForHolding(h.ticker, ex);
-                      if (!q || q.week52High == null || q.week52Low == null) return null;
-                      const range = q.week52High - q.week52Low;
-                      if (range <= 0) return null;
-                      const pct = ((q.price - q.week52Low) / range) * 100;
-                      const clampedPct = Math.max(0, Math.min(100, pct));
-                      const nearLow = pct < 25;
-                      const nearHigh = pct > 75;
-                      const barColor = nearLow ? "bg-primary" : nearHigh ? "bg-orange-500" : "bg-muted-foreground/40";
-                      const dotColor = nearLow ? "bg-primary" : nearHigh ? "bg-orange-500" : "bg-foreground";
-                      return (
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
-                            <span>{cp}{fmt(q.week52Low)}</span>
-                            <div className="flex-1 relative h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div className={`absolute inset-y-0 left-0 rounded-full ${barColor} opacity-40`} style={{ width: `${clampedPct}%` }} />
-                              <div className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${dotColor} border-2 border-card shadow-sm`} style={{ left: `calc(${clampedPct}% - 5px)` }} />
-                            </div>
-                            <span>{cp}{fmt(q.week52High)}</span>
-                          </div>
-                          {nearLow && <span className="text-[10px] font-medium text-primary">Near 52w low</span>}
-                          {nearHigh && <span className="text-[10px] font-medium text-orange-500">Near 52w high</span>}
-                        </div>
-                      );
-                    })()}
-
-                    {/* High Volume badge */}
-                    {(() => {
-                      const q = getCachedQuoteForHolding(h.ticker, ex);
-                      if (!q || q.todayVolume == null || q.avgVolume == null || q.avgVolume <= 0) return null;
-                      if (q.todayVolume > q.avgVolume * 2) {
-                        return <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/40 w-fit">High Volume</Badge>;
-                      }
-                      return null;
-                    })()}
-
-                    {/* DCA summary row */}
-                    <div className="rounded-md bg-muted/50 px-3 py-1.5 -mx-1">
-                      {dca ? (
-                        <p className="text-xs font-mono text-muted-foreground">
-                          <span className="font-semibold text-foreground/80">DCA:</span>{" "}
-                          Buy {Number(dca.shares_to_buy).toFixed(1)} shares at {cp}{Number(dca.buy_price ?? dca.input1_value).toFixed(2)} →{" "}
-                          avg {cp}{Number(dca.new_avg_cost).toFixed(2)}{" "}
-                          <span className="text-primary">(↓{cp}{fmt(h.avg_cost - dca.new_avg_cost)} / {((h.avg_cost - dca.new_avg_cost) / h.avg_cost * 100).toFixed(1)}%)</span>
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground/60 italic">No DCA plan — tap to calculate</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Chevron */}
-                  <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
-
-                  {/* Action buttons — always visible on mobile, hover on desktop */}
-                  <div className="absolute right-8 top-3 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
-                      aria-label="Edit"
-                    >
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
+      <main className="mx-auto max-w-4xl px-6 py-8 space-y-8">
+        {holdings.length === 0 ? (
           /* ── Empty state ── */
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
             <div className="rounded-full bg-muted p-4">
@@ -556,9 +253,181 @@ export default function Holdings() {
               Add Stock
             </Button>
           </div>
-        )}
+        ) : (
+          <>
+            {/* ════════════════════════════════════════════════
+                SECTION 1 — Portfolio Health
+               ════════════════════════════════════════════════ */}
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="h-4.5 w-4.5 text-primary" />
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Portfolio Health
+                </h2>
+                {lastRefreshed && (
+                  <span className="ml-auto text-[10px] text-muted-foreground/50">
+                    Updated {formatLastRefreshed(lastRefreshed)}
+                  </span>
+                )}
+              </div>
 
-        {/* Data management moved to Settings tab */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <HealthCard
+                  icon={<Wallet className="h-4 w-4" />}
+                  label="Market Value"
+                  value={hasAnyPrice ? `$${fmt(totalMarketValue)}` : "—"}
+                />
+                <HealthCard
+                  icon={<DollarSign className="h-4 w-4" />}
+                  label="Cost Basis"
+                  value={`$${fmt(totalCostBasis)}`}
+                />
+                <HealthCard
+                  icon={hasAnyPrice && totalPnl >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                  label="Unrealized P/L"
+                  value={hasAnyPrice ? `${totalPnl >= 0 ? "+" : ""}$${fmt(totalPnl)}` : "—"}
+                  sub={hasAnyPrice ? `${totalPnlPct >= 0 ? "+" : ""}${totalPnlPct.toFixed(1)}%` : undefined}
+                  accent={hasAnyPrice ? (totalPnl >= 0 ? "positive" : "negative") : undefined}
+                />
+                <HealthCard
+                  icon={<BarChart3 className="h-4 w-4" />}
+                  label="Holdings"
+                  value={String(holdings.length)}
+                />
+              </div>
+            </section>
+
+            {/* ════════════════════════════════════════════════
+                SECTION 2 — DCA Opportunities
+               ════════════════════════════════════════════════ */}
+            <section>
+              <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
+            </section>
+
+            {/* ════════════════════════════════════════════════
+                SECTION 3 — Your Holdings
+               ════════════════════════════════════════════════ */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
+                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Your Holdings
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2">
+                        <ArrowUpDown className="mr-1 h-3 w-3" />
+                        <span className="text-xs">{SORT_LABELS[sortMode]}</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
+                      {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                        <DropdownMenuItem
+                          key={mode}
+                          onClick={() => handleSortChange(mode)}
+                          className={sortMode === mode ? "font-semibold text-primary" : ""}
+                        >
+                          {SORT_LABELS[mode]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button size="sm" variant="outline" className="h-8" onClick={() => setCsvOpen(true)}>
+                    <FileSpreadsheet className="mr-1 h-3 w-3" />
+                    <span className="text-xs">CSV</span>
+                  </Button>
+                  <Button size="sm" className="h-8" onClick={() => { setEditing(null); setFormOpen(true); }}>
+                    <Plus className="mr-1 h-3 w-3" />
+                    <span className="text-xs">Add</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {sortedHoldings.map((h) => {
+                  const ex = (h.exchange ?? "US") as any;
+                  const cp = currencyPrefix(ex);
+                  const price = livePrices[h.id];
+                  const pnlData = getPnl(h);
+                  const isFetching = fetchingTickers.has(h.ticker);
+
+                  const borderColor = pnlData
+                    ? pnlData.pnl >= 0 ? "border-l-primary" : "border-l-destructive"
+                    : "border-l-border";
+
+                  return (
+                    <div
+                      key={h.id}
+                      className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative`}
+                      onClick={() => navigate(`/holdings/${h.id}`)}
+                    >
+                      <div className="p-4 pr-10">
+                        {/* Top row: ticker + price */}
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-bold font-mono tracking-tight">{h.ticker}</span>
+                            <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
+                              {exchangeLabel(ex)}
+                            </span>
+                          </div>
+                          {price != null ? (
+                            <span className="text-sm font-bold font-mono">{cp}{fmt(price)}</span>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
+                              disabled={isFetching}
+                              className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+                            >
+                              {isFetching ? "…" : "Get Price"}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Stats row */}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                          <span>{fmt(h.shares)} shares</span>
+                          <span className="text-muted-foreground/30">·</span>
+                          <span>Avg {cp}{fmt(h.avg_cost)}</span>
+                          {pnlData && (
+                            <>
+                              <span className="text-muted-foreground/30">·</span>
+                              <span className={`font-semibold ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
+                                {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)} ({pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%)
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+
+                      {/* Action buttons */}
+                      <div className="absolute right-8 top-2.5 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </>
+        )}
       </main>
 
       <HoldingFormDialog
@@ -598,57 +467,41 @@ export default function Holdings() {
   );
 }
 
-function SummaryRow({
+/* ── Health Card ─────────────────────────────────────────── */
+function HealthCard({
+  icon,
   label,
-  prefix,
-  invested,
   value,
-  pnl,
-  pnlPct,
+  sub,
+  accent,
 }: {
+  icon: React.ReactNode;
   label: string;
-  prefix: string;
-  invested: number;
-  value: number | null;
-  pnl: number | null;
-  pnlPct: number | null;
+  value: string;
+  sub?: string;
+  accent?: "positive" | "negative";
 }) {
-  const fmt = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const accentColor = accent === "positive"
+    ? "text-primary"
+    : accent === "negative"
+    ? "text-destructive"
+    : "text-foreground";
 
   return (
-    <div className="flex items-center gap-4 flex-wrap text-sm">
-      {label && (
-        <span className="text-xs font-semibold uppercase text-muted-foreground w-8">{label}</span>
-      )}
-      <div className="flex items-center gap-1">
-        <span className="text-muted-foreground">Invested:</span>
-        <span className="font-mono font-semibold">{prefix}{fmt(invested)}</span>
+    <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        {icon}
+        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      {value != null && (
-        <div className="flex items-center gap-1">
-          <span className="text-muted-foreground">Value:</span>
-          <span className="font-mono font-semibold">{prefix}{fmt(value)}</span>
-        </div>
-      )}
-      {pnl != null && pnlPct != null && (
-        <span className={`font-mono font-semibold ${pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-          {pnl >= 0 ? "+" : ""}{prefix}{fmt(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
-        </span>
+      <p className={`text-lg font-mono font-bold leading-none ${accentColor}`}>{value}</p>
+      {sub && (
+        <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
       )}
     </div>
   );
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className="text-lg font-mono font-semibold mt-1">{value}</p>
-    </div>
-  );
-}
-
+/* ── DCA Opportunities ──────────────────────────────────── */
 function DcaOpportunities({
   holdings,
   livePrices,
@@ -658,13 +511,9 @@ function DcaOpportunities({
   livePrices: Record<string, number | null>;
   navigate: (path: string) => void;
 }) {
-  const fmt = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
   const TEST_INVESTMENT = 500;
 
   const scored = useMemo(() => {
-    // Compute improvement for each holding, then normalize to 0–100
     const raw = holdings
       .map((h) => {
         const price = livePrices[h.id];
@@ -677,7 +526,6 @@ function DcaOpportunities({
       })
       .filter(Boolean) as { holding: Holding; price: number; improvement: number; score: number }[];
 
-    // Normalize: best improvement maps to 100
     const maxImprovement = Math.max(...raw.map((r) => r.improvement), 0.001);
     for (const r of raw) {
       r.score = Math.round((r.improvement / maxImprovement) * 100);
@@ -698,21 +546,21 @@ function DcaOpportunities({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <Gauge className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <Gauge className="h-4.5 w-4.5 text-primary" />
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           DCA Opportunities
         </h2>
+        <span className="ml-auto text-[10px] text-muted-foreground/40">$500 test investment</span>
       </div>
-      <p className="text-[10px] text-muted-foreground/60 mb-3">
-        Analytical indicator only — not financial advice
-      </p>
 
       {!hasAnyPrice ? (
-        <p className="text-xs text-muted-foreground">
-          Add current prices to evaluate DCA opportunities.
-        </p>
+        <div className="rounded-xl border border-dashed border-border p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Add current prices to evaluate DCA opportunities.
+          </p>
+        </div>
       ) : (
         <div className="space-y-1.5">
           {scored.map(({ holding: h, price, score, improvement }) => {
@@ -741,12 +589,18 @@ function DcaOpportunities({
                       ? `$${TEST_INVESTMENT} → Avg drops ${cp}${fmt(improvement)}`
                       : `Price at or above avg — no benefit`}
                   </p>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
+                    Avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(price)}
+                  </p>
                 </div>
 
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
               </button>
             );
           })}
+          <p className="text-[9px] text-muted-foreground/40 text-center pt-1">
+            Analytical indicator only — not financial advice
+          </p>
         </div>
       )}
     </div>
