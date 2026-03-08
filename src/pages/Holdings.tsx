@@ -341,6 +341,7 @@ export default function Holdings() {
                 SECTION 3 — Your Holdings
                ════════════════════════════════════════════════ */}
             <section>
+              {/* Section header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
@@ -348,37 +349,69 @@ export default function Holdings() {
                     Your Holdings
                   </h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2">
-                        <ArrowUpDown className="mr-1 h-3 w-3" />
-                        <span className="text-xs">{SORT_LABELS[sortMode]}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
-                      {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-                        <DropdownMenuItem
-                          key={mode}
-                          onClick={() => handleSortChange(mode)}
-                          className={sortMode === mode ? "font-semibold text-primary" : ""}
-                        >
-                          {SORT_LABELS[mode]}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => setCsvOpen(true)}>
-                    <FileSpreadsheet className="mr-1 h-3 w-3" />
-                    <span className="text-xs">CSV</span>
-                  </Button>
-                  <Button size="sm" className="h-8" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                    <Plus className="mr-1 h-3 w-3" />
-                    <span className="text-xs">Add</span>
-                  </Button>
-                </div>
+
+                {selectMode ? (
+                  /* ── Select mode toolbar ── */
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {selected.size === holdings.length ? "Deselect All" : "Select All"}
+                    </button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-8"
+                      disabled={selected.size === 0}
+                      onClick={() => setBulkDeleting(true)}
+                    >
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      <span className="text-xs">Delete ({selected.size})</span>
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={exitSelectMode}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  /* ── Normal toolbar ── */
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2" onClick={() => setSelectMode(true)}>
+                      <CheckSquare className="mr-1 h-3 w-3" />
+                      <span className="text-xs">Select</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2">
+                          <ArrowUpDown className="mr-1 h-3 w-3" />
+                          <span className="text-xs">{SORT_LABELS[sortMode]}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
+                        {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                          <DropdownMenuItem
+                            key={mode}
+                            onClick={() => handleSortChange(mode)}
+                            className={sortMode === mode ? "font-semibold text-primary" : ""}
+                          >
+                            {SORT_LABELS[mode]}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCsvOpen(true)}>
+                      <FileSpreadsheet className="mr-1 h-3 w-3" />
+                      <span className="text-xs">CSV</span>
+                    </Button>
+                    <Button size="sm" className="h-8" onClick={() => { setEditing(null); setFormOpen(true); }}>
+                      <Plus className="mr-1 h-3 w-3" />
+                      <span className="text-xs">Add</span>
+                    </Button>
+                  </div>
+                )}
               </div>
 
+              {/* Holdings list */}
               <div className="space-y-2">
                 {sortedHoldings.map((h) => {
                   const ex = (h.exchange ?? "US") as any;
@@ -386,74 +419,96 @@ export default function Holdings() {
                   const price = livePrices[h.id];
                   const pnlData = getPnl(h);
                   const isFetching = fetchingTickers.has(h.ticker);
+                  const isSelected = selected.has(h.id);
 
-                  const borderColor = pnlData
+                  const borderColor = selectMode && isSelected
+                    ? "border-l-destructive"
+                    : pnlData
                     ? pnlData.pnl >= 0 ? "border-l-primary" : "border-l-destructive"
                     : "border-l-border";
 
                   return (
                     <div
                       key={h.id}
-                      className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative`}
-                      onClick={() => navigate(`/holdings/${h.id}`)}
+                      className={`group rounded-lg border border-border ${borderColor} border-l-[3px] ${isSelected ? "bg-destructive/5" : "bg-card hover:bg-muted/40"} transition-colors cursor-pointer relative`}
+                      onClick={() => selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`)}
                     >
-                      <div className="p-4 pr-10">
-                        {/* Top row: ticker + price */}
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-bold font-mono tracking-tight">{h.ticker}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
-                              {exchangeLabel(ex)}
-                            </span>
-                          </div>
-                          {price != null ? (
-                            <span className="text-sm font-bold font-mono">{cp}{fmt(price)}</span>
-                          ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
-                              disabled={isFetching}
-                              className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
-                            >
-                              {isFetching ? "…" : "Get Price"}
-                            </button>
+                      <div className={`p-4 ${selectMode ? "pl-3" : "pr-10"}`}>
+                        <div className="flex items-center gap-3">
+                          {/* Checkbox area */}
+                          {selectMode && (
+                            <div className="shrink-0">
+                              {isSelected ? (
+                                <CheckSquare className="h-5 w-5 text-destructive" />
+                              ) : (
+                                <Square className="h-5 w-5 text-muted-foreground/40" />
+                              )}
+                            </div>
                           )}
-                        </div>
 
-                        {/* Stats row */}
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
-                          <span>{fmt(h.shares)} shares</span>
-                          <span className="text-muted-foreground/30">·</span>
-                          <span>Avg {cp}{fmt(h.avg_cost)}</span>
-                          {pnlData && (
-                            <>
+                          <div className="flex-1 min-w-0">
+                            {/* Top row: ticker + price */}
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base font-bold font-mono tracking-tight">{h.ticker}</span>
+                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">
+                                  {exchangeLabel(ex)}
+                                </span>
+                              </div>
+                              {price != null ? (
+                                <span className="text-sm font-bold font-mono">{cp}{fmt(price)}</span>
+                              ) : (
+                                !selectMode && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
+                                    disabled={isFetching}
+                                    className="text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+                                  >
+                                    {isFetching ? "…" : "Get Price"}
+                                  </button>
+                                )
+                              )}
+                            </div>
+
+                            {/* Stats row */}
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+                              <span>{fmt(h.shares)} shares</span>
                               <span className="text-muted-foreground/30">·</span>
-                              <span className={`font-semibold ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-                                {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)} ({pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%)
-                              </span>
-                            </>
-                          )}
+                              <span>Avg {cp}{fmt(h.avg_cost)}</span>
+                              {pnlData && (
+                                <>
+                                  <span className="text-muted-foreground/30">·</span>
+                                  <span className={`font-semibold ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
+                                    {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)} ({pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%)
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
-
-                      {/* Action buttons */}
-                      <div className="absolute right-8 top-2.5 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
-                          aria-label="Edit"
-                        >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
-                          aria-label="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                        </button>
-                      </div>
+                      {!selectMode && (
+                        <>
+                          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+                          <div className="absolute right-8 top-2.5 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
+                              aria-label="Edit"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
