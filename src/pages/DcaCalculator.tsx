@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle } from "lucide-react";
+import SavedScenarios from "@/components/SavedScenarios";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding } from "@/lib/storage";
+import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding, type Scenario } from "@/lib/storage";
 import { fetchStockPrice, getCachedQuote } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
@@ -491,6 +492,21 @@ export default function DcaCalculator() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Saved Scenarios */}
+        <SavedScenarios
+          holdingId={holding.id}
+          exchange={exchange as any}
+          refreshKey={tick}
+          onUseScenario={(s: Scenario) => {
+            const m = s.method as any;
+            setMethod(m);
+            setVal1(String(s.input1_value));
+            setVal2(String(s.input2_value));
+            if (s.budget_percent_used != null) setBudgetPercent(s.budget_percent_used);
+            setIncludeFees(s.include_fees);
+          }}
+        />
       </main>
     </div>
   );
