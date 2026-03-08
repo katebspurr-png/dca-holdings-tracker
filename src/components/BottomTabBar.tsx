@@ -21,19 +21,10 @@ export default function BottomTabBar() {
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
-          // Goal Ladder tab is contextual — only navigable from holdings
-          const isGoalTab = tab.path === "#goal";
           return (
             <button
               key={tab.path}
-              onClick={() => {
-                if (isGoalTab) {
-                  // If already on a holding page, stay; otherwise go to holdings
-                  if (!active) navigate("/");
-                } else {
-                  navigate(tab.path);
-                }
-              }}
+              onClick={() => navigate(tab.path)}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
                 active
                   ? "text-primary"

@@ -39,7 +39,6 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Holdings />} />
           <Route path="/holdings/:id" element={<HoldingDetail />} />
-          <Route path="/holdings/:id/dca" element={<DcaCalculator />} />
           <Route path="/scenarios" element={<Scenarios />} />
           <Route path="/scenarios/:id" element={<ScenarioDetail />} />
           <Route path="/what-if" element={<WhatIfScenarios />} />

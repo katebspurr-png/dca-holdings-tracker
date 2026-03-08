@@ -137,7 +137,11 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
   }, [holding, currentPrice, targetLevels, includeFees]);
 
   const handleUseInCalc = (method: string, v1: string, v2: string) => {
-    navigate(`/holdings/${holding.id}/dca?method=${method}&val1=${v1}&val2=${v2}`);
+    if (onUseInCalculator) {
+      onUseInCalculator(method, v1, v2);
+    } else {
+      navigate(`/holdings/${holding.id}/dca?method=${method}&val1=${v1}&val2=${v2}`);
+    }
   };
 
   const handleSaveBudget = (s: BudgetScenario) => {
