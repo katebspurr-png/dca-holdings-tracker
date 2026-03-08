@@ -165,6 +165,7 @@ function read(): AppData {
       parsed.holdings = parsed.holdings.map((h: any) => ({
         ...h,
         exchange: h.exchange ?? "US",
+        initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
       }));
     }
     // Migrate: add is_undone/undone_at to transactions if missing
