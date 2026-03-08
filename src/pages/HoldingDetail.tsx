@@ -687,13 +687,19 @@ export default function HoldingDetail() {
                             </Button>
                           )}
                           <div className="flex gap-2">
-                            <Button onClick={handleSave} size="sm" variant="outline" className="flex-1 h-8 text-xs">
+                            <Button onClick={handleSave} size="sm" variant="outline" className="flex-1 h-8 text-xs"
+                              disabled={!canSaveScenario(scenarios.length)}>
                               <Save className="mr-1.5 h-3.5 w-3.5" /> Save
                             </Button>
                             <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="flex-1 h-8 text-xs">
                               <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> {applying ? "Applying…" : "Apply Buy"}
                             </Button>
                           </div>
+                          {!canSaveScenario(scenarios.length) && (
+                            <p className="text-[10px] text-destructive text-center">
+                              Limit reached ({FREE_SCENARIO_LIMIT}/{FREE_SCENARIO_LIMIT}). Upgrade to Premium for unlimited.
+                            </p>
+                          )}
                         </div>
                       </div>
                     ) : (
