@@ -328,6 +328,39 @@ export default function DcaCalculator() {
     }
   };
 
+  const handleApplyScenario = (s: Scenario) => {
+    if (!holding || applying) return;
+    setScenarioToApply(s);
+  };
+
+  const confirmApplyScenario = () => {
+    if (!holding || !scenarioToApply || applying) return;
+    const s = scenarioToApply;
+    setApplying(true);
+    setScenarioToApply(null);
+    try {
+      applyBuyToHolding({
+        holdingId: holding.id,
+        buyPrice: s.buy_price ?? s.input1_value,
+        sharesBought: s.shares_to_buy,
+        budgetInvested: s.budget_invested,
+        feeApplied: s.fee_applied,
+        totalSpend: s.total_spend,
+        includeFees: s.include_fees,
+        newTotalShares: s.new_total_shares,
+        newAvgCost: s.new_avg_cost,
+        method: s.method,
+      });
+      toast({ title: "Buy applied successfully" });
+      setHoldingVersion((v) => v + 1);
+      setTick((t) => t + 1);
+    } catch (e: any) {
+      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setApplying(false);
+    }
+  }
+
   if (!holding) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
