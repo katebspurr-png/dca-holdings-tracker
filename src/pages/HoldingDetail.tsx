@@ -312,6 +312,15 @@ export default function HoldingDetail() {
 
   const handleSave = () => {
     if (!holding || !r) return;
+    const currentCount = scenarios.length;
+    if (!canSaveScenario(currentCount)) {
+      toast({
+        title: "Scenario limit reached",
+        description: `Free users can save up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Upgrade to Premium for unlimited scenarios.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const flds = FIELD_CONFIG[calcMethod];
     const n1 = parseFloat(val1), n2 = parseFloat(val2);
     let buyPrice: number | null = null;
