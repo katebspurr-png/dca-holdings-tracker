@@ -20,7 +20,7 @@ import type { Holding, FeeType, Exchange } from "@/lib/storage";
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { ticker: string; exchange: Exchange; shares: number; avg_cost: number; fee: number; fee_type: FeeType; fee_value: number }) => void;
+  onSubmit: (data: { ticker: string; exchange: Exchange; shares: number; avg_cost: number; fee: number; fee_type: FeeType; fee_value: number; initial_avg_cost?: number }) => void;
   initial?: Holding | null;
   loading?: boolean;
 };

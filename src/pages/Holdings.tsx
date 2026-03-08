@@ -206,7 +206,7 @@ export default function Holdings() {
     refresh();
   };
 
-  const handleUpdate = (data: Omit<Holding, "id" | "created_at">) => {
+  const handleUpdate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     if (!editing) return;
     editHolding(editing.id, data);
     setEditing(null);
