@@ -298,6 +298,50 @@ export default function Holdings() {
           </div>
         )}
 
+        {/* ── Dashboard Metrics ── */}
+        {holdings.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
+            <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
+            <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
+            <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
+          </div>
+        )}
+
+        {/* ── Portfolio Summary by Holding ── */}
+        {holdings.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Portfolio Summary by Holding
+            </h2>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ticker</TableHead>
+                    <TableHead className="text-right">Shares</TableHead>
+                    <TableHead className="text-right">Avg Cost</TableHead>
+                    <TableHead className="text-right">Cost Basis</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {holdingsByCostBasis.map((h) => {
+                    const cp = currencyPrefix((h.exchange ?? "US") as any);
+                    return (
+                      <TableRow key={h.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/holdings/${h.id}`)}>
+                        <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
+                        <TableCell className="text-right font-mono">{Number(h.shares).toFixed(4)}</TableCell>
+                        <TableCell className="text-right font-mono">{cp}{fmt(Number(h.avg_cost))}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{cp}{fmt(h.costBasis)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+
         {/* ── Sort + Add Stock row ── */}
         {holdings.length > 0 && (
           <div className="flex items-center justify-between">
