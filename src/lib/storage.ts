@@ -248,6 +248,12 @@ export function addScenario(s: Omit<Scenario, "id" | "created_at">): Scenario {
   return scenario;
 }
 
+export function removeScenario(id: string) {
+  const data = read();
+  data.scenarios = data.scenarios.filter((s) => s.id !== id);
+  write(data);
+}
+
 // ── Reset ────────────────────────────────────────────────────
 
 export function resetAll() {
