@@ -442,3 +442,24 @@ export function undoLastBuy(holdingId: string): void {
 
   write(data);
 }
+
+// ── Optimization Scenarios ──────────────────────────────────
+
+export function getOptimizationScenarios(): OptimizationScenario[] {
+  return (read().optimizationScenarios ?? []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function addOptimizationScenario(s: Omit<OptimizationScenario, "id" | "created_at">): OptimizationScenario {
+  const data = read();
+  const opt: OptimizationScenario = { ...s, id: uid(), created_at: new Date().toISOString() };
+  if (!data.optimizationScenarios) data.optimizationScenarios = [];
+  data.optimizationScenarios.push(opt);
+  write(data);
+  return opt;
+}
+
+export function removeOptimizationScenario(id: string) {
+  const data = read();
+  data.optimizationScenarios = (data.optimizationScenarios ?? []).filter((s) => s.id !== id);
+  write(data);
+}
