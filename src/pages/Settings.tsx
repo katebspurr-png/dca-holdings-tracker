@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Moon, Sun, Download, Upload, RotateCcw, Crown } from "lucide-react";
+import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { resetAll, exportData, importData } from "@/lib/storage";
 import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 import ProSettings from "@/components/ProSettings";
 import { toast } from "sonner";
+import { getUserPlan, getActivePlan, setUserPlan, isPremium, type PlanType } from "@/lib/feature-access";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
