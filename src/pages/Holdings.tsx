@@ -4,6 +4,7 @@ import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
+  Gauge,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
@@ -355,7 +356,10 @@ export default function Holdings() {
           </div>
         )}
 
-        {/* ── Sort + Add Stock row ── */}
+        {/* ── DCA Opportunities ── */}
+        <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
+
+
         {holdings.length > 0 && (
           <div className="flex items-center justify-between">
             <DropdownMenu>
@@ -641,6 +645,97 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-border bg-card p-4">
       <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
       <p className="text-lg font-mono font-semibold mt-1">{value}</p>
+    </div>
+  );
+}
+
+function DcaOpportunities({
+  holdings,
+  livePrices,
+  navigate,
+}: {
+  holdings: Holding[];
+  livePrices: Record<string, number | null>;
+  navigate: (path: string) => void;
+}) {
+  const fmt = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const scored = useMemo(() => {
+    return holdings
+      .map((h) => {
+        const price = livePrices[h.id];
+        if (price == null || price <= 0) return null;
+        const raw = h.avg_cost > 0 ? ((h.avg_cost - price) / h.avg_cost) * 100 : 0;
+        const score = Math.max(0, Math.min(100, Math.round(raw)));
+        return { holding: h, price, score };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.score - a!.score) as { holding: Holding; price: number; score: number }[];
+  }, [holdings, livePrices]);
+
+  if (holdings.length === 0) return null;
+
+  const hasAnyPrice = scored.length > 0;
+
+  const getBand = (score: number) => {
+    if (score >= 80) return { label: "Strong opportunity", color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" };
+    if (score >= 60) return { label: "Good opportunity", color: "text-primary", bg: "bg-primary/5", border: "border-primary/10" };
+    if (score >= 40) return { label: "Neutral", color: "text-muted-foreground", bg: "bg-muted/30", border: "border-border" };
+    if (score >= 20) return { label: "Weak", color: "text-muted-foreground", bg: "bg-muted/20", border: "border-border" };
+    return { label: "Inefficient", color: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/10" };
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <Gauge className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          DCA Opportunities
+        </h2>
+      </div>
+      <p className="text-[10px] text-muted-foreground/60 mb-3">
+        Analytical indicator only — not financial advice
+      </p>
+
+      {!hasAnyPrice ? (
+        <p className="text-xs text-muted-foreground">
+          Add current prices to evaluate DCA opportunities.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {scored.map(({ holding: h, price, score }) => {
+            const band = getBand(score);
+            const cp = currencyPrefix((h.exchange ?? "US") as any);
+            return (
+              <button
+                key={h.id}
+                onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                className={`w-full flex items-center gap-3 rounded-lg border ${band.border} ${band.bg} p-3 text-left hover:opacity-80 transition-opacity`}
+              >
+                {/* Score */}
+                <div className="flex flex-col items-center justify-center w-11 shrink-0">
+                  <span className={`text-lg font-mono font-bold leading-none ${band.color}`}>{score}</span>
+                  <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-semibold text-sm">{h.ticker}</span>
+                    <span className={`text-[10px] font-medium ${band.color}`}>{band.label}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-mono">
+                    Avg {cp}{fmt(h.avg_cost)} → Price {cp}{fmt(price)}
+                  </p>
+                </div>
+
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
