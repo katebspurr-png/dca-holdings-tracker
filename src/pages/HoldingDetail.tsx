@@ -463,7 +463,12 @@ export default function HoldingDetail() {
         {activeTab === "overview" && (
           <>
             <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Position Overview</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Position Overview</h2>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-1 h-3 w-3" /> Edit
+                </Button>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                 <MiniStat label="Shares" value={fmt4(S)} />
                 <MiniStat label="Avg Cost" value={`${cp}${fmt2(A)}`} accent />
