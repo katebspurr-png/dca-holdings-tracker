@@ -1073,15 +1073,20 @@ function InsightsTab({ holding, marketPrice, cp, onUseInCalculator, onSaved }: {
             </span>
             <span className="text-lg text-muted-foreground font-mono">/ 100</span>
           </div>
+          {efficiencyData && efficiencyData.improvement > 0 && (
+            <p className="text-sm font-mono font-semibold text-primary mb-1">
+              ${TEST_INVESTMENT} → Avg drops {cp}{fmt2(efficiencyData.improvement)}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
-            {efficiencyScore >= 80
-              ? "Current price is far below your average. Averaging down is highly effective right now."
-              : efficiencyScore >= 60
-              ? "Good gap between price and average. Averaging down would meaningfully improve your position."
-              : efficiencyScore >= 40
-              ? "Moderate gap. Averaging down would have some effect but requires significant capital."
-              : efficiencyScore >= 20
-              ? "Small gap between price and average. Averaging down has limited impact."
+            {efficiencyScore != null && efficiencyScore >= 80
+              ? "A $500 test investment significantly lowers your average. Averaging down is highly effective."
+              : efficiencyScore != null && efficiencyScore >= 60
+              ? "Good impact from a $500 investment. Averaging down meaningfully improves your position."
+              : efficiencyScore != null && efficiencyScore >= 40
+              ? "Moderate impact. Averaging down has some effect but larger capital is needed for meaningful change."
+              : efficiencyScore != null && efficiencyScore >= 20
+              ? "Small impact from $500. Averaging down has limited effect at this position size."
               : "Price is near or above your average. Averaging down is not effective."}
           </p>
           <div className="mt-3 pt-3 border-t border-border">
