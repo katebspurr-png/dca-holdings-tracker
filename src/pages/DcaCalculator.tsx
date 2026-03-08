@@ -492,6 +492,21 @@ export default function DcaCalculator() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Saved Scenarios */}
+        <SavedScenarios
+          holdingId={holding.id}
+          exchange={exchange as any}
+          refreshKey={tick}
+          onUseScenario={(s: Scenario) => {
+            const m = s.method as any;
+            setMethod(m);
+            setVal1(String(s.input1_value));
+            setVal2(String(s.input2_value));
+            if (s.budget_percent_used != null) setBudgetPercent(s.budget_percent_used);
+            setIncludeFees(s.include_fees);
+          }}
+        />
       </main>
     </div>
   );
