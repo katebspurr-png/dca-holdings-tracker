@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Save, TrendingDown } from "lucide-react";
+import { ArrowRight, Save, TrendingDown, ChevronDown, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type Holding, type Scenario, addScenario, currencyPrefix } from "@/lib/storage";
 import { getCachedQuote } from "@/lib/stock-price";
@@ -228,65 +228,19 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
           Goal Ladder — Budget Scenarios
         </h2>
         <p className="text-[11px] text-muted-foreground/70 mb-4">
-          What happens if you invest a fixed amount at {cp}{fmt(currentPrice)}/share. For scenario planning only.
+          Impact of investing at {cp}{fmt(currentPrice)}/share. For scenario planning only.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {budgetScenarios.map((s) => (
-            <div
+            <BudgetCard
               key={s.budget}
-              className="group rounded-lg border border-border/60 bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors"
-            >
-              <div className="flex items-baseline justify-between mb-2.5">
-                <span className="text-base font-bold font-[family-name:var(--font-heading)]">
-                  Invest {cp}{fmt(s.budget)}
-                </span>
-                {s.improvement > 0 && (
-                  <span className="text-[11px] font-medium text-primary font-[family-name:var(--font-mono)] tabular-nums">
-                    −{s.improvement.toFixed(2)}% avg
-                  </span>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] font-[family-name:var(--font-mono)] tabular-nums">
-                <div className="text-muted-foreground">Shares to buy</div>
-                <div className="text-right">{s.sharesToBuy.toFixed(4)}</div>
-
-                {s.feeApplied > 0 && (
-                  <>
-                    <div className="text-muted-foreground">Fee</div>
-                    <div className="text-right">{cp}{fmt(s.feeApplied)}</div>
-                  </>
-                )}
-
-                <div className="text-muted-foreground">Total spend</div>
-                <div className="text-right">{cp}{fmt(s.totalSpend)}</div>
-
-                <div className="text-muted-foreground">New avg cost</div>
-                <div className="text-right font-medium text-foreground">{cp}{fmt(s.newAvgCost)}</div>
-              </div>
-
-              <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
-                  onClick={() => handleUseInCalc("price_budget", String(s.buyPrice), String(s.budget))}
-                >
-                  <ArrowRight className="mr-1 h-3 w-3" />
-                  Use in calculator
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
-                  onClick={() => handleSaveBudget(s)}
-                >
-                  <Save className="mr-1 h-3 w-3" />
-                  Save scenario
-                </Button>
-              </div>
-            </div>
+              scenario={s}
+              cp={cp}
+              avgCost={holding.avg_cost}
+              onUseInCalc={() => handleUseInCalc("price_budget", String(s.buyPrice), String(s.budget))}
+              onSave={() => handleSaveBudget(s)}
+            />
           ))}
         </div>
       </div>
@@ -299,64 +253,184 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
             Goal Ladder — Target Checkpoints
           </h2>
           <p className="text-[11px] text-muted-foreground/70 mb-4">
-            What it takes to bring your average cost down to specific targets at {cp}{fmt(currentPrice)}/share.
+            What it takes to reach specific average cost targets at {cp}{fmt(currentPrice)}/share.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {targetScenarios.map((s) => (
-              <div
+              <TargetCard
                 key={s.targetAvg}
-                className="group rounded-lg border border-border/60 bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors"
-              >
-                <div className="mb-2.5">
-                  <span className="text-base font-bold font-[family-name:var(--font-heading)]">
-                    Get avg under {cp}{fmt(s.targetAvg)}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] font-[family-name:var(--font-mono)] tabular-nums">
-                  <div className="text-muted-foreground">Shares needed</div>
-                  <div className="text-right">{s.sharesToBuy.toFixed(4)}</div>
-
-                  <div className="text-muted-foreground">Budget needed</div>
-                  <div className="text-right">{cp}{fmt(s.budget)}</div>
-
-                  {s.feeApplied > 0 && (
-                    <>
-                      <div className="text-muted-foreground">Fee</div>
-                      <div className="text-right">{cp}{fmt(s.feeApplied)}</div>
-                    </>
-                  )}
-
-                  <div className="text-muted-foreground">Total spend</div>
-                  <div className="text-right font-medium text-foreground">{cp}{fmt(s.totalSpend)}</div>
-                </div>
-
-                <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
-                    onClick={() => handleUseInCalc("price_target", String(s.buyPrice), String(s.targetAvg))}
-                  >
-                    <ArrowRight className="mr-1 h-3 w-3" />
-                    Use in calculator
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
-                    onClick={() => handleSaveTarget(s)}
-                  >
-                    <Save className="mr-1 h-3 w-3" />
-                    Save scenario
-                  </Button>
-                </div>
-              </div>
+                scenario={s}
+                cp={cp}
+                avgCost={holding.avg_cost}
+                onUseInCalc={() => handleUseInCalc("price_target", String(s.buyPrice), String(s.targetAvg))}
+                onSave={() => handleSaveTarget(s)}
+              />
             ))}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Budget Card ─────────────────────────────────────────── */
+function BudgetCard({
+  scenario: s,
+  cp,
+  avgCost,
+  onUseInCalc,
+  onSave,
+}: {
+  scenario: BudgetScenario;
+  cp: string;
+  avgCost: number;
+  onUseInCalc: () => void;
+  onSave: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const improvementDollar = avgCost - s.newAvgCost;
+
+  return (
+    <div className="group rounded-lg border border-border/60 bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors">
+      {/* Primary: Investment amount */}
+      <p className="text-base font-bold font-[family-name:var(--font-heading)]">
+        Invest {cp}{fmt(s.budget)}
+      </p>
+
+      {/* Primary: Resulting average */}
+      <p className="text-lg font-mono font-bold text-foreground mt-1">
+        Avg becomes {cp}{fmt(s.newAvgCost)}
+      </p>
+
+      {/* Improvement indicator */}
+      {improvementDollar > 0 && (
+        <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-1">
+          <ArrowDownRight className="h-3.5 w-3.5" />
+          improves by {cp}{fmt(improvementDollar)}
+          <span className="text-muted-foreground/60 text-[11px] ml-1">({s.improvement.toFixed(1)}%)</span>
+        </p>
+      )}
+
+      {/* Current avg reference */}
+      <p className="text-[11px] text-muted-foreground/50 font-mono mt-2">
+        Current avg {cp}{fmt(avgCost)}
+      </p>
+
+      {/* Expandable detail */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-2 transition-colors"
+      >
+        <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        Details
+      </button>
+      {expanded && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono text-muted-foreground mt-2 pt-2 border-t border-border/30">
+          <span>Shares to buy</span>
+          <span className="text-right">{s.sharesToBuy.toFixed(4)}</span>
+          {s.feeApplied > 0 && (
+            <>
+              <span>Fee</span>
+              <span className="text-right">{cp}{fmt(s.feeApplied)}</span>
+            </>
+          )}
+          <span>Total spend</span>
+          <span className="text-right">{cp}{fmt(s.totalSpend)}</span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
+        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onUseInCalc}>
+          <ArrowRight className="mr-1 h-3 w-3" />
+          Use in calculator
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onSave}>
+          <Save className="mr-1 h-3 w-3" />
+          Save scenario
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Target Card ─────────────────────────────────────────── */
+function TargetCard({
+  scenario: s,
+  cp,
+  avgCost,
+  onUseInCalc,
+  onSave,
+}: {
+  scenario: TargetScenario;
+  cp: string;
+  avgCost: number;
+  onUseInCalc: () => void;
+  onSave: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const improvementDollar = avgCost - s.targetAvg;
+
+  return (
+    <div className="group rounded-lg border border-border/60 bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors">
+      {/* Primary: Required investment */}
+      <p className="text-base font-bold font-[family-name:var(--font-heading)]">
+        Invest {cp}{fmt(s.budget)}
+      </p>
+
+      {/* Primary: Resulting average */}
+      <p className="text-lg font-mono font-bold text-foreground mt-1">
+        Avg becomes {cp}{fmt(s.targetAvg)}
+      </p>
+
+      {/* Improvement indicator */}
+      {improvementDollar > 0 && (
+        <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-1">
+          <ArrowDownRight className="h-3.5 w-3.5" />
+          improves by {cp}{fmt(improvementDollar)}
+        </p>
+      )}
+
+      {/* Current avg reference */}
+      <p className="text-[11px] text-muted-foreground/50 font-mono mt-2">
+        Current avg {cp}{fmt(avgCost)}
+      </p>
+
+      {/* Expandable detail */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-2 transition-colors"
+      >
+        <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        Details
+      </button>
+      {expanded && (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono text-muted-foreground mt-2 pt-2 border-t border-border/30">
+          <span>Shares needed</span>
+          <span className="text-right">{s.sharesToBuy.toFixed(4)}</span>
+          {s.feeApplied > 0 && (
+            <>
+              <span>Fee</span>
+              <span className="text-right">{cp}{fmt(s.feeApplied)}</span>
+            </>
+          )}
+          <span>Total spend</span>
+          <span className="text-right">{cp}{fmt(s.totalSpend)}</span>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
+        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onUseInCalc}>
+          <ArrowRight className="mr-1 h-3 w-3" />
+          Use in calculator
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onSave}>
+          <Save className="mr-1 h-3 w-3" />
+          Save scenario
+        </Button>
+      </div>
     </div>
   );
 }
