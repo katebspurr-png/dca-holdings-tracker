@@ -28,6 +28,7 @@ import {
 } from "@/lib/storage";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
+import { canSaveScenario, scenariosRemaining, hasFeature, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 
