@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign, GitCompareArrows, X, Check } from "lucide-react";
+import { Trash2, ArrowRight, Award, BookOpen, TrendingDown, TrendingUp, SlidersHorizontal, Clock, DollarSign, GitCompareArrows, X, Check, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { getScenariosForHolding, removeScenario, type Scenario, type Exchange } from "@/lib/storage";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import { toast } from "sonner";
+import { hasFeature } from "@/lib/feature-access";
+import { PremiumBadge } from "@/components/PremiumGate";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -144,7 +146,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 <X className="h-3 w-3" />
                 Exit Compare
               </Button>
-            ) : (
+            ) : hasFeature("scenario_compare") ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -153,6 +155,17 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               >
                 <GitCompareArrows className="h-3 w-3" />
                 Compare
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-[10px] px-2.5 gap-1 opacity-70"
+                onClick={() => toast.info("Upgrade to Premium to compare scenarios side-by-side.")}
+              >
+                <Lock className="h-3 w-3" />
+                Compare
+                <PremiumBadge className="ml-0.5" />
               </Button>
             )
           )}

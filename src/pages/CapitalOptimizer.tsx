@@ -4,6 +4,8 @@ import {
   Sparkles, Save, CheckCircle, ArrowRight, TrendingDown, TrendingUp,
   AlertCircle, Zap, Info, Calculator
 } from "lucide-react";
+import { hasFeature } from "@/lib/feature-access";
+import PremiumGate from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -279,6 +281,27 @@ export default function CapitalOptimizer() {
       setApplyingId(null);
     }
   };
+
+  if (!hasFeature("optimizer")) {
+    return (
+      <div className="min-h-screen bg-background pb-28">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h1 className="text-lg font-bold tracking-tight">Capital Allocation Optimizer</h1>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Model how to spread a budget across your holdings to improve your portfolio positioning.
+            </p>
+          </div>
+        </header>
+        <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
+          <PremiumGate feature="optimizer" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-28">
