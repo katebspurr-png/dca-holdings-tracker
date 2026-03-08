@@ -78,7 +78,7 @@ export default function Holdings() {
   const [deleting, setDeleting] = useState<Holding | null>(null);
   const [tick, setTick] = useState(0);
   const [csvOpen, setCsvOpen] = useState(false);
-  const [refreshingAll, setRefreshingAll] = useState(false);
+  const { refreshing: refreshingAll, refreshAll, lastRefreshed } = useRefreshPrices();
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
