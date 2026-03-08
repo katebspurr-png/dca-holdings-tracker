@@ -148,6 +148,9 @@ export default function DcaCalculator() {
   const [budgetPercent, setBudgetPercent] = useState(100);
   const [tick, setTick] = useState(0);
   const [fetchingPrice, setFetchingPrice] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
+  const [holdingVersion, setHoldingVersion] = useState(0);
   const { toast } = useToast();
 
   const input1IsPrice = method !== "budget_target";
