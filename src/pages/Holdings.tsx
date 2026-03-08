@@ -5,6 +5,7 @@ import {
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
 } from "lucide-react";
+import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
