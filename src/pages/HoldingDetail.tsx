@@ -955,6 +955,15 @@ function InsightsTab({ holding, marketPrice, cp, onUseInCalculator, onSaved }: {
 
   const handleSaveRescue = (target: { target: number; budget: number; shares: number; newAvg: number }) => {
     if (!marketPrice) return;
+    const currentCount = getScenariosForHolding(holding.id).length;
+    if (!canSaveScenario(currentCount)) {
+      toast({
+        title: "Scenario limit reached",
+        description: `Free users can save up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Upgrade to Premium for unlimited scenarios.`,
+        variant: "destructive",
+      });
+      return;
+    }
     addScenario({
       holding_id: holding.id, ticker: holding.ticker, method: "price_target",
       input1_label: "Buy price", input1_value: marketPrice,
