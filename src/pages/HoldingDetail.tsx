@@ -24,7 +24,7 @@ import {
 import {
   getHolding, getScenariosForHolding, getTransactionsForHolding,
   undoLastBuy, removeScenario, currencyPrefix, exchangeLabel, apiTicker,
-  addScenario, applyBuyToHolding, type Scenario,
+  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding,
 } from "@/lib/storage";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
