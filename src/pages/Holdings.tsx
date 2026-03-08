@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
-  ChevronRight, RefreshCw, Briefcase, ArrowUpDown,
+  ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +81,7 @@ export default function Holdings() {
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
-  
+  const [summaryExpanded, setSummaryExpanded] = useState(true);
 
   const refresh = () => setTick((t) => t + 1);
 
@@ -247,10 +247,13 @@ export default function Holdings() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-8 space-y-5">
-        {/* ── Portfolio Summary Card ── */}
+        {/* ── Portfolio Summary (collapsible) ── */}
         {holdings.length > 0 && (
           <div className="rounded-xl border border-border bg-gradient-to-br from-card to-muted/30 p-5 space-y-4">
-            <div className="flex items-center justify-between">
+            <button
+              className="flex items-center justify-between w-full"
+              onClick={() => setSummaryExpanded((v) => !v)}
+            >
               <div className="flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-primary" />
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -259,86 +262,92 @@ export default function Holdings() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{holdings.length} stock{holdings.length !== 1 ? "s" : ""}</span>
-                <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
-                  <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                  {refreshingAll ? "Fetching…" : "Refresh All"}
-                </Button>
+                {summaryExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
               </div>
-            </div>
+            </button>
 
-            {hasMixed ? (
-              <div className="space-y-2">
-                <SummaryRow
-                  label="USD"
-                  prefix="$"
-                  invested={totalUsdInvested}
-                  value={hasAnyPrice ? usdValue : null}
-                  pnl={hasAnyPrice ? usdPnl : null}
-                  pnlPct={hasAnyPrice ? usdPnlPct : null}
-                />
-                <SummaryRow
-                  label="CAD"
-                  prefix="C$"
-                  invested={totalCadInvested}
-                  value={hasAnyPrice ? cadValue : null}
-                  pnl={hasAnyPrice ? cadPnl : null}
-                  pnlPct={hasAnyPrice ? cadPnlPct : null}
-                />
-              </div>
-            ) : (
-              <SummaryRow
-                label=""
-                prefix={totalCadInvested > 0 ? "C$" : "$"}
-                invested={totalUsdInvested + totalCadInvested}
-                value={hasAnyPrice ? usdValue + cadValue : null}
-                pnl={hasAnyPrice ? usdPnl + cadPnl : null}
-                pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
-              />
-            )}
-          </div>
-        )}
+            {summaryExpanded && (
+              <>
+                {hasMixed ? (
+                  <div className="space-y-2">
+                    <SummaryRow
+                      label="USD"
+                      prefix="$"
+                      invested={totalUsdInvested}
+                      value={hasAnyPrice ? usdValue : null}
+                      pnl={hasAnyPrice ? usdPnl : null}
+                      pnlPct={hasAnyPrice ? usdPnlPct : null}
+                    />
+                    <SummaryRow
+                      label="CAD"
+                      prefix="C$"
+                      invested={totalCadInvested}
+                      value={hasAnyPrice ? cadValue : null}
+                      pnl={hasAnyPrice ? cadPnl : null}
+                      pnlPct={hasAnyPrice ? cadPnlPct : null}
+                    />
+                  </div>
+                ) : (
+                  <SummaryRow
+                    label=""
+                    prefix={totalCadInvested > 0 ? "C$" : "$"}
+                    invested={totalUsdInvested + totalCadInvested}
+                    value={hasAnyPrice ? usdValue + cadValue : null}
+                    pnl={hasAnyPrice ? usdPnl + cadPnl : null}
+                    pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
+                  />
+                )}
 
-        {/* ── Dashboard Metrics ── */}
-        {holdings.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
-            <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
-            <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
-            <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
-          </div>
-        )}
+                {/* Dashboard Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
+                  <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
+                  <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
+                  <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
+                </div>
 
-        {/* ── Portfolio Summary by Holding ── */}
-        {holdings.length > 0 && (
-          <div className="rounded-lg border border-border bg-card p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Portfolio Summary by Holding
-            </h2>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ticker</TableHead>
-                    <TableHead className="text-right">Shares</TableHead>
-                    <TableHead className="text-right">Avg Cost</TableHead>
-                    <TableHead className="text-right">Cost Basis</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {holdingsByCostBasis.map((h) => {
-                    const cp = currencyPrefix((h.exchange ?? "US") as any);
-                    return (
-                      <TableRow key={h.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/holdings/${h.id}`)}>
-                        <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
-                        <TableCell className="text-right font-mono">{Number(h.shares).toFixed(4)}</TableCell>
-                        <TableCell className="text-right font-mono">{cp}{fmt(Number(h.avg_cost))}</TableCell>
-                        <TableCell className="text-right font-mono font-semibold">{cp}{fmt(h.costBasis)}</TableCell>
+                {/* Summary by Holding */}
+                <div className="overflow-x-auto">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    By Holding
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ticker</TableHead>
+                        <TableHead className="text-right">Shares</TableHead>
+                        <TableHead className="text-right">Avg Cost</TableHead>
+                        <TableHead className="text-right">Cost Basis</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
+                    <TableBody>
+                      {holdingsByCostBasis.map((h) => {
+                        const cp = currencyPrefix((h.exchange ?? "US") as any);
+                        return (
+                          <TableRow key={h.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/holdings/${h.id}`)}>
+                            <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
+                            <TableCell className="text-right font-mono">{Number(h.shares).toFixed(4)}</TableCell>
+                            <TableCell className="text-right font-mono">{cp}{fmt(Number(h.avg_cost))}</TableCell>
+                            <TableCell className="text-right font-mono font-semibold">{cp}{fmt(h.costBasis)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll}>
+                    <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
+                    {refreshingAll ? "Fetching…" : "Refresh All"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
