@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle, Info, Save, Target, Zap } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,11 @@ import { Slider } from "@/components/ui/slider";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { getHolding, addScenario, currencyPrefix, apiTicker } from "@/lib/storage";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getHolding, addScenario, currencyPrefix, apiTicker, applyBuyToHolding } from "@/lib/storage";
 import { fetchStockPrice, getCachedQuote } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { useToast } from "@/hooks/use-toast";
