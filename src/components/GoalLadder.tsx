@@ -76,8 +76,8 @@ function computeTargetScenario(
   } else {
     f = includeFees ? computeFee(h.fee_type, h.fee_value, 0) : 0;
     const den = targetAvg - buyPrice;
-    if (den >= 0) return null;
-    x = (S * (A - targetAvg) + f) / Math.abs(den);
+    if (den <= 0) return null;
+    x = (S * (A - targetAvg) + f) / den;
     if (x <= 0) return null;
     B = x * buyPrice;
   }
