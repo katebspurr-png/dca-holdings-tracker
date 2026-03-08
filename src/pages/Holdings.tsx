@@ -188,17 +188,15 @@ export default function Holdings() {
 
   // ── Refresh all prices ─────────────────────────────────────
   const refreshAllPrices = useCallback(async () => {
-    setRefreshingAll(true);
-    const symbols = holdings.map((h) => apiTicker(h.ticker, (h.exchange ?? "US") as any));
-    const results = await Promise.allSettled(symbols.map((t) => fetchStockPrice(t)));
-    let fetched = 0;
-    results.forEach((r) => {
-      if (r.status === "fulfilled" && r.value.ok) fetched++;
-    });
-    setRefreshingAll(false);
-    toast.success(`Fetched prices for ${fetched} of ${symbols.length} stocks`);
-    refresh();
-  }, [holdings]);
+    const result = await refreshAll(() => refresh());
+    if (result.failed.length === 0) {
+      toast.success("Market prices refreshed");
+    } else if (result.success > 0) {
+      toast.success(`Refreshed ${result.success} of ${result.total} prices. Failed: ${result.failed.join(", ")}`);
+    } else {
+      toast.error("Could not refresh prices");
+    }
+  }, [refreshAll]);
 
   // ── Single price fetch ─────────────────────────────────────
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
