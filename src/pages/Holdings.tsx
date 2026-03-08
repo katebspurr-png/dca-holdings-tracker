@@ -4,7 +4,7 @@ import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
-  Gauge, Activity, BarChart3, Wallet,
+  Gauge, Activity, BarChart3, Wallet, CheckSquare, Square, X,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
