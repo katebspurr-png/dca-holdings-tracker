@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { getHolding, getScenariosForHolding, getRecommendedTargets, currencyPrefix, exchangeLabel } from "@/lib/storage";
+import { getHolding, getScenariosForHolding, getRecommendedTargets, getTransactionsForHolding, currencyPrefix, exchangeLabel } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
