@@ -63,6 +63,15 @@ export default function Settings() {
     toast.success("Reset to demo data");
   }, []);
 
+  const [plan, setPlan] = useState(getActivePlan);
+
+  const togglePlan = () => {
+    const next: PlanType = plan === "premium" ? "free" : "premium";
+    setUserPlan(next);
+    setPlan(next);
+    toast.success(next === "premium" ? "Premium activated" : "Switched to Free plan");
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
@@ -72,6 +81,49 @@ export default function Settings() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
+        {/* Plan */}
+        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Plan</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Crown className={`h-5 w-5 ${plan === "premium" ? "text-primary" : "text-muted-foreground"}`} />
+              <div>
+                <p className="text-sm font-medium">
+                  {plan === "premium" ? "Premium" : "Free"}
+                  {plan === "premium" && (
+                    <Badge variant="secondary" className="ml-2 text-[9px] px-1.5 h-4 bg-primary/10 text-primary border-0">Active</Badge>
+                  )}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {plan === "premium"
+                    ? "All features unlocked."
+                    : "Basic features included. Upgrade for full access."}
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant={plan === "premium" ? "outline" : "default"} className="h-8 text-xs" onClick={togglePlan}>
+              {plan === "premium" ? "Downgrade" : "Upgrade to Premium"}
+            </Button>
+          </div>
+          {plan === "free" && (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+              {[
+                "Scenario Compare",
+                "Capital Optimizer",
+                "Opportunity Alerts",
+                "Auto Price Refresh",
+                "Advanced Goal Ladder",
+                "Unlimited Scenarios",
+              ].map((f) => (
+                <div key={f} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Check className="h-3 w-3 text-primary" />
+                  {f}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Appearance */}
         <div className="rounded-lg border border-border bg-card p-5 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Appearance</h2>
@@ -111,7 +163,7 @@ export default function Settings() {
         {/* Pro Settings */}
         {ENABLE_LOOKUP_LIMIT && (
           <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Plan</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Lookup Limits</h2>
             <ProSettings />
           </div>
         )}

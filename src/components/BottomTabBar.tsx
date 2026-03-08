@@ -22,17 +22,23 @@ export default function BottomTabBar() {
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
+          const locked = tab.premiumFeature && !hasFeature(tab.premiumFeature);
           return (
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors relative ${
                 active
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+              <div className="relative">
+                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
+                {locked && (
+                  <Lock className="h-2.5 w-2.5 absolute -top-1 -right-1.5 text-primary" />
+                )}
+              </div>
               <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>
                 {tab.label}
               </span>

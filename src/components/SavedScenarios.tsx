@@ -146,7 +146,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 <X className="h-3 w-3" />
                 Exit Compare
               </Button>
-            ) : (
+            ) : hasFeature("scenario_compare") ? (
               <Button
                 size="sm"
                 variant="outline"
@@ -155,6 +155,17 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               >
                 <GitCompareArrows className="h-3 w-3" />
                 Compare
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 text-[10px] px-2.5 gap-1 opacity-70"
+                onClick={() => toast.info("Upgrade to Premium to compare scenarios side-by-side.")}
+              >
+                <Lock className="h-3 w-3" />
+                Compare
+                <PremiumBadge className="ml-0.5" />
               </Button>
             )
           )}
