@@ -5,6 +5,7 @@ import {
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
 } from "lucide-react";
+import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -77,7 +78,7 @@ export default function Holdings() {
   const [deleting, setDeleting] = useState<Holding | null>(null);
   const [tick, setTick] = useState(0);
   const [csvOpen, setCsvOpen] = useState(false);
-  const [refreshingAll, setRefreshingAll] = useState(false);
+  const { refreshing: refreshingAll, refreshAll, lastRefreshed } = useRefreshPrices();
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
   });
@@ -187,17 +188,15 @@ export default function Holdings() {
 
   // ── Refresh all prices ─────────────────────────────────────
   const refreshAllPrices = useCallback(async () => {
-    setRefreshingAll(true);
-    const symbols = holdings.map((h) => apiTicker(h.ticker, (h.exchange ?? "US") as any));
-    const results = await Promise.allSettled(symbols.map((t) => fetchStockPrice(t)));
-    let fetched = 0;
-    results.forEach((r) => {
-      if (r.status === "fulfilled" && r.value.ok) fetched++;
-    });
-    setRefreshingAll(false);
-    toast.success(`Fetched prices for ${fetched} of ${symbols.length} stocks`);
-    refresh();
-  }, [holdings]);
+    const result = await refreshAll(() => refresh());
+    if (result.failed.length === 0) {
+      toast.success("Market prices refreshed");
+    } else if (result.success > 0) {
+      toast.success(`Refreshed ${result.success} of ${result.total} prices. Failed: ${result.failed.join(", ")}`);
+    } else {
+      toast.error("Could not refresh prices");
+    }
+  }, [refreshAll]);
 
   // ── Single price fetch ─────────────────────────────────────
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
@@ -340,10 +339,15 @@ export default function Holdings() {
                   </Table>
                 </div>
 
-                <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll}>
+                <div className="flex items-center justify-between">
+                  {lastRefreshed && (
+                    <span className="text-[11px] text-muted-foreground opacity-70">
+                      Last refreshed {formatLastRefreshed(lastRefreshed)}
+                    </span>
+                  )}
+                  <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll} className="ml-auto">
                     <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                    {refreshingAll ? "Fetching…" : "Refresh All"}
+                    {refreshingAll ? "Refreshing…" : "Refresh Prices"}
                   </Button>
                 </div>
               </>
