@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
-  ChevronRight, RefreshCw, Briefcase, ArrowUpDown,
+  ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
