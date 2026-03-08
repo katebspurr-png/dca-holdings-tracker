@@ -174,7 +174,7 @@ export default function HoldingDetail() {
   // Active tab
   const tabParam = searchParams.get("tab") as WorkspaceTab | null;
   const [activeTab, setActiveTab] = useState<WorkspaceTab>(
-    tabParam && ["overview", "strategy", "calculator", "history"].includes(tabParam) ? tabParam : "strategy"
+    tabParam && ["overview", "strategy", "calculator", "history", "insights"].includes(tabParam) ? tabParam : "strategy"
   );
 
   const switchTab = (tab: WorkspaceTab) => {
