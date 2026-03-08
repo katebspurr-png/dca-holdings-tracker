@@ -1,11 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, Layers, Sparkles, Settings, TrendingDown } from "lucide-react";
+import { Briefcase, Layers, Sparkles, Settings, TrendingDown, Lock } from "lucide-react";
+import { hasFeature } from "@/lib/feature-access";
 
 const TABS = [
-  { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/" },
-  { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/") },
-  { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p: string) => p === "/optimizer" },
-  { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings" },
+  { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/", premiumFeature: null },
+  { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/"), premiumFeature: null },
+  { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p: string) => p === "/optimizer", premiumFeature: "optimizer" as const },
+  { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings", premiumFeature: null },
 ] as const;
 
 export default function BottomTabBar() {
