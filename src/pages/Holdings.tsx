@@ -24,7 +24,7 @@ import {
   getScenariosForHolding,
   type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
 } from "@/lib/storage";
-import { fetchStockPrice, getCachedQuote, type StockQuote } from "@/lib/stock-price";
+import { getCachedQuote, type StockQuote } from "@/lib/stock-price";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
