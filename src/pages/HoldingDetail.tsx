@@ -99,6 +99,9 @@ export default function HoldingDetail() {
           </Button>
         </div>
 
+        {/* Goal Ladder */}
+        <GoalLadder holding={holding} onSaved={() => setVersion((v) => v + 1)} />
+
         {/* Recommended targets */}
         <div className="rounded-lg border border-border bg-card p-6">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
