@@ -88,12 +88,27 @@ export type WhatIfComparison = {
   created_at: string;
 };
 
+export type OptimizationScenario = {
+  id: string;
+  name: string;
+  total_budget: number;
+  include_fees: boolean;
+  optimization_mode: string;
+  selected_holdings_json: string;
+  allocation_results_json: string;
+  projected_portfolio_avg: number;
+  total_fees: number;
+  total_spend: number;
+  created_at: string;
+};
+
 export interface AppData {
   version: 1;
   holdings: Holding[];
   scenarios: Scenario[];
   transactions?: Transaction[];
   whatIfComparisons?: WhatIfComparison[];
+  optimizationScenarios?: OptimizationScenario[];
 }
 
 const STORAGE_KEY = "dca-down-data";
