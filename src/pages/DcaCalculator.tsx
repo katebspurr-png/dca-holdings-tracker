@@ -735,7 +735,24 @@ export default function DcaCalculator() {
             if (s.budget_percent_used != null) setBudgetPercent(s.budget_percent_used);
             setIncludeFees(s.include_fees);
           }}
+          onApplyBuy={handleApplyScenario}
         />
+
+        {/* Scenario apply confirmation */}
+        <AlertDialog open={!!scenarioToApply} onOpenChange={(o) => !o && setScenarioToApply(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply this scenario to {holding.ticker}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will update the holding's shares and average cost based on the saved scenario. A transaction record will be saved.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmApplyScenario}>Apply</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
