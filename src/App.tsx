@@ -43,6 +43,7 @@ const App = () => {
           <Route path="/scenarios/:id" element={<ScenarioDetail />} />
           <Route path="/what-if" element={<WhatIfScenarios />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/update-prices" element={<UpdatePrices />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomTabBar />
