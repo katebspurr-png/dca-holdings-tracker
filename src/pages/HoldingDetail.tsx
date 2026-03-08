@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calculator, Undo2 } from "lucide-react";
+import GoalLadder from "@/components/GoalLadder";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -97,6 +98,9 @@ export default function HoldingDetail() {
             Open DCA Calculator
           </Button>
         </div>
+
+        {/* Goal Ladder */}
+        <GoalLadder holding={holding} onSaved={() => setVersion((v) => v + 1)} />
 
         {/* Recommended targets */}
         <div className="rounded-lg border border-border bg-card p-6">

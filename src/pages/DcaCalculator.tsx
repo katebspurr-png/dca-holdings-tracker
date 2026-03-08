@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -141,9 +141,14 @@ function compute(
 export default function DcaCalculator() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [method, setMethod] = useState<Method>("price_shares");
-  const [val1, setVal1] = useState("");
-  const [val2, setVal2] = useState("");
+  const [searchParams] = useSearchParams();
+  const [method, setMethod] = useState<Method>(() => {
+    const m = searchParams.get("method");
+    return (m && ["price_shares", "price_budget", "price_target", "budget_target"].includes(m))
+      ? m as Method : "price_shares";
+  });
+  const [val1, setVal1] = useState(() => searchParams.get("val1") || "");
+  const [val2, setVal2] = useState(() => searchParams.get("val2") || "");
   const [includeFees, setIncludeFees] = useState(true);
   const [budgetPercent, setBudgetPercent] = useState(100);
   const [tick, setTick] = useState(0);
