@@ -171,6 +171,7 @@ export default function HoldingDetail() {
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
   const [showUndoConfirm, setShowUndoConfirm] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Active tab
   const tabParam = searchParams.get("tab") as WorkspaceTab | null;
