@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Info, Save, Target, Zap, CheckCircle, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import SavedScenarios from "@/components/SavedScenarios";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -26,13 +27,16 @@ function formatVolume(vol: number): string {
   return vol.toFixed(0);
 }
 
+const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt4 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+
 type Method = "price_shares" | "price_budget" | "price_target" | "budget_target";
 
-const METHOD_OPTIONS: { value: Method; label: string }[] = [
-  { value: "price_shares", label: "Price + Shares" },
-  { value: "price_budget", label: "Price + Budget (Recommended target)" },
-  { value: "price_target", label: "Price + Target Avg" },
-  { value: "budget_target", label: "Budget + Target Avg" },
+const METHOD_OPTIONS: { value: Method; label: string; desc: string }[] = [
+  { value: "price_shares", label: "Price + Shares", desc: "Set buy price & share count" },
+  { value: "price_budget", label: "Price + Budget", desc: "Recommended target workflow" },
+  { value: "price_target", label: "Price + Target Avg", desc: "Target a specific average" },
+  { value: "budget_target", label: "Budget + Target Avg", desc: "Fixed budget, target avg" },
 ];
 
 const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: string; label: string }]> = {
@@ -42,14 +46,14 @@ const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: strin
   ],
   price_budget: [
     { key: "buyPrice", label: "Buy price" },
-    { key: "budget", label: "Max budget (shares only, excl. fee)" },
+    { key: "budget", label: "Max budget (excl. fee)" },
   ],
   price_target: [
     { key: "buyPrice", label: "Buy price" },
     { key: "targetAvg", label: "Target average cost" },
   ],
   budget_target: [
-    { key: "budget", label: "Budget (shares only, excl. fee)" },
+    { key: "budget", label: "Budget (excl. fee)" },
     { key: "targetAvg", label: "Target average cost" },
   ],
 };
@@ -139,6 +143,27 @@ function compute(
   }
 }
 
+// Preset chips per method
+function getPresets(method: Method, field: 1 | 2): { label: string; value: string }[] {
+  if (method === "price_shares" && field === 2) {
+    return [
+      { label: "+10", value: "10" },
+      { label: "+25", value: "25" },
+      { label: "+50", value: "50" },
+      { label: "+100", value: "100" },
+    ];
+  }
+  if ((method === "price_budget" || method === "budget_target") && field === (method === "price_budget" ? 2 : 1)) {
+    return [
+      { label: "$250", value: "250" },
+      { label: "$500", value: "500" },
+      { label: "$1,000", value: "1000" },
+      { label: "$2,500", value: "2500" },
+    ];
+  }
+  return [];
+}
+
 export default function DcaCalculator() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -194,6 +219,7 @@ export default function DcaCalculator() {
     const n2 = parseFloat(method === "price_budget" ? effectiveVal2 : val2);
     if (isNaN(n1) || isNaN(n2)) return null;
     return compute(method, Number(holding.shares), Number(holding.avg_cost), holding.fee_type, Number(holding.fee_value), includeFees, n1, n2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [method, val1, val2, effectiveVal2, holding, includeFees, tick]);
 
   const handleMethodChange = (v: Method) => {
@@ -319,163 +345,330 @@ export default function DcaCalculator() {
   const isValid = result !== null && result.ok === true;
   const isPriceBudget = method === "price_budget";
 
+  // Market data
+  const quote = getCachedQuote(apiTicker(holding.ticker, exchange).toUpperCase());
+  const marketPrice = quote?.price ?? null;
+  const marketValue = marketPrice != null ? S * marketPrice : null;
+  const costBasis = S * A;
+  const unrealizedPL = marketValue != null ? marketValue - costBasis : null;
+  const unrealizedPct = unrealizedPL != null && costBasis > 0 ? (unrealizedPL / costBasis) * 100 : null;
+
+  // Result comparison
+  const r = isValid ? (result as ResultOk) : null;
+  const avgDiff = r ? A - r.newAvg : 0;
+  const avgImproves = avgDiff > 0.005;
+  const avgWorsens = avgDiff < -0.005;
+
+  const presets1 = getPresets(method, 1);
+  const presets2 = getPresets(method, 2);
+
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center gap-4 px-6 py-5">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Holdings
+    <div className="min-h-screen bg-background pb-28">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 sm:px-6 py-3">
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate("/")}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">
-            DCA Calculator —{" "}
-            <span className="text-primary font-mono">{holding.ticker}</span>
-            <span className="text-xs font-medium text-muted-foreground ml-2 bg-muted px-2 py-0.5 rounded-full">
-              {exLabel}
-            </span>
-          </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-lg font-bold tracking-tight truncate">
+              <span className="text-primary font-mono">{holding.ticker}</span>
+              <span className="text-muted-foreground font-normal ml-1.5 text-sm">DCA Planner</span>
+            </h1>
+            <Badge variant="outline" className="text-[10px] px-1.5 h-5 shrink-0">{exLabel}</Badge>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
-        {/* Current holding stats */}
-        <div className="rounded-lg border border-border bg-card p-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Stat label="Ticker" value={holding.ticker} />
-            <Stat label="Shares (S)" value={S.toFixed(4)} />
-            <Stat label="Avg Cost (A)" value={`${cp}${A.toFixed(2)}`} />
-            <Stat label={`Fee (${holding.fee_type})`} value={feeLabel} />
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-6">
+        {/* Position Overview */}
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Position Overview</h2>
           </div>
-          {/* Today's Trading row */}
-          {(() => {
-            const q = getCachedQuote(apiTicker(holding.ticker, exchange).toUpperCase());
-            if (!q || q.todayOpen == null) return null;
-            return (
-              <p className="text-xs text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
-                Open: {cp}{q.todayOpen.toFixed(2)}
-                {q.todayLow != null && <> · Low: {cp}{q.todayLow.toFixed(2)}</>}
-                {q.todayHigh != null && <> · High: {cp}{q.todayHigh.toFixed(2)}</>}
-                {q.todayVolume != null && <> · Vol: {formatVolume(q.todayVolume)}</>}
-              </p>
-            );
-          })()}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            <MiniStat label="Shares" value={fmt4(S)} />
+            <MiniStat label="Avg Cost" value={`${cp}${fmt2(A)}`} accent />
+            <MiniStat label="Cost Basis" value={`${cp}${fmt2(costBasis)}`} />
+            {marketPrice != null && (
+              <MiniStat label="Market Price" value={`${cp}${fmt2(marketPrice)}`} />
+            )}
+            {marketValue != null && (
+              <MiniStat label="Market Value" value={`${cp}${fmt2(marketValue)}`} />
+            )}
+            {unrealizedPL != null && (
+              <MiniStat
+                label="Unrealized P/L"
+                value={`${unrealizedPL >= 0 ? "+" : ""}${cp}${fmt2(unrealizedPL)}`}
+                sub={unrealizedPct != null ? `${unrealizedPct >= 0 ? "+" : ""}${unrealizedPct.toFixed(1)}%` : undefined}
+                positive={unrealizedPL >= 0}
+                negative={unrealizedPL < 0}
+              />
+            )}
+          </div>
+          {/* Trading data */}
+          {quote && quote.todayOpen != null && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+              <span>Open {cp}{quote.todayOpen.toFixed(2)}</span>
+              {quote.todayLow != null && <span>Low {cp}{quote.todayLow.toFixed(2)}</span>}
+              {quote.todayHigh != null && <span>High {cp}{quote.todayHigh.toFixed(2)}</span>}
+              {quote.todayVolume != null && <span>Vol {formatVolume(quote.todayVolume)}</span>}
+              <span>Fee {feeLabel}</span>
+            </div>
+          )}
+          {(!quote || quote.todayOpen == null) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+              <span>Fee: {feeLabel} ({holding.fee_type})</span>
+            </div>
+          )}
         </div>
 
-        {/* Method + Inputs */}
-        <div className="rounded-lg border border-border bg-card p-6 space-y-5">
-          <div className="space-y-2">
-            <Label>Method</Label>
-            <Select value={method} onValueChange={handleMethodChange}>
-              <SelectTrigger className="w-full sm:w-80 bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                {METHOD_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* 2-column calculator layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          {/* Left: Inputs */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Method selector */}
+            <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">Method</Label>
+                <Select value={method} onValueChange={handleMethodChange}>
+                  <SelectTrigger className="w-full bg-background h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    {METHOD_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        <span className="font-medium">{o.label}</span>
+                        <span className="text-muted-foreground ml-1.5 text-xs hidden sm:inline">— {o.desc}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Input fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Field 1 */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="input1" className="text-xs text-muted-foreground">{fields[0].label}</Label>
+                    {input1IsPrice && (
+                      <button
+                        type="button"
+                        className="text-[11px] text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
+                        disabled={fetchingPrice || !canLookup()}
+                        onClick={handleUseCurrentPrice}
+                      >
+                        <Zap className={`h-3 w-3 ${fetchingPrice ? "animate-pulse" : ""}`} />
+                        Live price
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="input1"
+                    type="number"
+                    step="any"
+                    placeholder="0.00"
+                    value={val1}
+                    onChange={(e) => setVal1(e.target.value)}
+                    className="h-9 font-mono text-sm bg-background"
+                  />
+                  {presets1.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {presets1.map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => setVal1(p.value)}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Field 2 */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="input2" className="text-xs text-muted-foreground">{fields[1].label}</Label>
+                  <Input
+                    id="input2"
+                    type="number"
+                    step="any"
+                    placeholder="0.00"
+                    value={val2}
+                    onChange={(e) => setVal2(e.target.value)}
+                    className="h-9 font-mono text-sm bg-background"
+                  />
+                  {presets2.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {presets2.map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => setVal2(p.value)}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Budget slider */}
+              {isPriceBudget && (
+                <div className="space-y-2 pt-1">
+                  <Label className="text-xs text-muted-foreground">Budget allocation: <span className="text-foreground font-semibold">{budgetPercent}%</span></Label>
+                  <Slider min={25} max={100} step={25} value={[budgetPercent]} onValueChange={(v) => setBudgetPercent(v[0])} />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    {SLIDER_STEPS.map((s) => (
+                      <span key={s} className={budgetPercent === s ? "text-primary font-bold" : ""}>{s}%</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fee toggle */}
+              <div className="flex items-center gap-2.5 pt-1">
+                <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} className="scale-90" />
+                <Label htmlFor="include-fees" className="cursor-pointer text-xs text-muted-foreground">Include fees</Label>
+              </div>
+            </div>
+
+            {/* Error display */}
+            {isError && (() => {
+              const err = result as ResultErr;
+              return err.level === "error" ? (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-destructive">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  {err.error}
+                </div>
+              ) : (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                  <Info className="h-3.5 w-3.5 shrink-0" />
+                  {err.error}
+                </p>
+              );
+            })()}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="input1">{fields[0].label}</Label>
-                {input1IsPrice && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs"
-                    disabled={fetchingPrice || !canLookup()}
-                    onClick={handleUseCurrentPrice}
-                  >
-                    <Zap className={`mr-1 h-3 w-3 ${fetchingPrice ? "animate-pulse" : ""}`} />
-                    Use current price
-                  </Button>
+          {/* Right: Results */}
+          <div className="lg:col-span-2">
+            <div className={`rounded-xl border bg-card transition-all sticky top-16 ${isValid ? "border-primary/20" : "border-border opacity-50"}`}>
+              {/* Results header */}
+              <div className="p-4 sm:p-5">
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                  {isValid ? "Projected Outcome" : "Results"}
+                </h2>
+
+                {isValid && r ? (
+                  <div className="space-y-4">
+                    {/* Hero metric: New Avg */}
+                    <div className="text-center pb-3 border-b border-border">
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                        {isPriceBudget ? "Achievable Target" : "New Average Cost"}
+                      </p>
+                      <p className="text-3xl font-mono font-bold text-primary leading-none">
+                        {cp}{fmt2(r.newAvg)}
+                      </p>
+                      {/* Comparison vs current avg */}
+                      <div className="flex items-center justify-center gap-1.5 mt-2">
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          Current {cp}{fmt2(A)}
+                        </span>
+                        <span className="text-[11px] mx-0.5">→</span>
+                        {avgImproves ? (
+                          <span className="text-[11px] font-medium text-primary flex items-center gap-0.5">
+                            <TrendingDown className="h-3 w-3" />
+                            −{cp}{fmt2(Math.abs(avgDiff))}/share
+                          </span>
+                        ) : avgWorsens ? (
+                          <span className="text-[11px] font-medium text-destructive flex items-center gap-0.5">
+                            <TrendingUp className="h-3 w-3" />
+                            +{cp}{fmt2(Math.abs(avgDiff))}/share
+                          </span>
+                        ) : (
+                          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-0.5">
+                            <Minus className="h-3 w-3" />
+                            No change
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Detail grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                      <ResultRow label="Shares to buy" value={fmt4(r.x)} />
+                      <ResultRow label="Budget invested" value={`${cp}${fmt2(r.budget)}`} />
+                      <ResultRow label="Fee applied" value={`${cp}${fmt2(r.feeApplied)}`} />
+                      <ResultRow label="Total spend" value={`${cp}${fmt2(r.totalSpend)}`} />
+                      <ResultRow label="New total shares" value={fmt4(r.totalShares)} />
+                      {r.effectivePrice !== null && (
+                        <ResultRow label="Eff. buy price" value={`${cp}${fmt2(r.effectivePrice)}`} />
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                      {isPriceBudget && (
+                        <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleUseAsTarget}>
+                          <Target className="mr-1.5 h-3.5 w-3.5" />
+                          Use as target
+                        </Button>
+                      )}
+                      <div className="flex gap-2">
+                        <Button onClick={handleSave} size="sm" variant="outline" className="flex-1 h-8 text-xs">
+                          <Save className="mr-1.5 h-3.5 w-3.5" />
+                          Save
+                        </Button>
+                        <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="flex-1 h-8 text-xs">
+                          <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                          {applying ? "Applying…" : "Apply Buy"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-xs text-muted-foreground">
+                      {hasInputs ? "Adjust inputs to see results." : "Enter values to see projected outcome."}
+                    </p>
+                  </div>
                 )}
               </div>
-              <Input id="input1" type="number" step="any" placeholder="0" value={val1} onChange={(e) => setVal1(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="input2">{fields[1].label}</Label>
-              <Input id="input2" type="number" step="any" placeholder="0" value={val2} onChange={(e) => setVal2(e.target.value)} />
-            </div>
-          </div>
-
-          {isPriceBudget && (
-            <div className="space-y-3">
-              <Label>Use % of max budget: {budgetPercent}%</Label>
-              <Slider min={25} max={100} step={25} value={[budgetPercent]} onValueChange={(v) => setBudgetPercent(v[0])} />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                {SLIDER_STEPS.map((s) => (
-                  <span key={s} className={budgetPercent === s ? "text-primary font-semibold" : ""}>{s}%</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
-            <Label htmlFor="include-fees" className="cursor-pointer">Include fees in calculation</Label>
           </div>
         </div>
 
-        {isError && (() => {
-          const err = result as ResultErr;
-          return err.level === "error" ? (
-            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {err.error}
-            </div>
-          ) : (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Info className="h-4 w-4 shrink-0" />
-              {err.error}
-            </p>
-          );
-        })()}
-
-        {/* Results */}
-        <div className={`rounded-lg border border-border bg-card p-6 transition-opacity ${isValid ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Results</h2>
-          {isValid ? (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {isPriceBudget && <Stat label="Achievable Target Avg Cost" value={`${cp}${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
-                <Stat label="Shares to Buy" value={(result as ResultOk).x.toFixed(4)} />
-                <Stat label="Budget Invested" value={`${cp}${(result as ResultOk).budget.toFixed(2)}`} />
-                <Stat label="Fee Applied" value={`${cp}${(result as ResultOk).feeApplied.toFixed(2)}`} />
-                <Stat label="Total Spend" value={`${cp}${(result as ResultOk).totalSpend.toFixed(2)}`} />
-                <Stat label="New Total Shares" value={(result as ResultOk).totalShares.toFixed(4)} />
-                {!isPriceBudget && <Stat label="New Avg Cost" value={`${cp}${(result as ResultOk).newAvg.toFixed(2)}`} highlight />}
-                {(result as ResultOk).effectivePrice !== null && <Stat label="Effective Buy Price" value={`${cp}${(result as ResultOk).effectivePrice!.toFixed(2)}`} />}
+        {/* Sticky bottom bar on valid result */}
+        {isValid && r && (
+          <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden">
+            <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-2.5 gap-3">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                  <p className="text-sm font-mono font-bold text-primary">{cp}{fmt2(r.newAvg)}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Spend</p>
+                  <p className="text-sm font-mono font-semibold">{cp}{fmt2(r.totalSpend)}</p>
+                </div>
               </div>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {hasInputs ? "Adjust inputs to see results." : "Enter values above to see results."}
-            </p>
-          )}
-          {isValid && (
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              {isPriceBudget && (
-                <Button variant="outline" size="sm" onClick={handleUseAsTarget}>
-                  <Target className="mr-1.5 h-4 w-4" />
-                  Use as target
+              <div className="flex gap-1.5 shrink-0">
+                <Button onClick={handleSave} size="sm" variant="outline" className="h-7 text-[11px] px-2.5">
+                  <Save className="h-3 w-3" />
                 </Button>
-              )}
-              <Button onClick={handleSave} size="sm" variant="outline">
-                <Save className="mr-1.5 h-4 w-4" />
-                Save scenario
-              </Button>
-              <Button onClick={handleApplyBuy} size="sm" disabled={applying}>
-                <CheckCircle className="mr-1.5 h-4 w-4" />
-                {applying ? "Applying…" : "Apply this buy"}
-              </Button>
+                <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="h-7 text-[11px] px-2.5">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Apply
+                </Button>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Apply confirmation dialog */}
         <AlertDialog open={showApplyConfirm} onOpenChange={setShowApplyConfirm}>
@@ -498,6 +691,8 @@ export default function DcaCalculator() {
           holdingId={holding.id}
           exchange={exchange as any}
           refreshKey={tick}
+          currentAvg={A}
+          currencyPrefix={cp}
           onUseScenario={(s: Scenario) => {
             const m = s.method as any;
             setMethod(m);
@@ -512,11 +707,31 @@ export default function DcaCalculator() {
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function MiniStat({ label, value, accent, sub, positive, negative }: {
+  label: string; value: string; accent?: boolean; sub?: string; positive?: boolean; negative?: boolean;
+}) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className={`text-lg font-mono font-semibold ${highlight ? "text-primary" : ""}`}>{value}</p>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">{label}</p>
+      <p className={`text-sm font-mono font-semibold leading-tight ${
+        accent ? "text-primary" : positive ? "text-primary" : negative ? "text-destructive" : ""
+      }`}>
+        {value}
+      </p>
+      {sub && (
+        <p className={`text-[10px] font-mono ${positive ? "text-primary" : negative ? "text-destructive" : "text-muted-foreground"}`}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ResultRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-baseline">
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-xs font-mono font-medium tabular-nums">{value}</span>
     </div>
   );
 }
