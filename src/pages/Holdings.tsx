@@ -379,6 +379,10 @@ export default function Holdings() {
             </DropdownMenu>
 
             <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); refreshAllPrices(); }} disabled={refreshingAll}>
+                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
+                {refreshingAll ? "Refreshing…" : "Refresh Prices"}
+              </Button>
               <Button size="sm" variant="outline" onClick={() => setCsvOpen(true)}>
                 <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
                 CSV
