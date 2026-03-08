@@ -215,7 +215,7 @@ export function getHolding(id: string): Holding | undefined {
   return read().holdings.find((h) => h.id === id);
 }
 
-export function addHolding(h: Omit<Holding, "id" | "created_at">): Holding {
+export function addHolding(h: Omit<Holding, "id" | "created_at" | "initial_avg_cost"> & { initial_avg_cost?: number }): Holding {
   const data = read();
   const holding: Holding = {
     ...h,
