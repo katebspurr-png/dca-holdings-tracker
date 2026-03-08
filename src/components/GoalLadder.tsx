@@ -103,7 +103,7 @@ interface Props {
   onSaved?: () => void;
 }
 
-export default function GoalLadder({ holding, onSaved }: Props) {
+export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const cp = currencyPrefix(holding.exchange ?? "US");
