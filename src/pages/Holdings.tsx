@@ -199,7 +199,7 @@ export default function Holdings() {
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────
-  const handleCreate = (data: Omit<Holding, "id" | "created_at">) => {
+  const handleCreate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     addHolding(data);
     setFormOpen(false);
     toast.success("Stock added");
