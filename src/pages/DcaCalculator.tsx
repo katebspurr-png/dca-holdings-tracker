@@ -155,7 +155,8 @@ export default function DcaCalculator() {
 
   const input1IsPrice = method !== "budget_target";
 
-  const holding = id ? getHolding(id) : undefined;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, holdingVersion]);
   const exchange = holding?.exchange ?? "US";
   const cp = currencyPrefix(exchange);
 
