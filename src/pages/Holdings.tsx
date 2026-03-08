@@ -348,6 +348,11 @@ export default function Holdings() {
               <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
             </section>
 
+            {/* ════════════════════════════════════════════════
+                SECTION 2.5 — Strategy Impact
+               ════════════════════════════════════════════════ */}
+            <StrategyImpact holdings={holdings} />
+
             {/* Divider */}
             <div className="border-t border-border" />
 
