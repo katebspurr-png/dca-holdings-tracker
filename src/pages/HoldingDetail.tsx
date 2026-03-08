@@ -783,6 +783,17 @@ export default function HoldingDetail() {
             )}
           </div>
         )}
+
+        {/* ═══════════════ INSIGHTS TAB ═══════════════ */}
+        {activeTab === "insights" && (
+          <InsightsTab
+            holding={holding}
+            marketPrice={marketPrice}
+            cp={cp}
+            onUseInCalculator={openCalculatorPrefilled}
+            onSaved={() => setVersion((v) => v + 1)}
+          />
+        )}
       </main>
 
       {/* Undo confirmation */}
