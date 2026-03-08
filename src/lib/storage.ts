@@ -88,12 +88,27 @@ export type WhatIfComparison = {
   created_at: string;
 };
 
+export type OptimizationScenario = {
+  id: string;
+  name: string;
+  total_budget: number;
+  include_fees: boolean;
+  optimization_mode: string;
+  selected_holdings_json: string;
+  allocation_results_json: string;
+  projected_portfolio_avg: number;
+  total_fees: number;
+  total_spend: number;
+  created_at: string;
+};
+
 export interface AppData {
   version: 1;
   holdings: Holding[];
   scenarios: Scenario[];
   transactions?: Transaction[];
   whatIfComparisons?: WhatIfComparison[];
+  optimizationScenarios?: OptimizationScenario[];
 }
 
 const STORAGE_KEY = "dca-down-data";
@@ -425,5 +440,26 @@ export function undoLastBuy(holdingId: string): void {
     undone_at: new Date().toISOString(),
   };
 
+  write(data);
+}
+
+// ── Optimization Scenarios ──────────────────────────────────
+
+export function getOptimizationScenarios(): OptimizationScenario[] {
+  return (read().optimizationScenarios ?? []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+export function addOptimizationScenario(s: Omit<OptimizationScenario, "id" | "created_at">): OptimizationScenario {
+  const data = read();
+  const opt: OptimizationScenario = { ...s, id: uid(), created_at: new Date().toISOString() };
+  if (!data.optimizationScenarios) data.optimizationScenarios = [];
+  data.optimizationScenarios.push(opt);
+  write(data);
+  return opt;
+}
+
+export function removeOptimizationScenario(id: string) {
+  const data = read();
+  data.optimizationScenarios = (data.optimizationScenarios ?? []).filter((s) => s.id !== id);
   write(data);
 }

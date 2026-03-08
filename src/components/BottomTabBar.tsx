@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, DollarSign, Layers, Settings } from "lucide-react";
+import { Briefcase, DollarSign, Layers, Settings, Sparkles } from "lucide-react";
 
 const TABS = [
   { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/" },
   { path: "/update-prices", label: "Prices", icon: DollarSign, match: (p: string) => p === "/update-prices" },
   { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/") },
+  { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p: string) => p === "/optimizer" },
   { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings" },
 ] as const;
 
