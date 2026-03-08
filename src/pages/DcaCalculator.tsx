@@ -251,6 +251,50 @@ export default function DcaCalculator() {
     setTick((t) => t + 1);
   };
 
+  const getBuyPrice = (): number => {
+    if (!result || !result.ok) return 0;
+    const r = result as ResultOk;
+    const n1 = parseFloat(val1);
+    if (method === "budget_target" && r.effectivePrice !== null) return r.effectivePrice;
+    return n1;
+  };
+
+  const handleApplyBuy = () => {
+    if (!holding || !result || !result.ok || applying) return;
+    setShowApplyConfirm(true);
+  };
+
+  const confirmApplyBuy = () => {
+    if (!holding || !result || !result.ok || applying) return;
+    const r = result as ResultOk;
+    setApplying(true);
+    setShowApplyConfirm(false);
+    try {
+      applyBuyToHolding({
+        holdingId: holding.id,
+        buyPrice: getBuyPrice(),
+        sharesBought: r.x,
+        budgetInvested: r.budget,
+        feeApplied: r.feeApplied,
+        totalSpend: r.totalSpend,
+        includeFees: includeFees,
+        newTotalShares: r.totalShares,
+        newAvgCost: r.newAvg,
+        method,
+      });
+      toast({ title: "Buy applied successfully" });
+      setVal1("");
+      setVal2("");
+      setBudgetPercent(100);
+      setHoldingVersion((v) => v + 1);
+      setTick((t) => t + 1);
+    } catch (e: any) {
+      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (!holding) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
