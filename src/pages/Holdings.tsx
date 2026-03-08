@@ -546,6 +546,27 @@ export default function Holdings() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={bulkDeleting} onOpenChange={(open) => !open && setBulkDeleting(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {selected.size === holdings.length ? "all holdings" : `${selected.size} selected holding${selected.size !== 1 ? "s" : ""}`} and their saved calculations. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <CsvImportDialog
         open={csvOpen}
         onOpenChange={setCsvOpen}
