@@ -750,3 +750,71 @@ function DcaOpportunities({
     </div>
   );
 }
+
+/* ── Next Best Move ─────────────────────────────────────── */
+function NextBestMove({
+  holdings,
+  livePrices,
+  navigate,
+}: {
+  holdings: Holding[];
+  livePrices: Record<string, number | null>;
+  navigate: (path: string) => void;
+}) {
+  const TEST_INVESTMENT = 500;
+
+  const best = useMemo(() => {
+    let top: { holding: Holding; price: number; newAvg: number; improvement: number } | null = null;
+    let maxImprovement = 0;
+
+    for (const h of holdings) {
+      const price = livePrices[h.id];
+      if (price == null || price <= 0 || price >= h.avg_cost) continue;
+      const sharesBought = TEST_INVESTMENT / price;
+      const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
+      const improvement = h.avg_cost - newAvg;
+      if (improvement > maxImprovement) {
+        maxImprovement = improvement;
+        top = { holding: h, price, newAvg, improvement };
+      }
+    }
+    return top;
+  }, [holdings, livePrices]);
+
+  if (!best) return null;
+
+  const h = best.holding;
+  const cp = currencyPrefix((h.exchange ?? "US") as any);
+
+  return (
+    <section>
+      <div className="flex items-center gap-2 mb-3">
+        <Zap className="h-4 w-4 text-primary" />
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Next Best Move
+        </h2>
+      </div>
+      <button
+        onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+        className="w-full rounded-xl border border-primary/15 bg-primary/[0.04] p-4 text-left hover:bg-primary/[0.08] transition-colors"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-lg font-mono font-bold">{h.ticker}</span>
+            <p className="text-sm font-mono text-foreground mt-1">
+              ${TEST_INVESTMENT} → Avg becomes {cp}{fmt(best.newAvg)}
+            </p>
+            <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-0.5">
+              <ArrowDownRight className="h-3.5 w-3.5" />
+              Improves avg by {cp}{fmt(best.improvement)}
+            </p>
+            <p className="text-[10px] text-muted-foreground/50 font-mono mt-1.5">
+              Current avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(best.price)}
+            </p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+        </div>
+      </button>
+    </section>
+  );
+}
