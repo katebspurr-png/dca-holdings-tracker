@@ -65,10 +65,6 @@ function computeTargetScenario(
     const r = h.fee_value / 100;
     const den = 1 + r - targetAvg / buyPrice;
     if (den <= 0) return null;
-    B = (S * (targetAvg - A)) / den;
-    if (B >= 0) return null; // target above current — need negative which means impossible
-    B = Math.abs(B);
-    // Recalc: actually S*(targetAvg - A) is negative since targetAvg < A
     B = (S * (A - targetAvg)) / den;
     if (B <= 0) return null;
     x = B / buyPrice;
@@ -76,8 +72,8 @@ function computeTargetScenario(
   } else {
     f = includeFees ? computeFee(h.fee_type, h.fee_value, 0) : 0;
     const den = targetAvg - buyPrice;
-    if (den >= 0) return null;
-    x = (S * (A - targetAvg) + f) / Math.abs(den);
+    if (den <= 0) return null;
+    x = (S * (A - targetAvg) + f) / den;
     if (x <= 0) return null;
     B = x * buyPrice;
   }
