@@ -337,6 +337,11 @@ export default function Holdings() {
             </section>
 
             {/* ════════════════════════════════════════════════
+                SECTION 1.5 — Next Best Move
+               ════════════════════════════════════════════════ */}
+            <NextBestMove holdings={holdings} livePrices={livePrices} navigate={navigate} />
+
+            {/* ════════════════════════════════════════════════
                 SECTION 2 — DCA Opportunities
                ════════════════════════════════════════════════ */}
             <section>
