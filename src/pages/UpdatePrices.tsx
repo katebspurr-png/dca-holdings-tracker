@@ -2,8 +2,9 @@ import { useState, useMemo, useCallback } from "react";
 import { getHoldings, currencyPrefix, apiTicker, type Holding } from "@/lib/storage";
 import { getCachedQuote, type StockQuote } from "@/lib/stock-price";
 import { useToast } from "@/hooks/use-toast";
+import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Save } from "lucide-react";
+import { RotateCcw, Save, RefreshCw } from "lucide-react";
 
 const CACHE_KEY = "dca-price-cache";
 
