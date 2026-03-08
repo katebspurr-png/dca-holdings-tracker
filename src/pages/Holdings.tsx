@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -148,6 +151,19 @@ export default function Holdings() {
     localStorage.setItem(SORT_KEY, mode);
   };
 
+  // ── Portfolio dashboard metrics ──────────────────────────────
+  const totalHoldingsCount = holdings.length;
+  const totalShares = holdings.reduce((sum, h) => sum + Number(h.shares), 0);
+  const totalCostBasis = holdings.reduce((sum, h) => sum + Number(h.shares) * Number(h.avg_cost), 0);
+  const weightedAvgCost = totalShares > 0 ? totalCostBasis / totalShares : 0;
+
+  // Holdings sorted by cost basis for summary table
+  const holdingsByCostBasis = useMemo(() => {
+    return [...holdings]
+      .map((h) => ({ ...h, costBasis: Number(h.shares) * Number(h.avg_cost) }))
+      .sort((a, b) => b.costBasis - a.costBasis);
+  }, [holdings]);
+
   // ── Portfolio summary ──────────────────────────────────────
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
@@ -279,6 +295,50 @@ export default function Holdings() {
                 pnlPct={hasAnyPrice && (totalUsdInvested + totalCadInvested) > 0 ? ((usdPnl + cadPnl) / (totalUsdInvested + totalCadInvested)) * 100 : null}
               />
             )}
+          </div>
+        )}
+
+        {/* ── Dashboard Metrics ── */}
+        {holdings.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <MetricCard label="Total Holdings" value={String(totalHoldingsCount)} />
+            <MetricCard label="Total Shares" value={totalShares.toFixed(4)} />
+            <MetricCard label="Total Cost Basis" value={`$${fmt(totalCostBasis)}`} />
+            <MetricCard label="Weighted Avg Cost" value={totalShares > 0 ? `$${fmt(weightedAvgCost)}` : "—"} />
+          </div>
+        )}
+
+        {/* ── Portfolio Summary by Holding ── */}
+        {holdings.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Portfolio Summary by Holding
+            </h2>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ticker</TableHead>
+                    <TableHead className="text-right">Shares</TableHead>
+                    <TableHead className="text-right">Avg Cost</TableHead>
+                    <TableHead className="text-right">Cost Basis</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {holdingsByCostBasis.map((h) => {
+                    const cp = currencyPrefix((h.exchange ?? "US") as any);
+                    return (
+                      <TableRow key={h.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/holdings/${h.id}`)}>
+                        <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
+                        <TableCell className="text-right font-mono">{Number(h.shares).toFixed(4)}</TableCell>
+                        <TableCell className="text-right font-mono">{cp}{fmt(Number(h.avg_cost))}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold">{cp}{fmt(h.costBasis)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
 
@@ -465,9 +525,9 @@ export default function Holdings() {
               <TrendingDown className="h-10 w-10 text-muted-foreground/50" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-semibold">Add your first stock to get started</h3>
+              <h3 className="text-lg font-semibold">No holdings yet</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Track your positions, calculate DCA targets, and run What-If scenarios to optimize your portfolio.
+                Add your first holding to start tracking your average cost and DCA scenarios.
               </p>
             </div>
             <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
@@ -555,6 +615,15 @@ function SummaryRow({
           {pnl >= 0 ? "+" : ""}{prefix}{fmt(pnl)} ({pnlPct >= 0 ? "+" : ""}{pnlPct.toFixed(1)}%)
         </span>
       )}
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-mono font-semibold mt-1">{value}</p>
     </div>
   );
 }
