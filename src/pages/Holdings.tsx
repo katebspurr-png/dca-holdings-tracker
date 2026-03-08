@@ -418,7 +418,7 @@ export default function Holdings() {
                 <div
                   key={h.id}
                   className={`group rounded-lg border border-border ${borderColor} border-l-[3px] bg-card hover:bg-muted/40 transition-colors cursor-pointer relative overflow-visible`}
-                  onClick={() => navigate(`/holdings/${h.id}/dca`)}
+                  onClick={() => navigate(`/holdings/${h.id}`)}
                 >
                   <div className="p-4 pr-10 space-y-2">
                     {/* Header row: ticker + price */}
