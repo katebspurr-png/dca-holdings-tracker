@@ -812,7 +812,7 @@ function NextBestMove({
       >
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-lg font-mono font-bold">{h.ticker}</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.5rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
             <p className="text-sm font-mono text-foreground mt-1">
               ${TEST_INVESTMENT} → Avg becomes {cp}{fmt(best.newAvg)}
             </p>
