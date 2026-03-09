@@ -678,7 +678,7 @@ function DcaOpportunities({
     <div>
       <div className="flex items-center gap-2 mb-4">
         <Gauge className="h-4.5 w-4.5 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           DCA Opportunities
         </h2>
         <span className="ml-auto text-[10px] text-muted-foreground/40">$500 test investment</span>
