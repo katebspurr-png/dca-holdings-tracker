@@ -256,10 +256,14 @@ export default function Holdings() {
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <h1 className="text-2xl font-bold tracking-tight">
-            <span className="text-primary">DCA.</span>{" "}
-            <span className="text-foreground">Strategy Engine</span>
-          </h1>
+          <div style={{ lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
+              DCA<span style={{ color: "hsl(160 60% 52%)" }}>.</span>
+            </span>
+            <div style={{ fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(215 16% 45%)", marginTop: 2 }}>
+              Strategy Engine
+            </div>
+          </div>
           {holdings.length > 0 && (
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
