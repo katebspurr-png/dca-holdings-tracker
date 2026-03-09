@@ -513,30 +513,7 @@ export default function HoldingDetail() {
             </div>
 
             {/* Cost Basis Progress */}
-            {holding.initial_avg_cost > holding.avg_cost && (
-              <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Cost Basis Progress</h2>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Initial Avg</p>
-                    <p className="text-base font-mono font-bold mt-0.5">{cp}{fmt2(holding.initial_avg_cost)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current Avg</p>
-                    <p className="text-base font-mono font-bold text-primary mt-0.5">{cp}{fmt2(A)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Improvement</p>
-                    <p className="text-base font-mono font-bold text-primary mt-0.5">
-                      {cp}{fmt2(holding.initial_avg_cost - A)}
-                    </p>
-                    <p className="text-[10px] font-mono text-muted-foreground">
-                      {((holding.initial_avg_cost - A) / holding.initial_avg_cost * 100).toFixed(1)}% lower
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            <CostBasisProgress holding={holding} currencyPrefix={cp} />
           </>
         )}
 
