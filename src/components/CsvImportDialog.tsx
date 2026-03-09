@@ -19,21 +19,33 @@ import { toast } from "sonner";
 
 const TICKER_NAMES = ["symbol", "ticker", "stock", "instrument"];
 const SHARES_NAMES = ["shares", "quantity", "qty", "units"];
-const PRICE_NAMES = ["price", "avg price", "average cost", "cost basis per share", "average price", "cost basis", "cost"];
+const PRICE_NAMES = [
+  "avg price",
+  "average price",
+  "average cost",
+  "cost basis per share",
+  "avg cost",
+  "book value per share",
+  "price paid",
+  "unit cost",
+  "price",
+];
+const EXCHANGE_NAMES = ["exchange", "market", "listing"];
 
 function fuzzyMatch(header: string, candidates: string[]): boolean {
   const h = header.toLowerCase().trim();
   return candidates.some((c) => h === c || h.includes(c));
 }
 
-function autoDetect(headers: string[]): { ticker: string; shares: string; price: string } {
-  let ticker = "", shares = "", price = "";
+function autoDetect(headers: string[]): { ticker: string; shares: string; price: string; exchange: string } {
+  let ticker = "", shares = "", price = "", exchange = "";
   for (const h of headers) {
     if (!ticker && fuzzyMatch(h, TICKER_NAMES)) ticker = h;
     if (!shares && fuzzyMatch(h, SHARES_NAMES)) shares = h;
     if (!price && fuzzyMatch(h, PRICE_NAMES)) price = h;
+    if (!exchange && fuzzyMatch(h, EXCHANGE_NAMES)) exchange = h;
   }
-  return { ticker, shares, price };
+  return { ticker, shares, price, exchange };
 }
 
 // ── Types ────────────────────────────────────────────────────
@@ -44,6 +56,7 @@ interface ParsedRow {
   ticker: string;
   shares: number;
   avg_cost: number;
+  exchange: "US" | "TSX";
 }
 
 interface ConflictItem {
@@ -65,7 +78,8 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   const [step, setStep] = useState<Step>("pick");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
-  const [mapping, setMapping] = useState<{ ticker: string; shares: string; price: string }>({ ticker: "", shares: "", price: "" });
+  const [mapping, setMapping] = useState<{ ticker: string; shares: string; price: string; exchange: string }>({ ticker: "", shares: "", price: "", exchange: "" });
+  const [defaultExchange, setDefaultExchange] = useState<"US" | "TSX">("US");
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [skippedCount, setSkippedCount] = useState(0);
   const [conflicts, setConflicts] = useState<ConflictItem[]>([]);
@@ -74,7 +88,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
     setStep("pick");
     setHeaders([]);
     setRawRows([]);
-    setMapping({ ticker: "", shares: "", price: "" });
+    setMapping({ ticker: "", shares: "", price: "", exchange: "" });
     setParsedRows([]);
     setSkippedCount(0);
     setConflicts([]);
@@ -102,7 +116,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
         setRawRows(result.data);
         const detected = autoDetect(hdrs);
         setMapping(detected);
-        // If all three detected, skip straight to preview
+        // If the three required fields detected, skip straight to preview
         if (detected.ticker && detected.shares && detected.price) {
           buildPreview(result.data, detected);
         } else {
@@ -115,11 +129,11 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   }, []);
 
   // ── Step 2→3: Build preview from mapping ─────────────────
-  const buildPreview = (rows: Record<string, string>[], map: { ticker: string; shares: string; price: string }) => {
+  const buildPreview = (rows: Record<string, string>[], map: { ticker: string; shares: string; price: string; exchange: string }) => {
     let skipped = 0;
     const parsed: ParsedRow[] = [];
     // Aggregate by ticker
-    const agg = new Map<string, { totalShares: number; totalCost: number }>();
+    const agg = new Map<string, { totalShares: number; totalCost: number; exchange: "US" | "TSX" }>();
 
     for (const row of rows) {
       const ticker = (row[map.ticker] ?? "").toUpperCase().replace(/[^A-Z.]/g, "");
@@ -129,18 +143,29 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
         skipped++;
         continue;
       }
+      // Detect exchange from column if present, otherwise fall back to defaultExchange
+      let exchange: "US" | "TSX" = defaultExchange;
+      if (map.exchange && row[map.exchange]) {
+        const raw = (row[map.exchange] ?? "").toUpperCase().trim();
+        if (raw.includes("TSX") || raw.includes("CA") || raw.includes("TOR")) {
+          exchange = "TSX";
+        } else {
+          exchange = "US";
+        }
+      }
       const existing = agg.get(ticker);
       if (existing) {
         const newTotal = existing.totalShares + shares;
         existing.totalCost = (existing.totalCost * existing.totalShares + price * shares) / newTotal;
         existing.totalShares = newTotal;
+        // Keep the exchange from the first row seen for this ticker
       } else {
-        agg.set(ticker, { totalShares: shares, totalCost: price });
+        agg.set(ticker, { totalShares: shares, totalCost: price, exchange });
       }
     }
 
     agg.forEach((v, ticker) => {
-      parsed.push({ ticker, shares: v.totalShares, avg_cost: v.totalCost });
+      parsed.push({ ticker, shares: v.totalShares, avg_cost: v.totalCost, exchange: v.exchange });
     });
 
     setParsedRows(parsed);
@@ -174,7 +199,12 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
       const conflict = conflictMap.get(row.ticker);
       if (conflict) {
         if (conflict.resolution === "replace") {
-          editHolding(conflict.existingId, { shares: row.shares, avg_cost: row.avg_cost });
+          editHolding(conflict.existingId, {
+            shares: row.shares,
+            avg_cost: row.avg_cost,
+            initial_avg_cost: row.avg_cost,
+            exchange: row.exchange,
+          });
           if (!firstId) firstId = conflict.existingId;
         } else {
           // Add: merge as weighted average
@@ -187,7 +217,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
       } else {
         const h = addHolding({
           ticker: row.ticker,
-          exchange: "US",
+          exchange: row.exchange,
           shares: row.shares,
           avg_cost: row.avg_cost,
           fee: 0,
@@ -257,6 +287,29 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               <MappingSelect label="Ticker / Symbol *" value={mapping.ticker} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, ticker: v }))} />
               <MappingSelect label="Shares / Quantity *" value={mapping.shares} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, shares: v }))} />
               <MappingSelect label="Price / Avg Cost *" value={mapping.price} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, price: v }))} />
+
+              <MappingSelect label="Exchange column (optional)" value={mapping.exchange} headers={["(none)", ...headers]} onChange={(v) => setMapping((m) => ({ ...m, exchange: v === "(none)" ? "" : v }))} />
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Default exchange (used when no column present)</label>
+                <div className="flex gap-3">
+                  {(["US", "TSX"] as const).map((ex) => (
+                    <button
+                      key={ex}
+                      type="button"
+                      onClick={() => setDefaultExchange(ex)}
+                      className={`flex-1 rounded-md border py-2 text-sm font-mono font-semibold transition-colors ${
+                        defaultExchange === ex
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {ex}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <DialogFooter>
                 <Button variant="ghost" onClick={() => { reset(); setStep("pick"); }}>Back</Button>
                 <Button
@@ -285,6 +338,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                       <th className="px-3 py-2 text-left font-medium">Ticker</th>
                       <th className="px-3 py-2 text-right font-medium">Shares</th>
                       <th className="px-3 py-2 text-right font-medium">Avg Cost</th>
+                      <th className="px-3 py-2 text-right font-medium">Exchange</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -292,7 +346,8 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                       <tr key={r.ticker} className="border-t border-border">
                         <td className="px-3 py-2 font-mono font-semibold">{r.ticker}</td>
                         <td className="px-3 py-2 text-right font-mono">{fmt(r.shares)}</td>
-                        <td className="px-3 py-2 text-right font-mono">${fmt(r.avg_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono">{r.exchange === "TSX" ? "C$" : "$"}{fmt(r.avg_cost)}</td>
+                        <td className="px-3 py-2 text-right font-mono text-muted-foreground">{r.exchange}</td>
                       </tr>
                     ))}
                   </tbody>
