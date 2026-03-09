@@ -854,7 +854,7 @@ function StrategyImpact({ holdings }: { holdings: Holding[] }) {
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Reduction</p>
-          <p className="text-lg font-mono font-bold text-primary mt-1">${fmt(avgReduction)}</p>
+          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(avgReduction)}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Cost Reduction</p>
