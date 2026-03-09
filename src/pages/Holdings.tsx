@@ -804,7 +804,7 @@ function NextBestMove({
       </div>
       <button
         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-        className="w-full rounded-xl border border-primary/15 bg-primary/[0.04] p-4 text-left hover:bg-primary/[0.08] transition-colors"
+        className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
       >
         <div className="flex items-center justify-between">
           <div>
