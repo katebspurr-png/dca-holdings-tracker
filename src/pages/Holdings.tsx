@@ -721,7 +721,7 @@ function DcaOpportunities({
                     </p>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl score-num">{top.score}</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "2.5rem", color: "hsl(160 60% 52%)", letterSpacing: "-0.02em", lineHeight: 1 }}>{top.score}</span>
                     <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
                   </div>
                 </div>
