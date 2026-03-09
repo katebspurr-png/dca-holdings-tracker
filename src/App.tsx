@@ -21,8 +21,10 @@ const queryClient = new QueryClient();
 function useInitTheme() {
   useEffect(() => {
     const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (stored === "dark" || (!stored && prefersDark)) {
+    // Default to dark unless the user has explicitly chosen light
+    if (stored === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
       document.documentElement.classList.add("dark");
     }
   }, []);
