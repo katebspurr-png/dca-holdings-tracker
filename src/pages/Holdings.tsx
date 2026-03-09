@@ -798,7 +798,7 @@ function NextBestMove({
     <section>
       <div className="flex items-center gap-2 mb-3">
         <Zap className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           Next Best Move
         </h2>
       </div>
