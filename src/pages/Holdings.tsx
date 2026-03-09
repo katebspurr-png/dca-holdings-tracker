@@ -736,7 +736,7 @@ function DcaOpportunities({
                     onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
                     className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
                   >
-                    <span className="text-sm font-mono font-bold text-muted-foreground w-8 text-right shrink-0">{score}</span>
+                    <span className="text-sm score-num w-8 text-right shrink-0">{score}</span>
                     <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
                     <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
                       {improvement > 0
