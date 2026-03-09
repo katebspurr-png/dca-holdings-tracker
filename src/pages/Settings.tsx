@@ -129,12 +129,14 @@ export default function Settings() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Appearance</h2>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {dark ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
-              <Label htmlFor="dark-mode" className="cursor-pointer text-sm font-medium">
-                Dark Mode
-              </Label>
+              <Sun className={`h-5 w-5 ${!dark ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`text-sm font-medium ${!dark ? "text-foreground" : "text-muted-foreground"}`}>Light</span>
             </div>
             <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${dark ? "text-foreground" : "text-muted-foreground"}`}>Dark</span>
+              <Moon className={`h-5 w-5 ${dark ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
           </div>
         </div>
 
