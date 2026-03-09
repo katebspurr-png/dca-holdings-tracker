@@ -712,7 +712,7 @@ function DcaOpportunities({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-lg font-mono font-bold">{h.ticker}</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">
                       ${TEST_INVESTMENT} → Avg drops {cp}{fmt(top.improvement)}
                     </p>
