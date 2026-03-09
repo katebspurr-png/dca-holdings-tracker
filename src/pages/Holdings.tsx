@@ -256,7 +256,10 @@ export default function Holdings() {
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            <span className="text-primary">DCA.</span>{" "}
+            <span className="text-foreground">Strategy Engine</span>
+          </h1>
           {holdings.length > 0 && (
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
@@ -300,7 +303,7 @@ export default function Holdings() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="h-4.5 w-4.5 text-primary" />
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <h2 className="section-label">
                   Portfolio Health
                 </h2>
                 {lastRefreshed && (
@@ -364,7 +367,7 @@ export default function Holdings() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                   <h2 className="section-label">
                     Your Holdings
                   </h2>
                 </div>
@@ -616,7 +619,7 @@ function HealthCard({
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      <p className={`text-lg font-mono font-bold leading-none ${accentColor}`}>{value}</p>
+      <p className={`text-lg font-bold leading-none display-num ${accentColor}`}>{value}</p>
       {sub && (
         <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
       )}
@@ -675,7 +678,7 @@ function DcaOpportunities({
     <div>
       <div className="flex items-center gap-2 mb-4">
         <Gauge className="h-4.5 w-4.5 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           DCA Opportunities
         </h2>
         <span className="ml-auto text-[10px] text-muted-foreground/40">$500 test investment</span>
@@ -697,7 +700,7 @@ function DcaOpportunities({
               <button
                 key={h.id}
                 onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left hover:bg-primary/10 transition-colors"
+                className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-center gap-1.5 mb-2">
                   <Gauge className="h-3.5 w-3.5 text-primary" />
@@ -714,7 +717,7 @@ function DcaOpportunities({
                     </p>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl font-mono font-bold text-primary leading-none">{top.score}</span>
+                    <span className="text-2xl score-num">{top.score}</span>
                     <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
                   </div>
                 </div>
@@ -733,7 +736,7 @@ function DcaOpportunities({
                     onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
                     className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
                   >
-                    <span className="text-sm font-mono font-bold text-muted-foreground w-8 text-right shrink-0">{score}</span>
+                    <span className="text-sm score-num w-8 text-right shrink-0">{score}</span>
                     <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
                     <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
                       {improvement > 0
@@ -795,13 +798,13 @@ function NextBestMove({
     <section>
       <div className="flex items-center gap-2 mb-3">
         <Zap className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           Next Best Move
         </h2>
       </div>
       <button
         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-        className="w-full rounded-xl border border-primary/15 bg-primary/[0.04] p-4 text-left hover:bg-primary/[0.08] transition-colors"
+        className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
       >
         <div className="flex items-center justify-between">
           <div>
@@ -836,7 +839,7 @@ function StrategyImpact({ holdings }: { holdings: Holding[] }) {
     <section>
       <div className="flex items-center gap-2 mb-3">
         <TrendingDown className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           Strategy Impact
         </h2>
       </div>

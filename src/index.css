@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Syne:wght@700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@700;800&display=swap");
 
 @layer base {
   :root {
@@ -105,16 +105,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "DM Mono", monospace;
+    font-family: "DM Mono", "JetBrains Mono", monospace;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-heading);
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Syne", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
   }
 
   code,
@@ -133,5 +131,54 @@
   ::-webkit-scrollbar-thumb {
     background: hsl(215 28% 17%);
     border-radius: 2px;
+  }
+
+  /* ── Display numbers — large Syne figures ── */
+  .display-num {
+    font-family: "Syne", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  /* ── Next Best Move glow card ── */
+  .card-glow {
+    background: linear-gradient(135deg, hsl(215 47% 9%) 0%, hsl(222 47% 11%) 60%, hsl(210 47% 8%) 100%);
+    border-color: hsl(160 60% 52% / 0.2);
+    box-shadow: 0 0 24px hsl(160 60% 52% / 0.08), inset 0 1px 0 hsl(160 60% 52% / 0.06);
+  }
+
+  /* ── Opportunity score badge ── */
+  .score-num {
+    font-family: "Syne", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: hsl(160 60% 52%);
+    line-height: 1;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(215 16% 45%);
+  }
+
+  /* ── Subtle radial glow behind key cards ── */
+  .glow-primary {
+    position: relative;
+    overflow: hidden;
+  }
+  .glow-primary::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 160px;
+    height: 160px;
+    background: radial-gradient(circle, hsl(160 60% 52% / 0.12) 0%, transparent 70%);
+    pointer-events: none;
   }
 }
