@@ -367,7 +367,7 @@ export default function Holdings() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
-                  <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                   <h2 className="section-label">
                     Your Holdings
                   </h2>
                 </div>
