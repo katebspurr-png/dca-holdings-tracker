@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import GoalLadder from "@/components/GoalLadder";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
+import CostBasisProgress from "@/components/CostBasisProgress";
+import InsightsTab from "@/components/InsightsTab";
 import SavedScenarios from "@/components/SavedScenarios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
