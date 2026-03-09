@@ -839,7 +839,7 @@ function StrategyImpact({ holdings }: { holdings: Holding[] }) {
     <section>
       <div className="flex items-center gap-2 mb-3">
         <TrendingDown className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="section-label">
           Strategy Impact
         </h2>
       </div>
