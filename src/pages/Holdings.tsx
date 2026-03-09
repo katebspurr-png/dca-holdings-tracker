@@ -303,7 +303,7 @@ export default function Holdings() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="h-4.5 w-4.5 text-primary" />
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <h2 className="section-label">
                   Portfolio Health
                 </h2>
                 {lastRefreshed && (
