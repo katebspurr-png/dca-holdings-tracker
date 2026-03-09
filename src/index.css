@@ -6,47 +6,47 @@
 
 @layer base {
   :root {
-    --background: 224 43% 6%;
-    --foreground: 214 32% 91%;
+    --background: 0 0% 98%;
+    --foreground: 224 40% 10%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 214 32% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 40% 10%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 214 32% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 40% 10%;
 
-    --primary: 160 60% 52%;
-    --primary-foreground: 224 43% 6%;
+    --primary: 160 60% 40%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 38% 15%;
-    --secondary-foreground: 214 32% 91%;
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 224 40% 10%;
 
-    --muted: 222 38% 14%;
-    --muted-foreground: 215 16% 45%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 160 40% 14%;
-    --accent-foreground: 160 60% 60%;
+    --accent: 160 30% 92%;
+    --accent-foreground: 160 50% 30%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 160 60% 52%;
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 160 60% 40%;
 
     --radius: 0.75rem;
 
     --font-heading: "Syne", sans-serif;
     --font-mono: "DM Mono", monospace;
 
-    --sidebar-background: 224 43% 6%;
-    --sidebar-foreground: 214 32% 91%;
-    --sidebar-primary: 160 60% 52%;
-    --sidebar-primary-foreground: 224 43% 6%;
-    --sidebar-accent: 222 38% 14%;
-    --sidebar-accent-foreground: 214 32% 91%;
-    --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 160 60% 52%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 224 40% 10%;
+    --sidebar-primary: 160 60% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 95%;
+    --sidebar-accent-foreground: 224 40% 10%;
+    --sidebar-border: 220 13% 87%;
+    --sidebar-ring: 160 60% 40%;
   }
 
   /* Dark class mirrors :root — dark is the canonical style */
