@@ -700,7 +700,7 @@ function DcaOpportunities({
               <button
                 key={h.id}
                 onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className="w-full rounded-xl border border-primary/20 bg-primary/5 p-4 text-left hover:bg-primary/10 transition-colors"
+                className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-center gap-1.5 mb-2">
                   <Gauge className="h-3.5 w-3.5 text-primary" />
