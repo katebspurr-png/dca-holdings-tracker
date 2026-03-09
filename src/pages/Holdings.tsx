@@ -256,7 +256,10 @@ export default function Holdings() {
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <h1 className="text-2xl font-bold tracking-tight">DCA Down</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            <span className="text-primary">DCA.</span>{" "}
+            <span className="text-foreground">Strategy Engine</span>
+          </h1>
           {holdings.length > 0 && (
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
