@@ -256,10 +256,14 @@ export default function Holdings() {
     <div className="min-h-screen bg-background pb-24">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <h1 className="text-2xl font-bold tracking-tight">
-            <span className="text-primary">DCA.</span>{" "}
-            <span className="text-foreground">Strategy Engine</span>
-          </h1>
+          <div style={{ lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
+              DCA<span style={{ color: "hsl(160 60% 52%)" }}>.</span>
+            </span>
+            <div style={{ fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(215 16% 45%)", marginTop: 2 }}>
+              Strategy Engine
+            </div>
+          </div>
           {holdings.length > 0 && (
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
@@ -619,7 +623,7 @@ function HealthCard({
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      <p className={`text-lg font-bold leading-none display-num ${accentColor}`}>{value}</p>
+      <p className={`leading-none ${accentColor}`} style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em" }}>{value}</p>
       {sub && (
         <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
       )}
@@ -708,7 +712,7 @@ function DcaOpportunities({
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-lg font-mono font-bold">{h.ticker}</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">
                       ${TEST_INVESTMENT} → Avg drops {cp}{fmt(top.improvement)}
                     </p>
@@ -717,7 +721,7 @@ function DcaOpportunities({
                     </p>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="text-2xl score-num">{top.score}</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "2.5rem", color: "hsl(160 60% 52%)", letterSpacing: "-0.02em", lineHeight: 1 }}>{top.score}</span>
                     <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
                   </div>
                 </div>
@@ -736,7 +740,7 @@ function DcaOpportunities({
                     onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
                     className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
                   >
-                    <span className="text-sm score-num w-8 text-right shrink-0">{score}</span>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1rem", color: "hsl(160 60% 52% / 0.65)", width: 28, textAlign: "right" as const, flexShrink: 0 }}>{score}</span>
                     <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
                     <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
                       {improvement > 0
@@ -808,7 +812,7 @@ function NextBestMove({
       >
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-lg font-mono font-bold">{h.ticker}</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.5rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
             <p className="text-sm font-mono text-foreground mt-1">
               ${TEST_INVESTMENT} → Avg becomes {cp}{fmt(best.newAvg)}
             </p>
@@ -846,15 +850,15 @@ function StrategyImpact({ holdings }: { holdings: Holding[] }) {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Positions Improved</p>
-          <p className="text-lg font-mono font-bold mt-1">{improved.length}</p>
+          <p className="mt-1" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{improved.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Reduction</p>
-          <p className="text-lg font-mono font-bold text-primary mt-1">${fmt(avgReduction)}</p>
+          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(avgReduction)}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Cost Reduction</p>
-          <p className="text-lg font-mono font-bold text-primary mt-1">${fmt(totalReduction)}</p>
+          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(totalReduction)}</p>
         </div>
       </div>
     </section>
