@@ -619,7 +619,7 @@ function HealthCard({
         {icon}
         <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      <p className={`text-lg font-mono font-bold leading-none ${accentColor}`}>{value}</p>
+      <p className={`text-lg font-bold leading-none display-num ${accentColor}`}>{value}</p>
       {sub && (
         <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
       )}
