@@ -28,7 +28,15 @@ const PRICE_NAMES = [
   "book value per share",
   "price paid",
   "unit cost",
-  "price",
+];
+
+// Total book-value columns: need to be divided by shares to get per-share cost
+const BOOK_VALUE_NAMES = [
+  "book value",
+  "book cost",
+  "total cost",
+  "cost basis",
+  "acb",
 ];
 const EXCHANGE_NAMES = ["exchange", "market", "listing"];
 
@@ -37,15 +45,25 @@ function fuzzyMatch(header: string, candidates: string[]): boolean {
   return candidates.some((c) => h === c || h.includes(c));
 }
 
-function autoDetect(headers: string[]): { ticker: string; shares: string; price: string; exchange: string } {
+function autoDetect(headers: string[]): { ticker: string; shares: string; price: string; exchange: string; priceIsTotal: boolean } {
   let ticker = "", shares = "", price = "", exchange = "";
+  const bookValueCols: string[] = [];
+  let priceIsTotal = false;
   for (const h of headers) {
     if (!ticker && fuzzyMatch(h, TICKER_NAMES)) ticker = h;
     if (!shares && fuzzyMatch(h, SHARES_NAMES)) shares = h;
     if (!price && fuzzyMatch(h, PRICE_NAMES)) price = h;
+    if (fuzzyMatch(h, BOOK_VALUE_NAMES)) bookValueCols.push(h);
     if (!exchange && fuzzyMatch(h, EXCHANGE_NAMES)) exchange = h;
   }
-  return { ticker, shares, price, exchange };
+  // If no per-share price column found, fall back to total book value (divided by shares later)
+  // Prefer "(Market)" over "(CAD)" so US stocks use their native currency
+  if (!price && bookValueCols.length > 0) {
+    const marketCol = bookValueCols.find((c) => c.toLowerCase().includes("market"));
+    price = marketCol ?? bookValueCols[0];
+    priceIsTotal = true;
+  }
+  return { ticker, shares, price, exchange, priceIsTotal };
 }
 
 // ── Types ────────────────────────────────────────────────────
@@ -78,7 +96,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   const [step, setStep] = useState<Step>("pick");
   const [headers, setHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
-  const [mapping, setMapping] = useState<{ ticker: string; shares: string; price: string; exchange: string }>({ ticker: "", shares: "", price: "", exchange: "" });
+  const [mapping, setMapping] = useState<{ ticker: string; shares: string; price: string; exchange: string; priceIsTotal: boolean }>({ ticker: "", shares: "", price: "", exchange: "", priceIsTotal: false });
   const [defaultExchange, setDefaultExchange] = useState<"US" | "TSX">("US");
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [skippedCount, setSkippedCount] = useState(0);
@@ -88,7 +106,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
     setStep("pick");
     setHeaders([]);
     setRawRows([]);
-    setMapping({ ticker: "", shares: "", price: "", exchange: "" });
+    setMapping({ ticker: "", shares: "", price: "", exchange: "", priceIsTotal: false });
     setParsedRows([]);
     setSkippedCount(0);
     setConflicts([]);
@@ -129,7 +147,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   }, []);
 
   // ── Step 2→3: Build preview from mapping ─────────────────
-  const buildPreview = (rows: Record<string, string>[], map: { ticker: string; shares: string; price: string; exchange: string }) => {
+  const buildPreview = (rows: Record<string, string>[], map: { ticker: string; shares: string; price: string; exchange: string; priceIsTotal?: boolean }) => {
     let skipped = 0;
     const parsed: ParsedRow[] = [];
     // Aggregate by ticker
@@ -138,7 +156,9 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
     for (const row of rows) {
       const ticker = (row[map.ticker] ?? "").toUpperCase().replace(/[^A-Z.]/g, "");
       const shares = parseFloat(row[map.shares]);
-      const price = parseFloat(row[map.price]);
+      const rawPrice = parseFloat(row[map.price]);
+      // If the column is a total book value, compute per-share cost
+      const price = map.priceIsTotal && shares > 0 ? rawPrice / shares : rawPrice;
       if (!ticker || isNaN(shares) || shares <= 0 || isNaN(price) || price <= 0) {
         skipped++;
         continue;
@@ -286,7 +306,17 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               )}
               <MappingSelect label="Ticker / Symbol *" value={mapping.ticker} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, ticker: v }))} />
               <MappingSelect label="Shares / Quantity *" value={mapping.shares} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, shares: v }))} />
-              <MappingSelect label="Price / Avg Cost *" value={mapping.price} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, price: v }))} />
+              <MappingSelect label="Price / Avg Cost *" value={mapping.price} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, price: v, priceIsTotal: false }))} />
+
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={mapping.priceIsTotal}
+                  onChange={(e) => setMapping((m) => ({ ...m, priceIsTotal: e.target.checked }))}
+                  className="rounded border-border"
+                />
+                Column is total book value (divide by shares)
+              </label>
 
               <MappingSelect label="Exchange column (optional)" value={mapping.exchange} headers={["(none)", ...headers]} onChange={(v) => setMapping((m) => ({ ...m, exchange: v === "(none)" ? "" : v }))} />
 
