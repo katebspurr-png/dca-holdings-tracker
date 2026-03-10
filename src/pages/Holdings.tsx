@@ -675,8 +675,11 @@ function DcaOpportunities({
     return "Inefficient";
   };
 
+  const [showAll, setShowAll] = useState(false);
+
   const top = scored[0];
   const rest = scored.slice(1);
+  const visibleRest = showAll ? rest : rest.slice(0, 2);
 
   return (
     <div>
@@ -732,7 +735,7 @@ function DcaOpportunities({
           {/* ── Remaining opportunities — compact rows ── */}
           {rest.length > 0 && (
             <div className="space-y-0.5">
-              {rest.map(({ holding: h, price, score, improvement }) => {
+              {visibleRest.map(({ holding: h, price, score, improvement }) => {
                 const cp = currencyPrefix((h.exchange ?? "US") as any);
                 return (
                   <button
@@ -751,6 +754,14 @@ function DcaOpportunities({
                   </button>
                 );
               })}
+              {rest.length > 2 && (
+                <button
+                  onClick={() => setShowAll((s) => !s)}
+                  className="w-full text-center text-[11px] text-muted-foreground/50 hover:text-muted-foreground py-1.5 transition-colors"
+                >
+                  {showAll ? "Show less" : `Show all ${rest.length} opportunities`}
+                </button>
+              )}
             </div>
           )}
 
