@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight,
+  ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight, ArrowDownRight,
   Trash2, Eye, Target as TargetIcon, Calculator, History, AlertCircle, Info,
   Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users, Pencil,
 } from "lucide-react";
@@ -520,6 +520,41 @@ export default function HoldingDetail() {
         {/* ═══════════════ STRATEGY TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
+            {/* Next Best Move — position-level recommendation */}
+            {marketPrice != null && marketPrice < A && (() => {
+              const testBudget = 500;
+              const sharesBought = testBudget / marketPrice;
+              const newAvg = (S * A + testBudget) / (S + sharesBought);
+              const improvement = A - newAvg;
+              if (improvement <= 0) return null;
+              return (
+                <div className="rounded-xl border p-4 card-glow glow-primary">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Next Best Move</h2>
+                  </div>
+                  <p className="text-sm font-mono text-foreground">
+                    Invest <span className="font-bold">{cp}{fmt2(testBudget)}</span> at {cp}{fmt2(marketPrice)} → Avg becomes <span className="font-bold text-primary">{cp}{fmt2(newAvg)}</span>
+                  </p>
+                  <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-1">
+                    <ArrowDownRight className="h-3.5 w-3.5" />
+                    Improves avg by {cp}{fmt2(improvement)}
+                    <span className="text-muted-foreground/60 text-[11px] ml-1">({((improvement / A) * 100).toFixed(1)}%)</span>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/50 font-mono mt-2">
+                    Current avg {cp}{fmt2(A)} · Market price {cp}{fmt2(marketPrice)} · Buys {sharesBought.toFixed(4)} shares
+                  </p>
+                  <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
+                    <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+                      onClick={() => openCalculatorPrefilled("price_budget", String(marketPrice), String(testBudget))}>
+                      <ArrowRight className="mr-1 h-3 w-3" />
+                      Open in calculator
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
+
             <GoalLadder
               holding={holding}
               onUseInCalculator={openCalculatorPrefilled}
@@ -527,27 +562,15 @@ export default function HoldingDetail() {
             />
 
             {/* Saved scenarios */}
-            <div className="space-y-3">
-              <div className="flex items-end justify-between gap-2">
-                <div>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Saved Scenarios</h2>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
-                </div>
-                {scenarios.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground/50 tabular-nums">{scenarios.length} total</span>
-                )}
-              </div>
-
-              <SavedScenarios
-                holdingId={holding.id}
-                exchange={exchange as any}
-                refreshKey={version}
-                currentAvg={A}
-                currencyPrefix={cp}
-                onUseScenario={(s: Scenario) => openCalculatorPrefilled(s.method, String(s.input1_value), String(s.input2_value))}
-                onApplyBuy={handleApplyScenario}
-              />
-            </div>
+            <SavedScenarios
+              holdingId={holding.id}
+              exchange={exchange as any}
+              refreshKey={version}
+              currentAvg={A}
+              currencyPrefix={cp}
+              onUseScenario={(s: Scenario) => openCalculatorPrefilled(s.method, String(s.input1_value), String(s.input2_value))}
+              onApplyBuy={handleApplyScenario}
+            />
           </>
         )}
 
@@ -750,7 +773,37 @@ export default function HoldingDetail() {
 
         {/* ═══════════════ HISTORY TAB ═══════════════ */}
         {activeTab === "history" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Cost Basis Progress in History context */}
+            <CostBasisProgress holding={holding} currencyPrefix={cp} />
+
+            {/* Transaction summary */}
+            {transactions.length > 0 && (() => {
+              const activeTx = transactions.filter((t) => !t.is_undone);
+              const undoneCount = transactions.filter((t) => t.is_undone).length;
+              const totalInvested = activeTx.reduce((sum, t) => sum + t.total_spend, 0);
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Executed Buys</p>
+                    <p className="text-lg font-mono font-bold mt-0.5">{activeTx.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Invested</p>
+                    <p className="text-lg font-mono font-bold mt-0.5">{cp}{fmt2(totalInvested)}</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Undone</p>
+                    <p className="text-lg font-mono font-bold mt-0.5">{undoneCount}</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current Avg</p>
+                    <p className="text-lg font-mono font-bold text-primary mt-0.5">{cp}{fmt2(A)}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Transaction History</h2>
             {transactions.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center space-y-1.5">
@@ -762,6 +815,7 @@ export default function HoldingDetail() {
               <div className="grid gap-2">
                 {transactions.map((t) => {
                   const isUndo = t.is_undone;
+                  const avgChange = t.previous_avg_cost - t.new_avg_cost;
                   return (
                     <div key={t.id} className={`rounded-xl border border-border bg-card p-3.5 transition-all ${isUndo ? "opacity-50" : ""}`}>
                       <div className="flex items-center justify-between mb-2">
@@ -799,9 +853,18 @@ export default function HoldingDetail() {
                           <span className="font-mono font-medium">{t.new_total_shares.toFixed(4)}</span>
                         </div>
                       </div>
+                      {/* Avg cost change indicator */}
+                      {!isUndo && avgChange > 0.005 && (
+                        <p className="flex items-center gap-1 text-[10px] font-mono font-medium text-primary mt-2 pt-1.5 border-t border-border/50">
+                          <ArrowDownRight className="h-3 w-3" />
+                          Avg improved by {cp}{fmt2(avgChange)} ({((avgChange / t.previous_avg_cost) * 100).toFixed(1)}%)
+                          <span className="text-muted-foreground/50 ml-1">from {cp}{fmt2(t.previous_avg_cost)}</span>
+                        </p>
+                      )}
                       {isUndo && t.undone_at && (
-                        <p className="text-[10px] text-muted-foreground mt-2 pt-1.5 border-t border-border/50 italic">
-                          Undone on {new Date(t.undone_at).toLocaleDateString()}
+                        <p className="flex items-center gap-1 text-[10px] text-muted-foreground mt-2 pt-1.5 border-t border-border/50 italic">
+                          <Undo2 className="h-3 w-3" />
+                          Undone on {new Date(t.undone_at).toLocaleDateString()} — reverted to {cp}{fmt2(t.previous_avg_cost)} avg, {t.previous_shares.toFixed(4)} shares
                         </p>
                       )}
                     </div>
