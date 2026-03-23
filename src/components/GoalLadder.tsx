@@ -7,7 +7,12 @@ import { getCachedQuote } from "@/lib/stock-price";
 import { apiTicker } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 
-const DEFAULT_BUDGETS = [250, 500, 1000, 2500];
+function getAdaptiveBudgets(shares: number, currentPrice: number): number[] {
+  const marketValue = shares * currentPrice;
+  if (marketValue < 1000) return [100, 250, 500];
+  if (marketValue <= 10000) return [250, 500, 1000];
+  return [500, 1000, 2500];
+}
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -119,7 +124,7 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
 
   const budgetScenarios = useMemo(() => {
     if (!currentPrice) return [];
-    return DEFAULT_BUDGETS
+    return getAdaptiveBudgets(holding.shares, currentPrice)
       .map((b) => computeBudgetScenario(holding, b, currentPrice, includeFees))
       .filter(Boolean) as BudgetScenario[];
   }, [holding, currentPrice, includeFees]);
@@ -231,7 +236,7 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
           Impact of investing at {cp}{fmt(currentPrice)}/share. For scenario planning only.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {budgetScenarios.map((s) => (
             <BudgetCard
               key={s.budget}
@@ -244,6 +249,10 @@ export default function GoalLadder({ holding, onUseInCalculator, onSaved }: Prop
           ))}
         </div>
       </div>
+
+      <p className="text-[10px] text-muted-foreground/40 text-center mt-2">
+        These are scenario simulations, not financial advice.
+      </p>
 
       {/* Target Ladder */}
       {targetScenarios.length > 0 && (

@@ -4,7 +4,7 @@ import {
   Plus, Pencil, Trash2,
   TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
   ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
-  Gauge, Activity, BarChart3, Wallet, CheckSquare, Square, X, Zap, ArrowDownRight,
+  Gauge, Activity, BarChart3, Wallet, CheckSquare, Square, X,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import CsvImportDialog from "@/components/CsvImportDialog";
+import SuggestedStrategyStep from "@/components/SuggestedStrategyStep";
 import {
   getHoldings, addHolding, editHolding, removeHolding,
   getScenariosForHolding,
@@ -344,9 +345,9 @@ export default function Holdings() {
             </section>
 
             {/* ════════════════════════════════════════════════
-                SECTION 1.5 — Next Best Move
+                SECTION 1.5 — Suggested Strategy Step
                ════════════════════════════════════════════════ */}
-            <NextBestMove holdings={holdings} livePrices={livePrices} navigate={navigate} />
+            <SuggestedStrategyStep mode="portfolio" holdings={holdings} />
 
             {/* ════════════════════════════════════════════════
                 SECTION 2 — DCA Opportunities
@@ -668,11 +669,11 @@ function DcaOpportunities({
   const hasAnyPrice = scored.length > 0;
 
   const getBandLabel = (score: number) => {
-    if (score >= 80) return "Strong opportunity";
-    if (score >= 60) return "Good opportunity";
-    if (score >= 40) return "Neutral";
-    if (score >= 20) return "Weak";
-    return "Inefficient";
+    if (score >= 80) return "Very strong impact";
+    if (score >= 60) return "Strong impact";
+    if (score >= 40) return "Moderate impact";
+    if (score >= 20) return "Weak impact";
+    return "Minimal impact";
   };
 
   const top = scored[0];
@@ -708,7 +709,7 @@ function DcaOpportunities({
               >
                 <div className="flex items-center gap-1.5 mb-2">
                   <Gauge className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Best Opportunity</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Top Impact</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
@@ -763,73 +764,6 @@ function DcaOpportunities({
   );
 }
 
-/* ── Next Best Move ─────────────────────────────────────── */
-function NextBestMove({
-  holdings,
-  livePrices,
-  navigate,
-}: {
-  holdings: Holding[];
-  livePrices: Record<string, number | null>;
-  navigate: (path: string) => void;
-}) {
-  const TEST_INVESTMENT = 500;
-
-  const best = useMemo(() => {
-    let top: { holding: Holding; price: number; newAvg: number; improvement: number } | null = null;
-    let maxImprovement = 0;
-
-    for (const h of holdings) {
-      const price = livePrices[h.id];
-      if (price == null || price <= 0 || price >= h.avg_cost) continue;
-      const sharesBought = TEST_INVESTMENT / price;
-      const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
-      const improvement = h.avg_cost - newAvg;
-      if (improvement > maxImprovement) {
-        maxImprovement = improvement;
-        top = { holding: h, price, newAvg, improvement };
-      }
-    }
-    return top;
-  }, [holdings, livePrices]);
-
-  if (!best) return null;
-
-  const h = best.holding;
-  const cp = currencyPrefix((h.exchange ?? "US") as any);
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <Zap className="h-4 w-4 text-primary" />
-        <h2 className="section-label">
-          Next Best Move
-        </h2>
-      </div>
-      <button
-        onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-        className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.5rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
-            <p className="text-sm font-mono text-foreground mt-1">
-              ${TEST_INVESTMENT} → Avg becomes {cp}{fmt(best.newAvg)}
-            </p>
-            <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-0.5">
-              <ArrowDownRight className="h-3.5 w-3.5" />
-              Improves avg by {cp}{fmt(best.improvement)}
-            </p>
-            <p className="text-[10px] text-muted-foreground/50 font-mono mt-1.5">
-              Current avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(best.price)}
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-        </div>
-      </button>
-    </section>
-  );
-}
 
 /* ── Strategy Impact ────────────────────────────────────── */
 function StrategyImpact({ holdings }: { holdings: Holding[] }) {

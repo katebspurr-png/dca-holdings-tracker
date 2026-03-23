@@ -12,7 +12,7 @@ import ScenarioDetail from "./pages/ScenarioDetail";
 import WhatIfScenarios from "./pages/WhatIfScenarios";
 import Settings from "./pages/Settings";
 import UpdatePrices from "./pages/UpdatePrices";
-import CapitalOptimizer from "./pages/CapitalOptimizer";
+import CapitalPlanner from "./pages/CapitalPlanner";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 
@@ -46,7 +46,7 @@ const App = () => {
           <Route path="/what-if" element={<WhatIfScenarios />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/update-prices" element={<UpdatePrices />} />
-          <Route path="/optimizer" element={<CapitalOptimizer />} />
+          <Route path="/planner" element={<CapitalPlanner />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <BottomTabBar />

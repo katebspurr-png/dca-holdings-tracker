@@ -109,7 +109,7 @@ export default function Settings() {
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
               {[
                 "Scenario Compare",
-                "Capital Optimizer",
+                "Capital Planner",
                 "Opportunity Alerts",
                 "Auto Price Refresh",
                 "Advanced Goal Ladder",

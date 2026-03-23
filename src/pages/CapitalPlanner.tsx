@@ -108,7 +108,7 @@ function runOptimization(
     const allocations = [buildAllocation(best.holding, totalBudget, includeFees, "High avg-cost improvement potential")];
     // Add non-allocated
     const rest = eligible.filter((h) => h.id !== best.holding.id);
-    rest.forEach((h) => allocations.push(buildAllocation(h, 0, includeFees, "No allocation recommended")));
+    rest.forEach((h) => allocations.push(buildAllocation(h, 0, includeFees, "No allocation in this simulation")));
     return buildResult(allocations, totalBudget);
   }
 
@@ -138,7 +138,7 @@ function runOptimization(
   const allocatedIds = new Set(allocations.map((a) => a.holding.id));
   for (const h of eligible) {
     if (!allocatedIds.has(h.id)) {
-      allocations.push(buildAllocation(h, 0, includeFees, h.price! >= h.avg_cost ? "Lower priority at current price" : "No allocation recommended"));
+      allocations.push(buildAllocation(h, 0, includeFees, h.price! >= h.avg_cost ? "Price at or above average" : "No allocation in this simulation"));
     }
   }
 
@@ -190,7 +190,7 @@ function buildResult(allocations: AllocationResult[], totalBudget: number): Opti
   return { allocations, totalBudget, totalFees, totalSpend, currentPortfolioAvg, projectedPortfolioAvg };
 }
 
-export default function CapitalOptimizer() {
+export default function CapitalPlanner() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [budget, setBudget] = useState("");
@@ -252,7 +252,7 @@ export default function CapitalOptimizer() {
       total_fees: result.totalFees,
       total_spend: result.totalSpend,
     });
-    toast({ title: "Optimization saved" });
+    toast({ title: "Plan saved" });
   };
 
   const confirmApplyBuy = () => {
@@ -272,7 +272,7 @@ export default function CapitalOptimizer() {
         includeFees,
         newTotalShares: a.newTotalShares,
         newAvgCost: a.newAvg,
-        method: "optimizer",
+        method: "planner",
       });
       toast({ title: `Buy applied to ${a.holding.ticker}` });
     } catch (e: any) {
@@ -282,22 +282,22 @@ export default function CapitalOptimizer() {
     }
   };
 
-  if (!hasFeature("optimizer")) {
+  if (!hasFeature("planner")) {
     return (
       <div className="min-h-screen bg-background pb-28">
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-bold tracking-tight">Capital Allocation Optimizer</h1>
+              <h1 className="text-lg font-bold tracking-tight">Capital Planner</h1>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Model how to spread a budget across your holdings to improve your portfolio positioning.
+              Simulates how a budget could be distributed across positions.
             </p>
           </div>
         </header>
         <main className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
-          <PremiumGate feature="optimizer" />
+          <PremiumGate feature="planner" />
         </main>
       </div>
     );
@@ -310,10 +310,10 @@ export default function CapitalOptimizer() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-bold tracking-tight">Capital Allocation Optimizer</h1>
+            <h1 className="text-lg font-bold tracking-tight">Capital Planner</h1>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Model how to spread a budget across your holdings to improve your portfolio positioning.
+            Simulates how a budget could be distributed across positions.
           </p>
         </div>
       </header>
@@ -396,7 +396,7 @@ export default function CapitalOptimizer() {
           {/* Fee toggle */}
           <div className="flex items-center gap-2.5">
             <Switch checked={includeFees} onCheckedChange={(v) => { setIncludeFees(v); setResult(null); }} className="scale-90" />
-            <Label className="cursor-pointer text-xs text-muted-foreground">Include fees in optimizer</Label>
+            <Label className="cursor-pointer text-xs text-muted-foreground">Include fees</Label>
           </div>
 
           {/* Run button */}
@@ -406,7 +406,7 @@ export default function CapitalOptimizer() {
             className="h-9"
           >
             <Zap className="mr-1.5 h-4 w-4" />
-            Run Optimization
+            Run Simulation
           </Button>
 
           {eligibleCount === 0 && holdingsWithPrice.length > 0 && (
@@ -432,7 +432,7 @@ export default function CapitalOptimizer() {
                 </h2>
                 <Button size="sm" variant="outline" className="h-7 text-[10px] px-2.5" onClick={handleSave}>
                   <Save className="mr-1 h-3 w-3" />
-                  Save Optimization
+                  Save Plan
                 </Button>
               </div>
 
@@ -454,7 +454,7 @@ export default function CapitalOptimizer() {
             {/* Allocation cards */}
             <div className="space-y-2">
               <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Recommended Allocations
+                Simulated Allocations
               </h3>
               <div className="grid gap-2">
                 {result.allocations
@@ -525,7 +525,7 @@ export default function CapitalOptimizer() {
                             </div>
                           </>
                         ) : (
-                          <p className="text-[10px] text-muted-foreground/50 italic">No allocation recommended</p>
+                          <p className="text-[10px] text-muted-foreground/50 italic">No allocation in this simulation</p>
                         )}
                       </div>
                     );
@@ -545,7 +545,8 @@ export default function CapitalOptimizer() {
       <AlertDialog open={!!confirmApply} onOpenChange={(o) => !o && setConfirmApply(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Apply recommended buy to {confirmApply?.holding.ticker}?</AlertDialogTitle>
+            <AlertDialogTitle>Apply simulated buy to {confirmApply?.holding.ticker}?</AlertDialogTitle>
+
             <AlertDialogDescription>
               This will update the holding's shares and average cost. A transaction record will be saved.
             </AlertDialogDescription>

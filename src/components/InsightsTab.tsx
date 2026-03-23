@@ -9,12 +9,11 @@ import {
   addScenario,
 } from "@/lib/storage";
 import { canSaveScenario, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
+import { computeEfficiencyScore, getEfficiencyBand } from "@/lib/strategy-step";
 import { useToast } from "@/hooks/use-toast";
 
 const fmt2 = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const TEST_INVESTMENT = 500;
 
 function computeRescueTarget(
   S: number, A: number, targetAvg: number, buyPrice: number,
@@ -40,25 +39,6 @@ function computeRescueTarget(
   const f = includeFees ? (feeType === "percent" ? B * (feeValue / 100) : feeValue) : 0;
   const newAvg = (S * A + B + f) / (S + x);
   return { budget: B, shares: x, newAvg };
-}
-
-function computeEfficiencyScore(
-  shares: number, avgCost: number, marketPrice: number
-): { score: number; improvement: number } {
-  if (marketPrice >= avgCost || avgCost <= 0) return { score: 0, improvement: 0 };
-  const sharesBought = TEST_INVESTMENT / marketPrice;
-  const newAvg = (shares * avgCost + TEST_INVESTMENT) / (shares + sharesBought);
-  const improvement = Math.max(0, avgCost - newAvg);
-  const score = Math.max(0, Math.min(100, Math.round((improvement / avgCost) * 10_000)));
-  return { score, improvement };
-}
-
-function getEfficiencyBand(score: number): { label: string; colorClass: string } {
-  if (score >= 80) return { label: "Very strong opportunity", colorClass: "text-primary" };
-  if (score >= 60) return { label: "Good opportunity", colorClass: "text-primary" };
-  if (score >= 40) return { label: "Neutral", colorClass: "text-muted-foreground" };
-  if (score >= 20) return { label: "Weak", colorClass: "text-muted-foreground" };
-  return { label: "Inefficient", colorClass: "text-destructive" };
 }
 
 interface InsightsTabProps {
@@ -260,7 +240,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         </div>
         {efficiencyScore > 0 && efficiencyImprovement > 0 && (
           <p className="text-sm font-mono font-semibold text-primary mb-1">
-            ${TEST_INVESTMENT} → Avg drops {cp}{fmt2(efficiencyImprovement)}
+            $500 → Avg drops {cp}{fmt2(efficiencyImprovement)}
           </p>
         )}
         <p className="text-xs text-muted-foreground">
@@ -278,7 +258,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
             />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-muted-foreground">Inefficient</span>
+            <span className="text-[9px] text-muted-foreground">Minimal</span>
             <span className={`text-[9px] font-medium ${band.colorClass}`}>
               {band.label}
             </span>

@@ -6,6 +6,7 @@ import {
   Save, Zap, CheckCircle, Minus, Lightbulb, Gauge, Users, Pencil,
 } from "lucide-react";
 import GoalLadder from "@/components/GoalLadder";
+import SuggestedStrategyStep from "@/components/SuggestedStrategyStep";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import CostBasisProgress from "@/components/CostBasisProgress";
 import InsightsTab from "@/components/InsightsTab";
@@ -59,7 +60,7 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 
 const METHOD_OPTIONS: { value: Method; label: string; desc: string }[] = [
   { value: "price_shares", label: "Price + Shares", desc: "Set buy price & share count" },
-  { value: "price_budget", label: "Price + Budget", desc: "Recommended target workflow" },
+  { value: "price_budget", label: "Price + Budget", desc: "Target workflow" },
   { value: "price_target", label: "Price + Target Avg", desc: "Target a specific average" },
   { value: "budget_target", label: "Budget + Target Avg", desc: "Fixed budget, target avg" },
 ];
@@ -520,6 +521,14 @@ export default function HoldingDetail() {
         {/* ═══════════════ STRATEGY TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
+            <SuggestedStrategyStep
+              mode="holding"
+              holding={holding}
+              currentPrice={marketPrice}
+              onUseInCalculator={openCalculatorPrefilled}
+              onSaved={() => setVersion((v) => v + 1)}
+            />
+
             <GoalLadder
               holding={holding}
               onUseInCalculator={openCalculatorPrefilled}

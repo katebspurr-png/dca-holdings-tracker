@@ -5,7 +5,7 @@ import { getScenario } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
-  price_budget: "Price + Budget (Recommended target)",
+  price_budget: "Price + Budget (Target)",
   price_target: "Price + Target Avg",
   budget_target: "Budget + Target Avg",
 };
@@ -76,7 +76,7 @@ export default function ScenarioDetail() {
             <Stat label="New Total Shares" value={Number(scenario.new_total_shares).toFixed(4)} />
             <Stat label="New Avg Cost" value={`$${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
             {scenario.buy_price !== null && <Stat label="Buy Price" value={`$${Number(scenario.buy_price).toFixed(2)}`} />}
-            {scenario.recommended_target != null && <Stat label="Recommended Target" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />}
+            {scenario.recommended_target != null && <Stat label="Projected Target" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />}
             {scenario.budget_percent_used != null && <Stat label="Budget % Used" value={`${scenario.budget_percent_used}%`} />}
           </div>
         </div>
