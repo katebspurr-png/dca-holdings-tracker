@@ -1,6 +1,6 @@
 /**
  * Stock price fetching with 5-minute cache.
- * Uses the stock-price edge function to avoid CORS.
+ * Quotes come from the Supabase `stock-price` edge function (Yahoo/Finnhub server-side).
  */
 
 import { canLookup, recordLookup } from "./pro";
@@ -24,6 +24,8 @@ export interface StockQuote {
 
 const CACHE_KEY = "dca-price-cache";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const TICKER_RE = /^[A-Z]{1,5}(\.[A-Z]{1,4})?$/;
 
 function readCache(): Record<string, StockQuote> {
   try {
@@ -59,11 +61,13 @@ export type FetchResult =
 export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
   const upper = ticker.toUpperCase();
 
-  // Check cache first (free, doesn't count)
+  if (!TICKER_RE.test(upper)) {
+    return { ok: false, error: "Invalid ticker" };
+  }
+
   const cached = getCached(upper);
   if (cached) return { ok: true, quote: cached, fromCache: true };
 
-  // Check rate limit
   if (!canLookup()) {
     return { ok: false, error: "Daily lookup limit reached" };
   }
@@ -77,7 +81,7 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
     }
 
     const resp = await fetch(
-      `${projectUrl}/functions/v1/stock-price?ticker=${upper}`,
+      `${projectUrl}/functions/v1/stock-price?ticker=${encodeURIComponent(upper)}`,
       {
         headers: {
           Authorization: `Bearer ${anonKey}`,
@@ -90,27 +94,33 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
       if (resp.status === 401) {
         return { ok: false, error: "Unauthorized — use Supabase anon key in .env" };
       }
-      const errData = await resp.json().catch(() => ({}));
+      const errData = (await resp.json().catch(() => ({}))) as { error?: string };
       return { ok: false, error: errData.error || "Price unavailable" };
     }
 
-    const result = await resp.json();
-    const quote: StockQuote = {
-      ticker: upper,
-      price: result.price,
-      previousClose: result.previousClose,
-      change: result.change,
-      changePercent: result.changePercent,
-      fetchedAt: Date.now(),
-      week52High: result.week52High ?? null,
-      week52Low: result.week52Low ?? null,
-      todayOpen: result.todayOpen ?? null,
-      todayHigh: result.todayHigh ?? null,
-      todayLow: result.todayLow ?? null,
-      todayVolume: result.todayVolume ?? null,
-      avgVolume: result.avgVolume ?? null,
-    };
+    const data = (await resp.json()) as Record<string, unknown>;
+    if (typeof data.error === "string") {
+      return { ok: false, error: data.error };
+    }
+    if (typeof data.price !== "number") {
+      return { ok: false, error: "Price unavailable" };
+    }
 
+    const quote: StockQuote = {
+      ticker: String(data.ticker ?? upper),
+      price: data.price,
+      previousClose: typeof data.previousClose === "number" ? data.previousClose : 0,
+      change: typeof data.change === "number" ? data.change : 0,
+      changePercent: typeof data.changePercent === "number" ? data.changePercent : 0,
+      fetchedAt: Date.now(),
+      week52High: typeof data.week52High === "number" ? data.week52High : null,
+      week52Low: typeof data.week52Low === "number" ? data.week52Low : null,
+      todayOpen: typeof data.todayOpen === "number" ? data.todayOpen : null,
+      todayHigh: typeof data.todayHigh === "number" ? data.todayHigh : null,
+      todayLow: typeof data.todayLow === "number" ? data.todayLow : null,
+      todayVolume: typeof data.todayVolume === "number" ? data.todayVolume : null,
+      avgVolume: typeof data.avgVolume === "number" ? data.avgVolume : null,
+    };
     setCache(quote);
     recordLookup();
     return { ok: true, quote, fromCache: false };

@@ -520,11 +520,7 @@ export default function HoldingDetail() {
         {/* ═══════════════ STRATEGY TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
-            <GoalLadder
-              holding={holding}
-              onUseInCalculator={openCalculatorPrefilled}
-              onSaved={() => setVersion((v) => v + 1)}
-            />
+            <GoalLadder holding={holding} />
 
             {/* Saved scenarios */}
             <div className="space-y-3">

@@ -1,12 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, Layers, Sparkles, Settings, TrendingDown, Lock } from "lucide-react";
-import { hasFeature } from "@/lib/feature-access";
+import { Wallet, Search, Activity, User } from "lucide-react";
 
 const TABS = [
-  { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/", premiumFeature: null },
-  { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/"), premiumFeature: null },
-  { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p: string) => p === "/optimizer", premiumFeature: "optimizer" as const },
-  { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings", premiumFeature: null },
+  { path: "/", label: "Portfolio", icon: Wallet, match: (p: string) => p === "/" || p.startsWith("/holdings/") },
+  { path: "/update-prices", label: "Search", icon: Search, match: (p: string) => p === "/update-prices" },
+  { path: "/what-if", label: "Activity", icon: Activity, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/") },
+  { path: "/settings", label: "Profile", icon: User, match: (p: string) => p === "/settings" },
 ] as const;
 
 export default function BottomTabBar() {
@@ -15,37 +14,29 @@ export default function BottomTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-stitch-border bg-stitch-card/95 backdrop-blur-md"
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
-      <div className="mx-auto flex max-w-4xl items-stretch">
+      <ul className="mx-auto flex h-[88px] max-w-md items-center justify-around px-4 pb-4">
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
-          const locked = tab.premiumFeature && !hasFeature(tab.premiumFeature);
           return (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors relative ${
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <div className="relative">
-                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
-                {locked && (
-                  <Lock className="h-2.5 w-2.5 absolute -top-1 -right-1.5 text-primary" />
-                )}
-              </div>
-              <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>
-                {tab.label}
-              </span>
-            </button>
+            <li key={tab.path} className="flex h-full w-full flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={() => navigate(tab.path)}
+                className={`flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                  active ? "text-stitch-accent" : "text-stitch-muted hover:text-stitch-muted-soft"
+                }`}
+              >
+                <Icon className="h-6 w-6" strokeWidth={active ? 2.25 : 2} />
+                <span className={`text-[10px] ${active ? "font-medium" : "font-medium"}`}>{tab.label}</span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </nav>
   );
 }

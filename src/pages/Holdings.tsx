@@ -2,29 +2,55 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import Onboarding, { getOnboardingDone } from "@/components/onboarding";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus, Pencil, Trash2,
-  TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
-  ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
-  Gauge, Activity, BarChart3, Wallet, CheckSquare, Square, X, Zap, ArrowDownRight,
+  Plus,
+  Pencil,
+  Trash2,
+  TrendingDown,
+  FileSpreadsheet,
+  ChevronRight,
+  RefreshCw,
+  ArrowUpDown,
+  CheckSquare,
+  Square,
+  X,
+  MoreHorizontal,
+  SlidersHorizontal,
+  Gauge,
+  Zap,
+  ArrowDownRight,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import CsvImportDialog from "@/components/CsvImportDialog";
 import {
-  getHoldings, addHolding, editHolding, removeHolding,
+  getHoldings,
+  addHolding,
+  editHolding,
+  removeHolding,
   getScenariosForHolding,
-  type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
+  type Holding,
+  type Scenario,
+  currencyPrefix,
+  apiTicker,
 } from "@/lib/storage";
-import { fetchStockPrice, getCachedQuote, type StockQuote } from "@/lib/stock-price";
-import { Badge } from "@/components/ui/badge";
+import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { toast } from "sonner";
 
 const SORT_KEY = "dca-holdings-sort";
@@ -39,6 +65,19 @@ const SORT_LABELS: Record<SortMode, string> = {
 
 const CACHE_KEY = "dca-price-cache";
 
+const AVATAR_PALETTE = [
+  "bg-white text-black",
+  "bg-[#76b900] text-white",
+  "bg-[#627eea] text-white",
+  "bg-[#e31937] text-white",
+] as const;
+
+function avatarClassForTicker(ticker: string): string {
+  let h = 0;
+  for (let i = 0; i < ticker.length; i++) h = (h + ticker.charCodeAt(i) * (i + 1)) % 997;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
+}
+
 function readPriceCache(): Record<string, StockQuote> {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -50,21 +89,9 @@ function readPriceCache(): Record<string, StockQuote> {
 
 function getCachedPrice(ticker: string, exchange: string): number | null {
   const cache = readPriceCache();
-  const key = apiTicker(ticker, exchange as any).toUpperCase();
+  const key = apiTicker(ticker, exchange as "US" | "TSX").toUpperCase();
   const entry = cache[key];
   return entry ? entry.price : null;
-}
-
-function getCachedQuoteForHolding(ticker: string, exchange: string): StockQuote | null {
-  const key = apiTicker(ticker, exchange as any).toUpperCase();
-  return getCachedQuote(key);
-}
-
-function formatVolume(vol: number): string {
-  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
-  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
-  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
-  return vol.toFixed(0);
 }
 
 const fmt = (n: number) =>
@@ -90,7 +117,6 @@ export default function Holdings() {
 
   const holdings = getHoldings();
 
-  // Live prices from cache
   const livePrices = useMemo(() => {
     const prices: Record<string, number | null> = {};
     holdings.forEach((h) => {
@@ -100,17 +126,15 @@ export default function Holdings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holdings, tick]);
 
-  // Latest DCA scenario per holding
   const latestDca = useMemo(() => {
     const map: Record<string, Scenario | null> = {};
     holdings.forEach((h) => {
       const scenarios = getScenariosForHolding(h.id);
-      map[h.id] = scenarios.length > 0 ? scenarios[0] : null;
+      map[h.id] = scenarios.length > 0 ? scenarios[0]! : null;
     });
     return map;
   }, [holdings, tick]);
 
-  // P&L calculation
   const getPnl = (h: Holding) => {
     const price = livePrices[h.id];
     if (price == null) return null;
@@ -119,7 +143,6 @@ export default function Holdings() {
     return { pnl, pnlPct, price };
   };
 
-  // Sorting
   const sortedHoldings = useMemo(() => {
     const sorted = [...holdings];
     switch (sortMode) {
@@ -127,7 +150,7 @@ export default function Holdings() {
         sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
         break;
       case "position":
-        sorted.sort((a, b) => (b.shares * b.avg_cost) - (a.shares * a.avg_cost));
+        sorted.sort((a, b) => b.shares * b.avg_cost - a.shares * a.avg_cost);
         break;
       case "loss": {
         sorted.sort((a, b) => {
@@ -154,7 +177,6 @@ export default function Holdings() {
     localStorage.setItem(SORT_KEY, mode);
   };
 
-  // ── Portfolio metrics ──────────────────────────────────
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
   const totalUsdInvested = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
@@ -174,7 +196,6 @@ export default function Holdings() {
   const totalPnl = totalMarketValue - totalCostBasis;
   const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
 
-  // ── Refresh all prices ─────────────────────────────────────
   const refreshAllPrices = useCallback(async () => {
     const result = await refreshAll(() => refresh());
     if (result.failed.length === 0) {
@@ -186,21 +207,23 @@ export default function Holdings() {
     }
   }, [refreshAll]);
 
-  // ── Single price fetch ─────────────────────────────────────
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
   const fetchPrice = useCallback(async (ticker: string, exchange: string) => {
-    const sym = apiTicker(ticker, exchange as any);
+    const sym = apiTicker(ticker, exchange as "US" | "TSX");
     setFetchingTickers((prev) => new Set(prev).add(ticker));
     const result = await fetchStockPrice(sym);
-    setFetchingTickers((prev) => { const n = new Set(prev); n.delete(ticker); return n; });
+    setFetchingTickers((prev) => {
+      const n = new Set(prev);
+      n.delete(ticker);
+      return n;
+    });
     if (result.ok) {
       refresh();
     } else {
-      toast.error(`${ticker}: ${'error' in result ? result.error : "Price unavailable"}`);
+      toast.error(`${ticker}: ${"error" in result ? result.error : "Price unavailable"}`);
     }
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────
   const handleCreate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     addHolding(data);
     setFormOpen(false);
@@ -236,7 +259,8 @@ export default function Holdings() {
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -254,317 +278,378 @@ export default function Holdings() {
     setSelected(new Set());
   };
 
+  const displayDollar = (n: number) => `$${fmt(n)}`;
+
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {showOnboarding && (
         <Onboarding onDone={() => setShowOnboarding(false)} />
       )}
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <div style={{ lineHeight: 1 }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
-              DCA<span style={{ color: "hsl(160 60% 52%)" }}>.</span>
-            </span>
-            <div style={{ fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(215 16% 45%)", marginTop: 2 }}>
-              Strategy Engine
-            </div>
+      {holdings.length === 0 ? (
+        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-24 pt-20 text-center">
+          <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
+            <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
-          {holdings.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
-                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                {refreshingAll ? "…" : "Refresh"}
-              </Button>
-            </div>
-          )}
+          <h3 className="text-lg font-semibold text-white">No holdings yet</h3>
+          <p className="mt-2 max-w-sm text-sm text-stitch-muted">
+            Add your first holding to start tracking average cost and DCA scenarios.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              size="lg"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Stock
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              onClick={() => setCsvOpen(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+          </div>
         </div>
-      </header>
+      ) : (
+        <>
+          <header className="mb-8 px-4 pt-12 text-center sm:px-6 md:px-8">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight">
+              Modernized DCA
+              <br />
+              Portfolio Dashboard
+            </h1>
+          </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8 space-y-8">
-        {holdings.length === 0 ? (
-          /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-            <div className="rounded-full bg-muted p-4">
-              <TrendingDown className="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">No holdings yet</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Add your first holding to start tracking your average cost and DCA scenarios.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Stock
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => setCsvOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Import CSV
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ════════════════════════════════════════════════
-                SECTION 1 — Portfolio Health
-               ════════════════════════════════════════════════ */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="h-4.5 w-4.5 text-primary" />
-                <h2 className="section-label">
-                  Portfolio Health
-                </h2>
-                {lastRefreshed && (
-                  <span className="ml-auto text-[10px] text-muted-foreground/50">
-                    Updated {formatLastRefreshed(lastRefreshed)}
-                  </span>
-                )}
+          <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 sm:px-6 md:px-8">
+            {selectMode && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
+                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
+                  {selected.size === holdings.length ? "Deselect all" : "Select all"}
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={selected.size === 0}
+                    onClick={() => setBulkDeleting(true)}
+                    className="font-medium text-stitch-danger disabled:opacity-40"
+                  >
+                    Delete ({selected.size})
+                  </button>
+                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Total Portfolio */}
+            <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+              <div className="relative z-10 mb-4 flex items-center justify-between">
+                <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      aria-label="Portfolio menu"
+                    >
+                      <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="z-50 border-stitch-border bg-stitch-card text-white"
+                  >
+                    <DropdownMenuItem
+                      className="focus:bg-stitch-pill focus:text-white"
+                      onClick={() => refreshAllPrices()}
+                      disabled={refreshingAll}
+                    >
+                      <RefreshCw className={`mr-2 h-4 w-4 ${refreshingAll ? "animate-spin" : ""}`} />
+                      Refresh prices
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/update-prices")}
+                    >
+                      Update Prices page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="focus:bg-stitch-pill focus:text-white"
+                      onClick={() => setCsvOpen(true)}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      Import CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="focus:bg-stitch-pill focus:text-white"
+                      onClick={() => setSelectMode(true)}
+                    >
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Select holdings
+                    </DropdownMenuItem>
+                    {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                      <DropdownMenuItem
+                        key={mode}
+                        className="focus:bg-stitch-pill focus:text-white"
+                        onClick={() => handleSortChange(mode)}
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        Sort: {SORT_LABELS[mode]}
+                        {sortMode === mode ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <HealthCard
-                  icon={<Wallet className="h-4 w-4" />}
-                  label="Market Value"
-                  value={hasAnyPrice ? `$${fmt(totalMarketValue)}` : "—"}
-                />
-                <HealthCard
-                  icon={<DollarSign className="h-4 w-4" />}
-                  label="Cost Basis"
-                  value={`$${fmt(totalCostBasis)}`}
-                />
-                <HealthCard
-                  icon={hasAnyPrice && totalPnl >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  label="Unrealized P/L"
-                  value={hasAnyPrice ? `${totalPnl >= 0 ? "+" : ""}$${fmt(totalPnl)}` : "—"}
-                  sub={hasAnyPrice ? `${totalPnlPct >= 0 ? "+" : ""}${totalPnlPct.toFixed(1)}%` : undefined}
-                  accent={hasAnyPrice ? (totalPnl >= 0 ? "positive" : "negative") : undefined}
-                />
-                <HealthCard
-                  icon={<BarChart3 className="h-4 w-4" />}
-                  label="Holdings"
-                  value={String(holdings.length)}
-                />
+              <div className="relative z-10 mb-6 flex items-end justify-between">
+                <div>
+                  <p className="mb-1 text-[15px] text-stitch-muted">Current Value:</p>
+                  <p className="text-[34px] font-bold leading-none text-stitch-accent">
+                    {hasAnyPrice ? displayDollar(totalMarketValue) : "—"}
+                  </p>
+                </div>
+                <PortfolioSparkline positive={totalPnl >= 0} />
               </div>
+
+              <div className="relative z-10 flex justify-between">
+                <div>
+                  <p className="mb-1 text-[15px] text-stitch-muted">Total Invested:</p>
+                  <p className="text-[20px] font-medium text-white">{displayDollar(totalCostBasis)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="mb-1 text-[15px] text-stitch-muted">P&amp;L:</p>
+                  <p
+                    className={`text-[20px] font-medium ${
+                      !hasAnyPrice ? "text-stitch-muted" : totalPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
+                    }`}
+                  >
+                    {hasAnyPrice
+                      ? `${totalPnl >= 0 ? "+" : ""}${displayDollar(totalPnl)} (${totalPnlPct >= 0 ? "+" : ""}${totalPnlPct.toFixed(2)}%)`
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+              {lastRefreshed && (
+                <p className="relative z-10 mt-3 text-[10px] text-stitch-muted/70">
+                  Updated {formatLastRefreshed(lastRefreshed)}
+                </p>
+              )}
             </section>
 
-            {/* ════════════════════════════════════════════════
-                SECTION 1.5 — Next Best Move
-               ════════════════════════════════════════════════ */}
             <NextBestMove holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
-            {/* ════════════════════════════════════════════════
-                SECTION 2 — DCA Opportunities
-               ════════════════════════════════════════════════ */}
-            <section>
+            <section className="mt-2">
               <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
             </section>
 
-            {/* ════════════════════════════════════════════════
-                SECTION 2.5 — Strategy Impact
-               ════════════════════════════════════════════════ */}
             <StrategyImpact holdings={holdings} />
 
-            {/* Divider */}
-            <div className="border-t border-border" />
+            {/* Asset grid */}
+            <section className="grid grid-cols-2 gap-4">
+              {sortedHoldings.map((h) => {
+                const ex = (h.exchange ?? "US") as "US" | "TSX";
+                const cp = currencyPrefix(ex);
+                const price = livePrices[h.id];
+                const scenario = latestDca[h.id];
+                const isSelected = selected.has(h.id);
+                const underwater = price != null && price < h.avg_cost;
+                const sliderColor = !price ? "text-stitch-muted" : underwater ? "text-stitch-accent" : "text-stitch-danger";
 
-            {/* ════════════════════════════════════════════════
-                SECTION 3 — Your Holdings
-               ════════════════════════════════════════════════ */}
-            <section>
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
-                   <h2 className="section-label">
-                    Your Holdings
-                  </h2>
-                </div>
-
-                {selectMode ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleSelectAll}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {selected.size === holdings.length ? "Deselect All" : "Select All"}
-                    </button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-8"
-                      disabled={selected.size === 0}
-                      onClick={() => setBulkDeleting(true)}
-                    >
-                      <Trash2 className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Delete ({selected.size})</span>
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={exitSelectMode}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2" onClick={() => setSelectMode(true)}>
-                      <CheckSquare className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Select</span>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2">
-                          <ArrowUpDown className="mr-1 h-3 w-3" />
-                          <span className="text-xs">{SORT_LABELS[sortMode]}</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
-                        {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-                          <DropdownMenuItem
-                            key={mode}
-                            onClick={() => handleSortChange(mode)}
-                            className={sortMode === mode ? "font-semibold text-primary" : ""}
-                          >
-                            {SORT_LABELS[mode]}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCsvOpen(true)}>
-                      <FileSpreadsheet className="mr-1 h-3 w-3" />
-                      <span className="text-xs">CSV</span>
-                    </Button>
-                    <Button size="sm" className="h-8" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                      <Plus className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Add</span>
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Holdings list */}
-              <div className="space-y-1">
-                {sortedHoldings.map((h) => {
-                  const ex = (h.exchange ?? "US") as any;
-                  const cp = currencyPrefix(ex);
-                  const price = livePrices[h.id];
-                  const pnlData = getPnl(h);
-                  const isFetching = fetchingTickers.has(h.ticker);
-                  const isSelected = selected.has(h.id);
-
-                  return (
-                    <div
-                      key={h.id}
-                      className={`group rounded-lg border border-border ${isSelected ? "bg-destructive/5" : "bg-card hover:bg-muted/30"} transition-colors cursor-pointer relative`}
-                      onClick={() => selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`)}
-                    >
-                      <div className={`px-4 py-3 ${selectMode ? "pl-3" : "pr-10"}`}>
-                        <div className="flex items-center gap-3">
-                          {selectMode && (
-                            <div className="shrink-0">
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-destructive" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground/40" />
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex-1 min-w-0">
-                            {/* Row: ticker | shares | avg | price | P/L */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-sm font-bold font-mono tracking-tight">{h.ticker}</span>
-                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">{exchangeLabel(ex)}</span>
-                              </div>
-                              {pnlData ? (
-                                <span className={`text-sm font-mono font-semibold shrink-0 ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-                                  {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)}
-                                </span>
-                              ) : (
-                                !selectMode && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
-                                    disabled={isFetching}
-                                    className="text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium shrink-0"
-                                  >
-                                    {isFetching ? "…" : "Get Price"}
-                                  </button>
-                                )
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono mt-0.5">
-                              <span>{fmt(h.shares)} sh</span>
-                              <span className="text-muted-foreground/30">·</span>
-                              <span>Avg {cp}{fmt(h.avg_cost)}</span>
-                              {price != null && (
-                                <>
-                                  <span className="text-muted-foreground/30">·</span>
-                                  <span>Price {cp}{fmt(price)}</span>
-                                </>
-                              )}
-                              {pnlData && (
-                                <>
-                                  <span className="text-muted-foreground/30">·</span>
-                                  <span className={pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}>
-                                    {pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                return (
+                  <article
+                    key={h.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => (selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`);
+                      }
+                    }}
+                    className={`relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity ${
+                      isSelected ? "ring-2 ring-stitch-accent/60" : ""
+                    }`}
+                  >
+                    {selectMode && (
+                      <div className="absolute right-2 top-2">
+                        {isSelected ? (
+                          <CheckSquare className="h-5 w-5 text-stitch-accent" />
+                        ) : (
+                          <Square className="h-5 w-5 text-stitch-muted/50" />
+                        )}
                       </div>
-
-                      {!selectMode && (
-                        <>
-                          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
-                          <div className="absolute right-8 top-2 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
-                              aria-label="Edit"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                            </button>
-                          </div>
-                        </>
-                      )}
+                    )}
+                    <div className="mb-2 flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClassForTicker(h.ticker)}`}
+                        >
+                          {h.ticker.slice(0, 1)}
+                        </div>
+                        <span className="text-[15px] font-bold">{h.ticker}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/holdings/${h.id}?tab=strategy`);
+                        }}
+                        aria-label="Strategy"
+                      >
+                        <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
+
+                    <p className="mb-2 text-[22px] font-bold">
+                      {price != null ? `${cp}${fmt(price)}` : "—"}
+                    </p>
+
+                    {!selectMode && price == null && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchPrice(h.ticker, ex);
+                        }}
+                        disabled={fetchingTickers.has(h.ticker)}
+                        className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+                      >
+                        {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
+                      </button>
+                    )}
+
+                    <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
+                      <span>Your Average:</span>
+                      <span className="text-stitch-muted-soft">{cp}{fmt(h.avg_cost)}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/holdings/${h.id}?tab=strategy`);
+                      }}
+                      className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+                    >
+                      <span className="leading-tight">
+                        Target Average:
+                        <br />
+                        <span className="text-[15px]">
+                          {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
+                        </span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0" />
+                    </button>
+
+                    <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
+                      Buy to Reach Target:
+                      <br />
+                      {scenario && scenario.buy_price != null ? (
+                        <>
+                          <span className="text-stitch-muted-soft">
+                            {fmt(scenario.shares_to_buy)} shares at {cp}
+                            {fmt(scenario.buy_price)}
+                          </span>
+                          <br />
+                          {underwater && price != null && price > 0 && (
+                            <span className="text-stitch-accent">
+                              (+{(((h.avg_cost - price) / price) * 100).toFixed(1)}% vs. market)
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-stitch-muted-soft/80">Save a scenario on the Strategy tab</span>
+                      )}
+                    </p>
+
+                    {!selectMode && (
+                      <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+                        <button
+                          type="button"
+                          className="text-[11px] text-stitch-muted hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditing(h);
+                            setFormOpen(true);
+                          }}
+                        >
+                          <Pencil className="mr-1 inline h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleting(h);
+                          }}
+                        >
+                          <Trash2 className="mr-1 inline h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
             </section>
-          </>
-        )}
-      </main>
+          </main>
+
+          <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+            >
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <span className="font-semibold text-stitch-accent">Add Stock</span>
+            </button>
+          </div>
+        </>
+      )}
 
       <HoldingFormDialog
         open={formOpen}
-        onOpenChange={(open) => { setFormOpen(open); if (!open) setEditing(null); }}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditing(null);
+        }}
         initial={editing}
         loading={false}
-        onSubmit={(data) => editing ? handleUpdate(data) : handleCreate(data)}
+        onSubmit={(data) => (editing ? handleUpdate(data) : handleCreate(data))}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleting?.ticker} and all its data?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the stock position and all saved calculations for {deleting?.ticker}. This action cannot be undone.
+            <AlertDialogDescription className="text-stitch-muted">
+              This will permanently delete the stock position and all saved calculations for {deleting?.ticker}. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleting && handleDelete(deleting.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -572,66 +657,64 @@ export default function Holdings() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk delete confirmation */}
       <AlertDialog open={bulkDeleting} onOpenChange={(open) => !open && setBulkDeleting(false)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {selected.size === holdings.length ? "all holdings" : `${selected.size} selected holding${selected.size !== 1 ? "s" : ""}`} and their saved calculations. This action cannot be undone.
+            <AlertDialogTitle>
+              Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stitch-muted">
+              This will permanently delete{" "}
+              {selected.size === holdings.length
+                ? "all holdings"
+                : `${selected.size} selected holding${selected.size !== 1 ? "s" : ""}`}{" "}
+              and their saved calculations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
             >
-              Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <CsvImportDialog
-        open={csvOpen}
-        onOpenChange={setCsvOpen}
-        onImported={() => refresh()}
-      />
+      <CsvImportDialog open={csvOpen} onOpenChange={setCsvOpen} onImported={() => refresh()} />
     </div>
   );
 }
 
-/* ── Health Card ─────────────────────────────────────────── */
-function HealthCard({
-  icon,
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: "positive" | "negative";
-}) {
-  const accentColor = accent === "positive"
-    ? "text-primary"
-    : accent === "negative"
-    ? "text-destructive"
-    : "text-foreground";
-
+function PortfolioSparkline({ positive }: { positive: boolean }) {
+  const stroke = positive ? "#C4FB35" : "#ff453a";
+  const fillId = positive ? "stitch-graph-grad-pos" : "stitch-graph-grad-neg";
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        {icon}
-        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`leading-none ${accentColor}`} style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em" }}>{value}</p>
-      {sub && (
-        <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
-      )}
+    <div className="relative h-16 w-32">
+      <svg className="h-full w-full overflow-visible" viewBox="0 0 100 50" aria-hidden>
+        <defs>
+          <linearGradient id={fillId} x1="0%" x2="0%" y1="0%" y2="100%">
+            <stop offset="0%" stopColor={stroke} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M 0 45 C 10 35, 20 40, 30 30 C 40 20, 50 35, 60 25 C 70 15, 80 20, 90 5 L 100 0 L 100 50 L 0 50 Z"
+          fill={`url(#${fillId})`}
+        />
+        <path
+          d="M 0 45 C 10 35, 20 40, 30 30 C 40 20, 50 35, 60 25 C 70 15, 80 20, 90 5 L 100 0"
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
     </div>
   );
 }
