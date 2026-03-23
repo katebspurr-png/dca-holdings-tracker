@@ -32,6 +32,28 @@ const PRICE_NAMES = [
 ];
 const EXCHANGE_NAMES = ["exchange", "market", "listing"];
 
+/** Column headers that represent total cost (book value), not per-share. We derive avg_cost = total / quantity. */
+const BOOK_VALUE_TOTAL_NAMES = [
+  "book value (market)",
+  "book value (cad)",
+  "book value",
+  "cost basis",
+  "total cost",
+];
+
+function isTotalCostColumn(header: string): boolean {
+  if (!header) return false;
+  const h = header.toLowerCase().trim();
+  if (h.includes("per share")) return false;
+  return BOOK_VALUE_TOTAL_NAMES.some((c) => h.includes(c));
+}
+
+/** Exclude "Market Price" from being used as average cost (it's current price, not cost). */
+function isMarketPriceColumn(header: string): boolean {
+  const h = header.toLowerCase().trim();
+  return h === "market price" || (h.includes("market") && h.includes("price") && !h.includes("book"));
+}
+
 function fuzzyMatch(header: string, candidates: string[]): boolean {
   const h = header.toLowerCase().trim();
   return candidates.some((c) => h === c || h.includes(c));
@@ -42,8 +64,40 @@ function autoDetect(headers: string[]): { ticker: string; shares: string; price:
   for (const h of headers) {
     if (!ticker && fuzzyMatch(h, TICKER_NAMES)) ticker = h;
     if (!shares && fuzzyMatch(h, SHARES_NAMES)) shares = h;
-    if (!price && fuzzyMatch(h, PRICE_NAMES)) price = h;
     if (!exchange && fuzzyMatch(h, EXCHANGE_NAMES)) exchange = h;
+  }
+  // Prefer total-cost columns (Book Value) over per-share; never use Market Price as cost.
+  // Prefer "Book Value (Market)" (USD) first, then "Book Value (CAD)", then any other total-cost column.
+  const hLower = (s: string) => s.toLowerCase().trim();
+  for (const h of headers) {
+    if (!price && isTotalCostColumn(h) && hLower(h).includes("book value (market)")) {
+      price = h;
+      break;
+    }
+  }
+  if (!price) {
+    for (const h of headers) {
+      if (isTotalCostColumn(h) && hLower(h).includes("book value (cad)")) {
+        price = h;
+        break;
+      }
+    }
+  }
+  if (!price) {
+    for (const h of headers) {
+      if (isTotalCostColumn(h)) {
+        price = h;
+        break;
+      }
+    }
+  }
+  if (!price) {
+    for (const h of headers) {
+      if (fuzzyMatch(h, PRICE_NAMES) && !isMarketPriceColumn(h)) {
+        price = h;
+        break;
+      }
+    }
   }
   return { ticker, shares, price, exchange };
 }
@@ -116,12 +170,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
         setRawRows(result.data);
         const detected = autoDetect(hdrs);
         setMapping(detected);
-        // If the three required fields detected, skip straight to preview
-        if (detected.ticker && detected.shares && detected.price) {
-          buildPreview(result.data, detected);
-        } else {
-          setStep("map");
-        }
+        setStep("map");
       },
       error: () => toast.error("This file doesn't appear to be a valid CSV"),
     });
@@ -132,21 +181,31 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   const buildPreview = (rows: Record<string, string>[], map: { ticker: string; shares: string; price: string; exchange: string }) => {
     let skipped = 0;
     const parsed: ParsedRow[] = [];
-    // Aggregate by ticker
+    const costIsTotal = isTotalCostColumn(map.price);
+    // Resolve cell value by header (handles BOM/trim/case mismatches between mapping and CSV row keys)
+    const getCell = (row: Record<string, string>, header: string): string | undefined => {
+      if (!header) return undefined;
+      if (row[header] !== undefined && row[header] !== "") return row[header];
+      const want = header.trim().toLowerCase();
+      const key = Object.keys(row).find((k) => k.trim().toLowerCase() === want);
+      return key ? row[key] : undefined;
+    };
+    // Aggregate by ticker (totalCost in agg is weighted average cost per share)
     const agg = new Map<string, { totalShares: number; totalCost: number; exchange: "US" | "TSX" }>();
 
     for (const row of rows) {
-      const ticker = (row[map.ticker] ?? "").toUpperCase().replace(/[^A-Z.]/g, "");
-      const shares = parseFloat(row[map.shares]);
-      const price = parseFloat(row[map.price]);
-      if (!ticker || isNaN(shares) || shares <= 0 || isNaN(price) || price <= 0) {
+      const ticker = (getCell(row, map.ticker) ?? "").toUpperCase().replace(/[^A-Z.]/g, "");
+      const shares = parseFloat(getCell(row, map.shares) ?? "");
+      const costRaw = parseFloat(getCell(row, map.price) ?? "");
+      if (!ticker || isNaN(shares) || shares <= 0 || isNaN(costRaw) || costRaw <= 0) {
         skipped++;
         continue;
       }
+      const perShareCost = costIsTotal ? costRaw / shares : costRaw;
       // Detect exchange from column if present, otherwise fall back to defaultExchange
       let exchange: "US" | "TSX" = defaultExchange;
-      if (map.exchange && row[map.exchange]) {
-        const raw = (row[map.exchange] ?? "").toUpperCase().trim();
+      if (map.exchange) {
+        const raw = (getCell(row, map.exchange) ?? "").toUpperCase().trim();
         if (raw.includes("TSX") || raw.includes("CA") || raw.includes("TOR")) {
           exchange = "TSX";
         } else {
@@ -156,11 +215,10 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
       const existing = agg.get(ticker);
       if (existing) {
         const newTotal = existing.totalShares + shares;
-        existing.totalCost = (existing.totalCost * existing.totalShares + price * shares) / newTotal;
+        existing.totalCost = (existing.totalCost * existing.totalShares + perShareCost * shares) / newTotal;
         existing.totalShares = newTotal;
-        // Keep the exchange from the first row seen for this ticker
       } else {
-        agg.set(ticker, { totalShares: shares, totalCost: price, exchange });
+        agg.set(ticker, { totalShares: shares, totalCost: perShareCost, exchange });
       }
     }
 
@@ -241,7 +299,12 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
   return (
     <>
       <Dialog open={open && step !== "conflict"} onOpenChange={handleClose}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-lg max-h-[85vh] overflow-y-auto"
+          onInteractOutside={(e) => {
+            if (step === "pick") e.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
@@ -287,6 +350,11 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               <MappingSelect label="Ticker / Symbol *" value={mapping.ticker} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, ticker: v }))} />
               <MappingSelect label="Shares / Quantity *" value={mapping.shares} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, shares: v }))} />
               <MappingSelect label="Price / Avg Cost *" value={mapping.price} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, price: v }))} />
+              {mapping.price && isTotalCostColumn(mapping.price) && (
+                <p className="text-xs text-muted-foreground">
+                  Using as total cost; average cost = total ÷ quantity.
+                </p>
+              )}
 
               <MappingSelect label="Exchange column (optional)" value={mapping.exchange} headers={["(none)", ...headers]} onChange={(v) => setMapping((m) => ({ ...m, exchange: v === "(none)" ? "" : v }))} />
 
@@ -325,6 +393,11 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
           {/* ── Preview ────────────────────────────── */}
           {step === "preview" && (
             <div className="space-y-4">
+              {mapping.price && isTotalCostColumn(mapping.price) && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Using &quot;{mapping.price}&quot; as total cost; average cost = total ÷ quantity.
+                </p>
+              )}
               {skippedCount > 0 && (
                 <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 shrink-0" />

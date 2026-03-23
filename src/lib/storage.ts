@@ -112,7 +112,37 @@ export interface AppData {
   optimizationScenarios?: OptimizationScenario[];
 }
 
-const STORAGE_KEY = "dca-down-data";
+const BASE_KEY = "positionpilot-data";
+let STORAGE_KEY = BASE_KEY;
+let CURRENT_USER_ID: string | null = null;
+
+/**
+ * Called by AuthContext on login — scopes storage to the logged-in user.
+ * Each user gets their own isolated data on this device.
+ */
+export function initStorageForUser(userId: string) {
+  STORAGE_KEY = `${BASE_KEY}-${userId}`;
+  CURRENT_USER_ID = userId;
+}
+
+/** Called on sign out — resets to the base key */
+export function clearStorageUser() {
+  STORAGE_KEY = BASE_KEY;
+  CURRENT_USER_ID = null;
+}
+
+/** Returns the current user ID (used by sync layer) */
+export function getCurrentUserId(): string | null {
+  return CURRENT_USER_ID;
+}
+
+/**
+ * Seeds localStorage with data pulled from Supabase.
+ * Called by AuthContext after a successful cloud pull.
+ */
+export function seedFromCloud(data: AppData) {
+  write(data);
+}
 
 // ── Demo data ────────────────────────────────────────────────
 const DEMO_HOLDINGS: Holding[] = [
@@ -205,6 +235,11 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
+// Lazy import sync to avoid circular deps — fires and forgets
+function sync() {
+  return import("./sync");
+}
+
 // ── Holdings CRUD ────────────────────────────────────────────
 
 export function getHoldings(): Holding[] {
@@ -225,6 +260,8 @@ export function addHolding(h: Omit<Holding, "id" | "created_at" | "initial_avg_c
   };
   data.holdings.push(holding);
   write(data);
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) sync().then((s) => s.pushHolding(holding, uid_));
   return holding;
 }
 
@@ -234,6 +271,8 @@ export function editHolding(id: string, patch: Partial<Omit<Holding, "id" | "cre
   if (idx === -1) throw new Error("Holding not found");
   data.holdings[idx] = { ...data.holdings[idx], ...patch };
   write(data);
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) sync().then((s) => s.pushHolding(data.holdings[idx], uid_));
   return data.holdings[idx];
 }
 
@@ -242,6 +281,7 @@ export function removeHolding(id: string) {
   data.holdings = data.holdings.filter((h) => h.id !== id);
   data.scenarios = data.scenarios.filter((s) => s.holding_id !== id);
   write(data);
+  sync().then((s) => s.deleteHolding(id));
 }
 
 // ── Scenarios CRUD ───────────────────────────────────────────
@@ -267,6 +307,7 @@ export function addScenario(s: Omit<Scenario, "id" | "created_at">): Scenario {
   const scenario: Scenario = { ...s, id: uid(), created_at: new Date().toISOString() };
   data.scenarios.push(scenario);
   write(data);
+  sync().then((m) => m.pushScenario(scenario));
   return scenario;
 }
 
@@ -274,6 +315,7 @@ export function removeScenario(id: string) {
   const data = read();
   data.scenarios = data.scenarios.filter((s) => s.id !== id);
   write(data);
+  sync().then((s) => s.deleteScenario(id));
 }
 
 // ── Reset ────────────────────────────────────────────────────
@@ -309,6 +351,8 @@ export function addWhatIfComparison(c: Omit<WhatIfComparison, "id" | "created_at
   if (!data.whatIfComparisons) data.whatIfComparisons = [];
   data.whatIfComparisons.push(comp);
   write(data);
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) sync().then((s) => s.pushWhatIfComparison(comp, uid_));
   return comp;
 }
 
@@ -316,6 +360,7 @@ export function removeWhatIfComparison(id: string) {
   const data = read();
   data.whatIfComparisons = (data.whatIfComparisons ?? []).filter((c) => c.id !== id);
   write(data);
+  sync().then((s) => s.deleteWhatIfComparison(id));
 }
 
 // ── Transactions ─────────────────────────────────────────────
@@ -394,6 +439,16 @@ export function applyBuyToHolding(params: {
   data.transactions.push(tx);
 
   write(data);
+
+  // Background sync
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) {
+    sync().then((s) => {
+      s.pushHolding(data.holdings[idx], uid_);
+      s.pushTransaction(tx);
+    });
+  }
+
   return tx;
 }
 
@@ -402,6 +457,7 @@ export function applyScenarioToHoldings(
   trades: { holdingId: string; sharesBought: number; buyPrice: number }[]
 ) {
   const data = read();
+  const updatedHoldings: Holding[] = [];
   for (const trade of trades) {
     const idx = data.holdings.findIndex((h) => h.id === trade.holdingId);
     if (idx === -1) continue;
@@ -410,8 +466,15 @@ export function applyScenarioToHoldings(
     const newAvg =
       (h.shares * h.avg_cost + trade.sharesBought * trade.buyPrice) / newTotalShares;
     data.holdings[idx] = { ...h, shares: newTotalShares, avg_cost: newAvg };
+    updatedHoldings.push(data.holdings[idx]);
   }
   write(data);
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) {
+    sync().then((s) => {
+      updatedHoldings.forEach((h) => s.pushHolding(h, uid_));
+    });
+  }
 }
 
 /**
@@ -441,13 +504,23 @@ export function undoLastBuy(holdingId: string): void {
   // Mark transaction as undone
   const tIdx = (data.transactions ?? []).findIndex((t) => t.id === latest.id);
   if (tIdx === -1) throw new Error("Transaction not found");
-  data.transactions![tIdx] = {
+  const updatedTx = {
     ...data.transactions![tIdx],
     is_undone: true,
     undone_at: new Date().toISOString(),
   };
+  data.transactions![tIdx] = updatedTx;
 
   write(data);
+
+  // Background sync
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) {
+    sync().then((s) => {
+      s.pushHolding(data.holdings[hIdx], uid_);
+      s.patchTransaction(updatedTx.id, { is_undone: true, undone_at: updatedTx.undone_at });
+    });
+  }
 }
 
 // ── Optimization Scenarios ──────────────────────────────────
@@ -462,6 +535,8 @@ export function addOptimizationScenario(s: Omit<OptimizationScenario, "id" | "cr
   if (!data.optimizationScenarios) data.optimizationScenarios = [];
   data.optimizationScenarios.push(opt);
   write(data);
+  const uid_ = CURRENT_USER_ID;
+  if (uid_) sync().then((m) => m.pushOptimizationScenario(opt, uid_));
   return opt;
 }
 
@@ -469,4 +544,5 @@ export function removeOptimizationScenario(id: string) {
   const data = read();
   data.optimizationScenarios = (data.optimizationScenarios ?? []).filter((s) => s.id !== id);
   write(data);
+  sync().then((s) => s.deleteOptimizationScenario(id));
 }

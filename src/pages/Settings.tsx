@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check } from "lucide-react";
+import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check, LogOut, BookOpen } from "lucide-react";
+import { resetOnboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -9,9 +10,16 @@ import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 import ProSettings from "@/components/ProSettings";
 import { toast } from "sonner";
 import { getUserPlan, getActivePlan, setUserPlan, isPremium, type PlanType } from "@/lib/feature-access";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    toast.success("Signed out");
+  }, [signOut]);
 
   const [dark, setDark] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -170,10 +178,45 @@ export default function Settings() {
           </div>
         )}
 
+        {/* Account */}
+        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Account</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Signed in as</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
+            </div>
+            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={handleSignOut}>
+              <LogOut className="mr-1.5 h-3.5 w-3.5" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+
         {/* About */}
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">About</h2>
-          <p className="text-sm text-muted-foreground">DCA Down · v1.0.0</p>
+        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">About</h2>
+            <p className="text-sm text-muted-foreground">PositionPilot · v1.0.0</p>
+          </div>
+          <div className="border-t border-border pt-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">App Tutorial</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Replay the getting started walkthrough</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => {
+                resetOnboarding();
+                window.location.href = "/";
+              }}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Replay
+            </Button>
+          </div>
         </div>
       </main>
     </div>

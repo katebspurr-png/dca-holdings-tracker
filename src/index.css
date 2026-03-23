@@ -1,8 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@700;800&display=swap");
 
 @layer base {
   :root {
@@ -143,6 +143,12 @@
 
   /* ── Next Best Move glow card ── */
   .card-glow {
+    background: linear-gradient(135deg, hsl(160 40% 95%) 0%, hsl(160 30% 97%) 60%, hsl(160 20% 96%) 100%);
+    border-color: hsl(160 60% 40% / 0.25);
+    box-shadow: 0 0 24px hsl(160 60% 40% / 0.06), inset 0 1px 0 hsl(160 60% 40% / 0.08);
+  }
+
+  .dark .card-glow {
     background: linear-gradient(135deg, hsl(215 47% 9%) 0%, hsl(222 47% 11%) 60%, hsl(210 47% 8%) 100%);
     border-color: hsl(160 60% 52% / 0.2);
     box-shadow: 0 0 24px hsl(160 60% 52% / 0.08), inset 0 1px 0 hsl(160 60% 52% / 0.06);

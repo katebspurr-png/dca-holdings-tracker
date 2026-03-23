@@ -70,7 +70,11 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
 
   try {
     const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!projectUrl || !anonKey) {
+      return { ok: false, error: "Missing Supabase URL or key" };
+    }
 
     const resp = await fetch(
       `${projectUrl}/functions/v1/stock-price?ticker=${upper}`,
@@ -83,6 +87,9 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
     );
 
     if (!resp.ok) {
+      if (resp.status === 401) {
+        return { ok: false, error: "Unauthorized — use Supabase anon key in .env" };
+      }
       const errData = await resp.json().catch(() => ({}));
       return { ok: false, error: errData.error || "Price unavailable" };
     }

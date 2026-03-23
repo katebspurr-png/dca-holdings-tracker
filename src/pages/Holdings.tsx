@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import Onboarding, { getOnboardingDone } from "@/components/onboarding";
 import { useNavigate } from "react-router-dom";
 import {
   Plus, Pencil, Trash2,
@@ -71,6 +72,7 @@ const fmt = (n: number) =>
 
 export default function Holdings() {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(() => !getOnboardingDone());
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Holding | null>(null);
   const [deleting, setDeleting] = useState<Holding | null>(null);
@@ -254,6 +256,9 @@ export default function Holdings() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {showOnboarding && (
+        <Onboarding onDone={() => setShowOnboarding(false)} />
+      )}
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
           <div style={{ lineHeight: 1 }}>
@@ -642,6 +647,7 @@ function DcaOpportunities({
   navigate: (path: string) => void;
 }) {
   const TEST_INVESTMENT = 500;
+  const [showAll, setShowAll] = useState(false);
 
   const scored = useMemo(() => {
     const raw = holdings
@@ -666,17 +672,9 @@ function DcaOpportunities({
   if (holdings.length === 0) return null;
 
   const hasAnyPrice = scored.length > 0;
-
-  const getBandLabel = (score: number) => {
-    if (score >= 80) return "Strong opportunity";
-    if (score >= 60) return "Good opportunity";
-    if (score >= 40) return "Neutral";
-    if (score >= 20) return "Weak";
-    return "Inefficient";
-  };
-
   const top = scored[0];
   const rest = scored.slice(1);
+  const visibleRest = showAll ? rest : rest.slice(0, 3);
 
   return (
     <div>
@@ -732,7 +730,7 @@ function DcaOpportunities({
           {/* ── Remaining opportunities — compact rows ── */}
           {rest.length > 0 && (
             <div className="space-y-0.5">
-              {rest.map(({ holding: h, price, score, improvement }) => {
+              {visibleRest.map(({ holding: h, price, score, improvement }) => {
                 const cp = currencyPrefix((h.exchange ?? "US") as any);
                 return (
                   <button
@@ -751,6 +749,14 @@ function DcaOpportunities({
                   </button>
                 );
               })}
+              {rest.length > 3 && (
+                <button
+                  onClick={() => setShowAll((v) => !v)}
+                  className="w-full text-center text-[11px] text-muted-foreground/50 hover:text-muted-foreground py-1.5 transition-colors"
+                >
+                  {showAll ? "Show less" : `Show all ${rest.length} opportunities`}
+                </button>
+              )}
             </div>
           )}
 
