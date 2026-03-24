@@ -239,7 +239,7 @@ export async function deleteScenario(scenarioId: string) {
 // ── Push: Transactions ───────────────────────────────────────
 
 export async function pushTransaction(tx: Transaction) {
-  const { error } = await supabase.from("transactions").upsert({
+  const { error } = await db.from("transactions").upsert({
     id: tx.id,
     holding_id: tx.holding_id,
     ticker: tx.ticker,
