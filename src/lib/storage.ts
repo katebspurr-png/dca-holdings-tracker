@@ -222,7 +222,7 @@ export function exchangeLabel(exchange: Exchange): string {
   return exchange === "TSX" ? "TSX" : "US";
 }
 
-/** The ticker symbol used for API lookups (appends .TO for TSX) */
+/** Yahoo / Finnhub symbol: TSX uses `.TO`; TSX Venture uses `.V` (the price API retries `.V` if `.TO` fails). */
 export function apiTicker(ticker: string, exchange: Exchange): string {
   return exchange === "TSX" ? `${ticker}.TO` : ticker;
 }
@@ -450,31 +450,6 @@ export function applyBuyToHolding(params: {
   }
 
   return tx;
-}
-
-/** Apply scenario trades to holdings: add shares and recalculate avg cost */
-export function applyScenarioToHoldings(
-  trades: { holdingId: string; sharesBought: number; buyPrice: number }[]
-) {
-  const data = read();
-  const updatedHoldings: Holding[] = [];
-  for (const trade of trades) {
-    const idx = data.holdings.findIndex((h) => h.id === trade.holdingId);
-    if (idx === -1) continue;
-    const h = data.holdings[idx];
-    const newTotalShares = h.shares + trade.sharesBought;
-    const newAvg =
-      (h.shares * h.avg_cost + trade.sharesBought * trade.buyPrice) / newTotalShares;
-    data.holdings[idx] = { ...h, shares: newTotalShares, avg_cost: newAvg };
-    updatedHoldings.push(data.holdings[idx]);
-  }
-  write(data);
-  const uid_ = CURRENT_USER_ID;
-  if (uid_) {
-    sync().then((s) => {
-      updatedHoldings.forEach((h) => s.pushHolding(h, uid_));
-    });
-  }
 }
 
 /**

@@ -300,17 +300,17 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
     <>
       <Dialog open={open && step !== "conflict"} onOpenChange={handleClose}>
         <DialogContent
-          className="max-w-lg max-h-[85vh] overflow-y-auto"
+          className="max-h-[85vh] max-w-lg overflow-y-auto border-stitch-border bg-stitch-card text-white sm:rounded-[24px]"
           onInteractOutside={(e) => {
             if (step === "pick") e.preventDefault();
           }}
         >
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <FileSpreadsheet className="h-5 w-5 text-stitch-accent" />
               Import from CSV
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-stitch-muted">
               {step === "pick" && "Select a CSV or TSV file exported from your brokerage."}
               {step === "map" && "Map your file's columns to the required fields."}
               {step === "preview" && "Review the data before importing."}
@@ -320,13 +320,17 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
           {/* ── Pick file ──────────────────────────── */}
           {step === "pick" && (
             <div className="flex flex-col items-center gap-4 py-6">
-              <div className="rounded-full bg-muted p-4">
-                <Upload className="h-8 w-8 text-muted-foreground" />
+              <div className="rounded-full bg-stitch-pill/50 p-4">
+                <Upload className="h-8 w-8 text-stitch-accent" />
               </div>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-center text-sm text-stitch-muted">
                 Supports Wealthsimple, Questrade, TD Ameritrade, Robinhood, and generic CSV files
               </p>
-              <Button onClick={() => fileRef.current?.click()} variant="outline">
+              <Button
+                onClick={() => fileRef.current?.click()}
+                variant="outline"
+                className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              >
                 Choose File
               </Button>
               <input
@@ -343,33 +347,31 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
           {step === "map" && (
             <div className="space-y-4">
               {headers.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Found columns: {headers.join(", ")}
-                </p>
+                <p className="text-xs text-stitch-muted">Found columns: {headers.join(", ")}</p>
               )}
               <MappingSelect label="Ticker / Symbol *" value={mapping.ticker} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, ticker: v }))} />
               <MappingSelect label="Shares / Quantity *" value={mapping.shares} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, shares: v }))} />
               <MappingSelect label="Price / Avg Cost *" value={mapping.price} headers={headers} onChange={(v) => setMapping((m) => ({ ...m, price: v }))} />
               {mapping.price && isTotalCostColumn(mapping.price) && (
-                <p className="text-xs text-muted-foreground">
-                  Using as total cost; average cost = total ÷ quantity.
-                </p>
+                <p className="text-xs text-stitch-muted">Using as total cost; average cost = total ÷ quantity.</p>
               )}
 
               <MappingSelect label="Exchange column (optional)" value={mapping.exchange} headers={["(none)", ...headers]} onChange={(v) => setMapping((m) => ({ ...m, exchange: v === "(none)" ? "" : v }))} />
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Default exchange (used when no column present)</label>
+                <label className="text-sm font-medium text-white">
+                  Default exchange (used when no column present)
+                </label>
                 <div className="flex gap-3">
                   {(["US", "TSX"] as const).map((ex) => (
                     <button
                       key={ex}
                       type="button"
                       onClick={() => setDefaultExchange(ex)}
-                      className={`flex-1 rounded-md border py-2 text-sm font-mono font-semibold transition-colors ${
+                      className={`flex-1 rounded-lg border py-2 font-mono text-sm font-semibold transition-colors ${
                         defaultExchange === ex
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground"
+                          ? "border-stitch-accent bg-stitch-accent/15 text-stitch-accent"
+                          : "border-stitch-border text-stitch-muted hover:text-white"
                       }`}
                     >
                       {ex}
@@ -378,10 +380,20 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => { reset(); setStep("pick"); }}>Back</Button>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="ghost"
+                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  onClick={() => {
+                    reset();
+                    setStep("pick");
+                  }}
+                >
+                  Back
+                </Button>
                 <Button
                   disabled={!mapping.ticker || !mapping.shares || !mapping.price}
+                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
                   onClick={() => buildPreview(rawRows, mapping)}
                 >
                   Preview
@@ -394,20 +406,20 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
           {step === "preview" && (
             <div className="space-y-4">
               {mapping.price && isTotalCostColumn(mapping.price) && (
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-center text-xs text-stitch-muted">
                   Using &quot;{mapping.price}&quot; as total cost; average cost = total ÷ quantity.
                 </p>
               )}
               {skippedCount > 0 && (
-                <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
                   Skipped {skippedCount} row{skippedCount !== 1 ? "s" : ""} with missing data
                 </div>
               )}
-              <div className="rounded-md border border-border overflow-hidden">
+              <div className="overflow-hidden rounded-lg border border-stitch-border">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-muted text-muted-foreground">
+                    <tr className="bg-stitch-pill/40 text-stitch-muted">
                       <th className="px-3 py-2 text-left font-medium">Ticker</th>
                       <th className="px-3 py-2 text-right font-medium">Shares</th>
                       <th className="px-3 py-2 text-right font-medium">Avg Cost</th>
@@ -416,22 +428,35 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                   </thead>
                   <tbody>
                     {parsedRows.map((r) => (
-                      <tr key={r.ticker} className="border-t border-border">
-                        <td className="px-3 py-2 font-mono font-semibold">{r.ticker}</td>
+                      <tr key={r.ticker} className="border-t border-stitch-border">
+                        <td className="px-3 py-2 font-mono font-semibold text-white">{r.ticker}</td>
                         <td className="px-3 py-2 text-right font-mono">{fmt(r.shares)}</td>
-                        <td className="px-3 py-2 text-right font-mono">{r.exchange === "TSX" ? "C$" : "$"}{fmt(r.avg_cost)}</td>
-                        <td className="px-3 py-2 text-right font-mono text-muted-foreground">{r.exchange}</td>
+                        <td className="px-3 py-2 text-right font-mono">
+                          {r.exchange === "TSX" ? "C$" : "$"}
+                          {fmt(r.avg_cost)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-mono text-stitch-muted">{r.exchange}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-center text-xs text-stitch-muted">
                 {parsedRows.length} stock{parsedRows.length !== 1 ? "s" : ""} will be imported
               </p>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setStep("map")}>Back</Button>
-                <Button onClick={startImport} disabled={parsedRows.length === 0}>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="ghost"
+                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  onClick={() => setStep("map")}
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={startImport}
+                  disabled={parsedRows.length === 0}
+                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                >
                   <Check className="mr-1.5 h-4 w-4" />
                   Import
                 </Button>
@@ -443,27 +468,30 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
 
       {/* ── Conflict resolution ────────────────── */}
       <AlertDialog open={step === "conflict"} onOpenChange={(o) => { if (!o) { setStep("preview"); } }}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Existing stocks found</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Existing stocks found</AlertDialogTitle>
+            <AlertDialogDescription className="text-stitch-muted">
               Some stocks already exist in your portfolio. Choose how to handle each:
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-3 my-2">
+          <div className="my-2 space-y-3">
             {conflicts.map((c, i) => (
-              <div key={c.ticker} className="flex items-center justify-between rounded-md border border-border p-3">
-                <span className="font-mono font-semibold">{c.ticker}</span>
+              <div
+                key={c.ticker}
+                className="flex items-center justify-between rounded-lg border border-stitch-border bg-stitch-pill/30 p-3"
+              >
+                <span className="font-mono font-semibold text-white">{c.ticker}</span>
                 <Select
                   value={c.resolution}
                   onValueChange={(v: "add" | "replace") => {
-                    setConflicts((prev) => prev.map((item, idx) => idx === i ? { ...item, resolution: v } : item));
+                    setConflicts((prev) => prev.map((item, idx) => (idx === i ? { ...item, resolution: v } : item)));
                   }}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-40 border-stitch-border bg-stitch-pill text-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[60] border-stitch-border bg-stitch-card text-white">
                     <SelectItem value="add">Add to existing</SelectItem>
                     <SelectItem value="replace">Replace</SelectItem>
                   </SelectContent>
@@ -472,8 +500,16 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
             ))}
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setStep("preview")}>Back</AlertDialogCancel>
-            <AlertDialogAction onClick={() => doImport(conflicts)}>
+            <AlertDialogCancel
+              className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill"
+              onClick={() => setStep("preview")}
+            >
+              Back
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-stitch-accent text-black hover:bg-stitch-accent/90"
+              onClick={() => doImport(conflicts)}
+            >
               Confirm Import
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -486,14 +522,16 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
 function MappingSelect({ label, value, headers, onChange }: { label: string; value: string; headers: string[]; onChange: (v: string) => void }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium">{label}</label>
+      <label className="text-sm font-medium text-white">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
+        <SelectTrigger className="border-stitch-border bg-stitch-pill text-white focus:ring-stitch-accent">
           <SelectValue placeholder="Select column…" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="z-[60] border-stitch-border bg-stitch-card text-white">
           {headers.map((h) => (
-            <SelectItem key={h} value={h}>{h}</SelectItem>
+            <SelectItem key={h} value={h}>
+              {h}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

@@ -1,6 +1,6 @@
 /**
  * Centralized feature access & plan gating.
- * No billing — just internal architecture for free vs premium features.
+ * Plan is read from localStorage (`dca-user-plan`) for **preview only** until App Store / web billing is integrated.
  */
 
 export type PlanType = "free" | "premium";
@@ -48,15 +48,24 @@ const PLAN_FEATURES: Record<PlanType, Set<FeatureKey>> = {
 export const FEATURE_LABELS: Record<FeatureKey, { title: string; description: string }> = {
   basic_holdings: { title: "Holdings Tracking", description: "Track your stock positions" },
   calculator: { title: "DCA Calculator", description: "Calculate dollar-cost averaging scenarios" },
-  goal_ladder: { title: "Goal Ladder", description: "Budget and target goal scenarios" },
+  goal_ladder: {
+    title: "Budget-step simulator",
+    description: "Fixed-dollar rungs to model how buys at the current price would change average cost",
+  },
   manual_price_updates: { title: "Manual Price Updates", description: "Refresh market prices" },
-  position_insights: { title: "Position Insights", description: "Strategic analytics for your positions" },
+  position_insights: {
+    title: "Position math (Insights)",
+    description: "Modeled averages, fixed-size test scores, and what-if capital figures from your inputs",
+  },
   basic_scenarios: { title: "Scenario Saving", description: "Save up to 5 scenarios per holding" },
   scenario_compare: { title: "Scenario Compare", description: "Side-by-side comparison of saved scenarios and their modeled outcomes" },
-  optimizer: { title: "Capital Planner", description: "Simulate how a fixed budget splits across positions and affects average cost (illustrative, not prescriptive)" },
+  optimizer: { title: "Capital Optimizer", description: "Simulate how a fixed budget splits across positions and affects average cost (illustrative, not prescriptive)" },
   opportunity_alerts: { title: "Opportunity Alerts", description: "Get notified when a holding drops below key price thresholds" },
   auto_price_refresh: { title: "Auto Price Refresh", description: "Automatic market price updates without manual intervention" },
-  advanced_goal_ladder: { title: "Advanced Goal Ladder", description: "Custom budget tiers and advanced target configurations" },
+  advanced_goal_ladder: {
+    title: "Custom budget rungs (roadmap)",
+    description: "User-defined step sizes and targets — planned for a future release",
+  },
   unlimited_scenarios: { title: "Unlimited Scenarios", description: "Save unlimited DCA scenarios per holding" },
 };
 

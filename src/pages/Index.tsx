@@ -1,11 +1,14 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 font-sans text-white antialiased">
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+        <h1 className="mb-4 text-3xl font-bold tracking-tight">PositionPilot</h1>
+        <p className="mb-6 text-stitch-muted">This route is unused — open the app via the portfolio.</p>
+        <Link to="/" className="text-stitch-accent underline underline-offset-2 hover:opacity-90">
+          Go to portfolio
+        </Link>
       </div>
     </div>
   );

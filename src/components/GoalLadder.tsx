@@ -48,17 +48,17 @@ export default function GoalLadder({ holding }: Props) {
 
   if (currentPrice == null) {
     return (
-      <div className="rounded-xl border border-[#34d399]/20 bg-background/80 p-5 font-mono text-sm text-muted-foreground">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-2 flex items-center gap-2">
+      <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm text-stitch-muted">
+        <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
           <TrendingDown className="h-4 w-4" />
-          Goal Ladder
+          Budget-step simulator
         </h2>
         <p>
           Add a current market price from the Overview tab or{" "}
           <button
             type="button"
             onClick={() => navigate("/update-prices")}
-            className="text-[#34d399] underline underline-offset-2 hover:opacity-90"
+            className="text-stitch-accent underline underline-offset-2 hover:opacity-90"
           >
             Update Prices
           </button>{" "}
@@ -71,17 +71,18 @@ export default function GoalLadder({ holding }: Props) {
   if (!underwater) {
     return (
       <div className="space-y-5">
-        <div className="rounded-xl border border-[#34d399]/20 bg-background/80 p-5 font-mono text-sm">
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
+        <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
             <TrendingDown className="h-4 w-4" />
-            Goal Ladder
+            Budget-step simulator
           </h2>
-          <p className="text-muted-foreground">
-            Current price is at or above your average — ladder simulations apply when price is below average.
+          <p className="text-stitch-muted">
+            Current price is at or above your average — these fixed-rung simulations only apply when price is below
+            average (modeled average-cost reduction).
           </p>
         </div>
-        <div className="flex items-center justify-between rounded-xl border border-[#34d399]/30 bg-card/40 px-4 py-3 font-mono text-sm">
-          <Label htmlFor="goal-ladder-fees" className="text-[11px] text-muted-foreground cursor-pointer">
+        <div className="flex items-center justify-between rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3 font-mono text-sm">
+          <Label htmlFor="goal-ladder-fees" className="cursor-pointer text-[11px] text-stitch-muted">
             Include fees in ladder math
           </Label>
           <Switch id="goal-ladder-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
@@ -92,30 +93,31 @@ export default function GoalLadder({ holding }: Props) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between rounded-xl border border-[#34d399]/20 bg-background/80 px-4 py-3 font-mono text-sm">
-        <Label htmlFor="goal-ladder-fees-active" className="text-[11px] text-muted-foreground cursor-pointer">
+      <div className="flex items-center justify-between rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 px-4 py-3 font-mono text-sm">
+        <Label htmlFor="goal-ladder-fees-active" className="cursor-pointer text-[11px] text-stitch-muted">
           Include fees in ladder math
         </Label>
         <Switch id="goal-ladder-fees-active" checked={includeFees} onCheckedChange={setIncludeFees} />
       </div>
 
-      <div className="rounded-xl border border-[#34d399]/20 bg-background/80 p-5 font-mono text-sm">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-1 flex items-center gap-2">
+      <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
+        <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
           <TrendingDown className="h-4 w-4" />
-          Goal Ladder
+          Budget-step simulator
         </h2>
-        <p className="text-[11px] text-muted-foreground/80 mb-4">
-          Simulated buys at {cp}
-          {fmt(currentPrice)}/share (illustrative only; not a forecast or instruction).
+        <p className="mb-4 text-[11px] text-stitch-muted/90">
+          Uses preset dollar amounts (not custom “goals” yet). Simulated buys at {cp}
+          {fmt(currentPrice)}/share — illustrative only; not a forecast or instruction.
         </p>
-        <p className="text-[10px] text-muted-foreground/60 mb-3">
-          Steps: {LADDER_INVESTMENT_STEPS.map((n) => `${cp}${n}`).join(" · ")} — outcomes if each full amount were deployed at the current price.
+        <p className="mb-3 text-[10px] text-stitch-muted/70">
+          Rungs: {LADDER_INVESTMENT_STEPS.map((n) => `${cp}${n}`).join(" · ")} — modeled outcome if each full amount were
+          deployed at the current price.
         </p>
         <ul className="space-y-3">
           {ladderRows.map(({ amount, newAvg, avgImprovement }) => (
             <li
               key={amount}
-              className="border-b border-border/40 pb-3 last:border-0 last:pb-0 text-foreground/90 leading-relaxed"
+              className="border-b border-stitch-border/40 pb-3 text-white/90 last:border-0 last:pb-0 leading-relaxed"
             >
               Invest {cp}
               {fmt(amount)} → Avg becomes {cp}
@@ -127,15 +129,16 @@ export default function GoalLadder({ holding }: Props) {
       </div>
 
       {efficientStep && (
-        <div className="rounded-xl border border-[#34d399]/30 bg-card/40 p-5 font-mono text-sm card-glow">
-          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
+        <div className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-5 font-mono text-sm">
+          <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
             <Zap className="h-4 w-4" />
-            Most efficient step (from ladder)
+            Highlighted rung (internal math)
           </h3>
-          <p className="text-[10px] text-muted-foreground/70 mb-3">
-            Selected from the ladder by improvement per dollar, skipping tiny impact and very large steps vs. position size.
+          <p className="mb-3 text-[10px] text-stitch-muted/80">
+            One rung chosen by modeled improvement per dollar among the fixed amounts above, skipping tiny impact and very
+            large steps vs. position size — for your review, not a trade instruction.
           </p>
-          <div className="text-foreground/90 space-y-1.5 leading-relaxed">
+          <div className="space-y-1.5 text-white/90 leading-relaxed">
             <p>
               Simulated deploy {cp}
               {fmt(efficientStep.amount)}

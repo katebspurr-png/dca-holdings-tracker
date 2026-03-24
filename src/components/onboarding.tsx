@@ -28,18 +28,18 @@ const STEPS = [
     emoji: "📋",
   },
   {
-    title: "Strategy opportunities",
-    body: "Each row ranks positions using the same ladder-based simulation as the Goal Ladder. The number is a portfolio-relative rank (0–100), not a buy signal.",
+    title: "Portfolio simulations",
+    body: "The portfolio list can show 0–100 scores that only compare your holdings to each other using the same fixed-rung ladder math — like a spreadsheet column, not a buy list.",
     emoji: "🎯",
   },
   {
-    title: "Most efficient step",
-    body: "Highlights which holding’s ladder-selected step has the strongest modeled improvement-per-dollar right now — for exploration, not as advice.",
+    title: "Portfolio ladder highlight",
+    body: "One card may call out which position’s modeled ladder step has the strongest improvement-per-dollar right now. That’s internal math for your own review, not a recommendation.",
     emoji: "⚡",
   },
   {
     title: "Position Workspace",
-    body: "Tap any holding to access its full workspace — Goal Ladder, DCA Calculator, transaction history, and strategy insights all in one place.",
+    body: "Tap any holding for its workspace — budget-step simulator, DCA Calculator, transaction history, and position math (Insights) in one place.",
     emoji: "🔬",
   },
 ];
@@ -75,29 +75,29 @@ export default function Onboarding({ onDone }: OnboardingProps) {
         exiting ? "opacity-0" : "opacity-100"
       }`}
     >
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-stitch-bg/90 backdrop-blur-md" />
 
-      <div className="relative w-full max-w-lg mx-auto mb-24 px-4">
-        <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
-          <div className="h-1 bg-muted">
+      <div className="relative mx-auto mb-24 w-full max-w-lg px-4">
+        <div className="overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card shadow-2xl">
+          <div className="h-1 bg-stitch-pill">
             <div
-              className="h-full bg-primary transition-all duration-300 ease-out"
+              className="h-full bg-stitch-accent transition-all duration-300 ease-out"
               style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
             />
           </div>
 
           <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex gap-1.5">
                 {STEPS.map((_, i) => (
                   <div
                     key={i}
                     className={`h-1.5 rounded-full transition-all duration-300 ${
                       i === step
-                        ? "w-6 bg-primary"
+                        ? "w-6 bg-stitch-accent"
                         : i < step
-                        ? "w-1.5 bg-primary/40"
-                        : "w-1.5 bg-muted-foreground/20"
+                          ? "w-1.5 bg-stitch-accent/50"
+                          : "w-1.5 bg-stitch-muted/25"
                     }`}
                   />
                 ))}
@@ -105,7 +105,7 @@ export default function Onboarding({ onDone }: OnboardingProps) {
               <button
                 type="button"
                 onClick={handleDone}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs text-stitch-muted transition-colors hover:text-white"
               >
                 Don&apos;t show again
               </button>
@@ -113,26 +113,17 @@ export default function Onboarding({ onDone }: OnboardingProps) {
 
             <div className="space-y-3">
               <div className="text-3xl">{current.emoji}</div>
-              <h2
-                style={{
-                  fontFamily: "'Syne', sans-serif",
-                  fontWeight: 800,
-                  fontSize: "1.25rem",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.2,
-                }}
-              >
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold leading-tight tracking-tight text-white">
                 {current.title}
               </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {current.body}
-              </p>
+              <p className="text-sm leading-relaxed text-stitch-muted">{current.body}</p>
             </div>
 
-            <div className="flex items-center justify-between mt-6">
+            <div className="mt-6 flex items-center justify-between">
               <button
+                type="button"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
-                className={`flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors ${
+                className={`flex items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white ${
                   step === 0 ? "invisible" : ""
                 }`}
               >
@@ -140,7 +131,10 @@ export default function Onboarding({ onDone }: OnboardingProps) {
                 Back
               </button>
 
-              <Button onClick={handleNext} className="gap-2">
+              <Button
+                onClick={handleNext}
+                className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              >
                 {isLast ? "Get Started" : "Next"}
                 {!isLast && <ArrowRight className="h-4 w-4" />}
               </Button>
@@ -148,7 +142,7 @@ export default function Onboarding({ onDone }: OnboardingProps) {
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground/40 mt-3">
+        <p className="mt-3 text-center text-[11px] text-stitch-muted/60">
           {step + 1} of {STEPS.length}
         </p>
       </div>

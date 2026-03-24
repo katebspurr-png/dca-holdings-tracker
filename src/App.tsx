@@ -14,8 +14,11 @@ import UpdatePrices from "./pages/UpdatePrices";
 import CapitalOptimizer from "./pages/CapitalOptimizer";
 import Progress from "./pages/Progress";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
+import AuthResetPassword from "./pages/AuthResetPassword";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
+import AppEducationalDisclaimer from "./components/AppEducationalDisclaimer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SimFeesProvider } from "./contexts/SimFeesContext";
 import { Loader2 } from "lucide-react";
@@ -38,8 +41,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg">
+        <Loader2 className="h-6 w-6 animate-spin text-stitch-accent" />
       </div>
     );
   }
@@ -57,6 +60,8 @@ const AppRoutes = () => {
     <Routes>
       {/* Public */}
       <Route path="/auth" element={<Auth />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/reset-password" element={<AuthResetPassword />} />
 
       {/* Protected */}
       <Route path="/" element={<ProtectedRoute><Holdings /></ProtectedRoute>} />
@@ -83,6 +88,7 @@ const App = () => {
           <AuthProvider>
             <SimFeesProvider>
               <AppRoutes />
+              <AppEducationalDisclaimer />
               <BottomTabBarGuard />
             </SimFeesProvider>
           </AuthProvider>

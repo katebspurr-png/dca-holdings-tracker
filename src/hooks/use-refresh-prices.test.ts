@@ -15,7 +15,8 @@ vi.mock("@/lib/storage", () => ({
 const mockFetchStockPrice = vi.fn();
 
 vi.mock("@/lib/stock-price", () => ({
-  fetchStockPrice: (symbol: string) => mockFetchStockPrice(symbol),
+  fetchStockPrice: (symbol: string, opts?: { bypassCache?: boolean }) =>
+    mockFetchStockPrice(symbol, opts),
 }));
 
 describe("useRefreshPrices", () => {
@@ -32,8 +33,8 @@ describe("useRefreshPrices", () => {
     });
 
     expect(mockFetchStockPrice).toHaveBeenCalledTimes(2);
-    expect(mockFetchStockPrice).toHaveBeenCalledWith("AAPL");
-    expect(mockFetchStockPrice).toHaveBeenCalledWith("SHOP.TO");
+    expect(mockFetchStockPrice).toHaveBeenCalledWith("AAPL", { bypassCache: true });
+    expect(mockFetchStockPrice).toHaveBeenCalledWith("SHOP.TO", { bypassCache: true });
   });
 
   it("reports success and failed tickers correctly", async () => {

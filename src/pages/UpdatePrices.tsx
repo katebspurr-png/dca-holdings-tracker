@@ -48,10 +48,10 @@ function computeRow(h: Holding, priceStr: string) {
 }
 
 function glColor(val: number | null) {
-  if (val == null) return "text-muted-foreground";
-  if (val > 0) return "text-primary";
+  if (val == null) return "text-stitch-muted";
+  if (val > 0) return "text-stitch-accent";
   if (val < 0) return "text-destructive";
-  return "text-muted-foreground";
+  return "text-stitch-muted";
 }
 
 /* ── Page ──────────────────────────────────────────────── */
@@ -169,16 +169,12 @@ export default function UpdatePrices() {
   /* ── Empty state ─────────────────────────────────────── */
   if (holdings.length === 0) {
     return (
-      <div className="min-h-screen bg-background pb-24">
-        <div className="mx-auto max-w-[1080px] px-5 pt-8">
-          <h1 className="text-xl font-bold tracking-tight font-[family-name:var(--font-heading)]">
-            Update Market Prices
-          </h1>
-        </div>
-        <main className="mx-auto max-w-[1080px] px-5 py-20 text-center">
-          <p className="text-sm text-muted-foreground">
-            No holdings yet. Add a holding before updating prices.
-          </p>
+      <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+        <header className="mb-6 px-4 pt-12 text-center sm:px-6 md:px-8">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight">Update Market Prices</h1>
+        </header>
+        <main className="mx-auto max-w-md px-4 py-12 text-center sm:px-6 md:px-8">
+          <p className="text-sm text-stitch-muted">No holdings yet. Add a holding before updating prices.</p>
         </main>
       </div>
     );
@@ -186,27 +182,25 @@ export default function UpdatePrices() {
 
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {/* ── Header ────────────────────────────────────────── */}
-      <div className="mx-auto max-w-[1080px] px-5 pt-7 pb-5">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <div className="mx-auto max-w-[1080px] px-4 pb-5 pt-10 sm:px-6 md:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold tracking-tight font-[family-name:var(--font-heading)]">
-                Update Market Prices
-              </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">Update Market Prices</h1>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleRefreshAll}
                 disabled={refreshing}
-                className="h-7 text-xs gap-1.5"
+                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
               >
                 <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? "Refreshing…" : "Refresh Prices"}
               </Button>
             </div>
-            <p className="text-[13px] text-muted-foreground mt-0.5">
+            <p className="mt-0.5 text-[13px] text-stitch-muted">
               Quickly refresh the current price for your holdings.
               {lastRefreshed && (
                 <span className="ml-2 text-[11px] opacity-70">
@@ -220,19 +214,15 @@ export default function UpdatePrices() {
           <div className="flex items-baseline gap-5 text-right">
             {totals.totalMV != null && (
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                  Market Value
-                </span>
-                <span className="text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums">
+                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">Market Value</span>
+                <span className="font-[family-name:var(--font-mono)] text-base font-semibold tabular-nums text-white">
                   ${fmt(totals.totalMV)}
                 </span>
               </div>
             )}
             {totals.pnl != null && (
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
-                  Unrealized P/L
-                </span>
+                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">Unrealized P/L</span>
                 <span
                   className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${glColor(totals.pnl)}`}
                 >
@@ -252,7 +242,7 @@ export default function UpdatePrices() {
       {/* ── Desktop watchlist ─────────────────────────────── */}
       <div className="mx-auto max-w-[1080px] px-5 hidden md:block">
         {/* Column headers */}
-        <div className="grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 px-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 border-b border-border">
+        <div className="grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 px-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-stitch-muted/70 border-b border-stitch-border">
           <span>Ticker</span>
           <span className="text-right">Shares</span>
           <span className="text-right">Avg Cost</span>
@@ -270,34 +260,34 @@ export default function UpdatePrices() {
           return (
             <div
               key={h.id}
-              className={`group grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 items-center px-2 py-[9px] border-b border-border/40 transition-colors hover:bg-muted/30 ${
-                isEdited ? "bg-accent/30" : ""
+              className={`group grid grid-cols-[minmax(80px,1.2fr)_5.5rem_5.5rem_7rem_7rem_5rem] gap-x-4 items-center px-2 py-[9px] border-b border-stitch-border/40 transition-colors hover:bg-stitch-pill/35 ${
+                isEdited ? "bg-stitch-accent/15" : ""
               }`}
             >
               {/* Ticker + MV */}
               <div className="flex items-baseline gap-2 min-w-0">
-                <span className="text-[15px] font-bold font-[family-name:var(--font-mono)] tracking-tight truncate">
+                <span className="truncate text-[15px] font-bold tracking-tight text-white font-[family-name:var(--font-mono)]">
                   {h.ticker}
                 </span>
                 {r.marketValue != null && (
-                  <span className="text-[10px] text-muted-foreground/60 font-[family-name:var(--font-mono)] tabular-nums whitespace-nowrap">
+                  <span className="text-[10px] text-stitch-muted/60 font-[family-name:var(--font-mono)] tabular-nums whitespace-nowrap">
                     {cp}{fmt(r.marketValue)}
                   </span>
                 )}
                 {isEdited && (
-                  <span className="text-[9px] text-accent-foreground/60 bg-accent rounded px-1 py-px">
+                  <span className="text-[9px] text-stitch-accent/80 bg-stitch-accent/20 rounded px-1 py-px">
                     edited
                   </span>
                 )}
               </div>
 
               {/* Shares */}
-              <span className="text-right text-[12px] text-muted-foreground font-[family-name:var(--font-mono)] tabular-nums">
+              <span className="text-right text-[12px] text-stitch-muted font-[family-name:var(--font-mono)] tabular-nums">
                 {r.shares.toFixed(4)}
               </span>
 
               {/* Avg cost */}
-              <span className="text-right text-[12px] text-muted-foreground font-[family-name:var(--font-mono)] tabular-nums">
+              <span className="text-right text-[12px] text-stitch-muted font-[family-name:var(--font-mono)] tabular-nums">
                 {cp}{fmt(r.avgCost)}
               </span>
 
@@ -308,7 +298,7 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-muted/40 rounded-md border border-border/60 focus:border-ring focus:ring-1 focus:ring-ring/30 focus:bg-background outline-none py-1 px-2 transition-all placeholder:text-muted-foreground/40"
+                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -347,18 +337,18 @@ export default function UpdatePrices() {
           return (
             <div
               key={h.id}
-              className={`px-3 py-3 border-b border-border/30 transition-colors ${
-                isEdited ? "bg-accent/30" : ""
+              className={`px-3 py-3 border-b border-stitch-border/30 transition-colors ${
+                isEdited ? "bg-stitch-accent/15" : ""
               }`}
             >
               {/* Top row: ticker + price input */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-bold font-[family-name:var(--font-mono)] tracking-tight">
+                  <span className="text-[15px] font-bold tracking-tight text-white font-[family-name:var(--font-mono)]">
                     {h.ticker}
                   </span>
                   {isEdited && (
-                    <span className="text-[9px] text-accent-foreground/60 bg-accent rounded px-1 py-px">
+                    <span className="text-[9px] text-stitch-accent/80 bg-stitch-accent/20 rounded px-1 py-px">
                       edited
                     </span>
                   )}
@@ -368,7 +358,7 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-muted/40 rounded-md border border-border/60 focus:border-ring focus:ring-1 focus:ring-ring/30 focus:bg-background outline-none py-1 px-2 transition-all placeholder:text-muted-foreground/40"
+                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -376,7 +366,7 @@ export default function UpdatePrices() {
 
               {/* Secondary row */}
               <div className="flex items-center justify-between mt-1.5">
-                <span className="text-[11px] text-muted-foreground/70 font-[family-name:var(--font-mono)] tabular-nums">
+                <span className="text-[11px] text-stitch-muted/70 font-[family-name:var(--font-mono)] tabular-nums">
                   {r.shares.toFixed(4)} shares · avg {cp}{fmt(r.avgCost)}
                 </span>
                 <div className={`flex items-baseline gap-1.5 ${color}`}>
@@ -392,14 +382,14 @@ export default function UpdatePrices() {
                       </span>
                     </>
                   ) : (
-                    <span className="text-[11px] text-muted-foreground">—</span>
+                    <span className="text-[11px] text-stitch-muted">—</span>
                   )}
                 </div>
               </div>
 
               {/* Market value */}
               {r.marketValue != null && (
-                <div className="text-[10px] text-muted-foreground/50 mt-0.5 font-[family-name:var(--font-mono)] tabular-nums">
+                <div className="text-[10px] text-stitch-muted/50 mt-0.5 font-[family-name:var(--font-mono)] tabular-nums">
                   MV {cp}{fmt(r.marketValue)}
                 </div>
               )}
@@ -412,8 +402,8 @@ export default function UpdatePrices() {
       {hasChanges && (
         <div className="fixed bottom-16 left-0 right-0 z-30 animate-in slide-in-from-bottom-2 duration-200">
           <div className="mx-auto max-w-[1080px] px-5">
-            <div className="flex items-center justify-between rounded-xl bg-card/95 backdrop-blur-sm border border-border shadow-lg px-4 py-2.5">
-              <span className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-card/95 px-4 py-2.5 shadow-lg backdrop-blur-sm">
+              <span className="text-xs text-stitch-muted">
                 {editedCount} price{editedCount !== 1 ? "s" : ""} edited
               </span>
               <div className="flex items-center gap-2">
@@ -421,12 +411,16 @@ export default function UpdatePrices() {
                   variant="ghost"
                   size="sm"
                   onClick={handleReset}
-                  className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
                 >
                   <RotateCcw className="mr-1 h-3 w-3" />
                   Reset
                 </Button>
-                <Button size="sm" onClick={handleSave} className="h-8 text-xs">
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                >
                   <Save className="mr-1 h-3 w-3" />
                   Save prices
                 </Button>

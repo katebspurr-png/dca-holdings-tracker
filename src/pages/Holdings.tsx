@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, type KeyboardEvent } from "react";
 import Onboarding, { getOnboardingDone } from "@/components/onboarding";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,6 +8,7 @@ import {
   TrendingDown,
   FileSpreadsheet,
   ChevronRight,
+  ChevronDown,
   RefreshCw,
   ArrowUpDown,
   CheckSquare,
@@ -18,6 +19,8 @@ import {
   Gauge,
   Zap,
   ArrowDownRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
@@ -61,17 +64,46 @@ import {
 } from "@/lib/dca-sim";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
+import { cn } from "@/lib/utils";
 
 const SORT_KEY = "dca-holdings-sort";
-type SortMode = "az" | "position" | "loss" | "gain";
+const LAYOUT_KEY = "dca-holdings-layout";
+const OPPORTUNITIES_EXPANDED_KEY = "dca-opportunities-expanded";
+
+type SortMode =
+  | "az"
+  | "za"
+  | "position"
+  | "position_small"
+  | "loss"
+  | "gain"
+  | "loss_pct"
+  | "gain_pct";
 
 const SORT_LABELS: Record<SortMode, string> = {
   az: "A → Z",
+  za: "Z → A",
   position: "Largest Position",
-  loss: "Biggest Loss",
-  gain: "Biggest Gain",
+  position_small: "Smallest Position",
+  loss: "Biggest Loss ($)",
+  gain: "Biggest Gain ($)",
+  loss_pct: "Biggest Loss %",
+  gain_pct: "Biggest Gain %",
 };
+
+function parseStoredSort(): SortMode {
+  const v = localStorage.getItem(SORT_KEY);
+  if (v && Object.prototype.hasOwnProperty.call(SORT_LABELS, v)) return v as SortMode;
+  return "az";
+}
+
+type HoldingsLayout = "grid" | "list";
+
+function parseStoredLayout(): HoldingsLayout {
+  const v = localStorage.getItem(LAYOUT_KEY);
+  if (v === "list" || v === "grid") return v;
+  return "grid";
+}
 
 const AVATAR_PALETTE = [
   "bg-white text-black",
@@ -89,6 +121,309 @@ function avatarClassForTicker(ticker: string): string {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+type PnlInfo = { pnl: number; pnlPct: number };
+
+function HoldingPortfolioCard({
+  holding: h,
+  layout,
+  price,
+  scenario,
+  pnl,
+  selectMode,
+  isSelected,
+  fetchingTickers,
+  onRowActivate,
+  onStrategy,
+  onFetchPrice,
+  onEdit,
+  onDelete,
+}: {
+  holding: Holding;
+  layout: HoldingsLayout;
+  price: number | null;
+  scenario: Scenario | null;
+  pnl: PnlInfo | null;
+  selectMode: boolean;
+  isSelected: boolean;
+  fetchingTickers: Set<string>;
+  onRowActivate: () => void;
+  onStrategy: () => void;
+  onFetchPrice: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const ex = (h.exchange ?? "US") as "US" | "TSX";
+  const cp = currencyPrefix(ex);
+  const underwater = price != null && price < h.avg_cost;
+  const sliderColor = !price ? "text-stitch-muted" : underwater ? "text-stitch-accent" : "text-stitch-danger";
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onRowActivate();
+    }
+  };
+
+  if (layout === "list") {
+    return (
+      <article
+        role="button"
+        tabIndex={0}
+        onClick={onRowActivate}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          isSelected && "ring-2 ring-stitch-accent/60",
+        )}
+      >
+        {selectMode && (
+          <div className="absolute right-2 top-2">
+            {isSelected ? (
+              <CheckSquare className="h-5 w-5 text-stitch-accent" />
+            ) : (
+              <Square className="h-5 w-5 text-stitch-muted/50" />
+            )}
+          </div>
+        )}
+        <div className={cn("flex min-w-0 items-start gap-2", selectMode && "pr-8")}>
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                avatarClassForTicker(h.ticker),
+              )}
+            >
+              {h.ticker.slice(0, 1)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-[15px] font-bold">{h.ticker}</span>
+                <span className="text-[15px] font-semibold tabular-nums">
+                  {price != null ? `${cp}${fmt(price)}` : "—"}
+                </span>
+                {pnl != null && (
+                  <span
+                    className={cn(
+                      "text-[12px] font-medium tabular-nums",
+                      pnl.pnl >= 0 ? "text-stitch-accent" : "text-stitch-danger",
+                    )}
+                  >
+                    {pnl.pnl >= 0 ? "+" : ""}
+                    {cp}
+                    {fmt(pnl.pnl)} ({pnl.pnlPct >= 0 ? "+" : ""}
+                    {pnl.pnlPct.toFixed(1)}%)
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-[11px] text-stitch-muted">
+                Avg {cp}
+                {fmt(h.avg_cost)}
+              </p>
+              {!selectMode && price == null && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFetchPrice();
+                  }}
+                  disabled={fetchingTickers.has(h.ticker)}
+                  className="mt-1 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+                >
+                  {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStrategy();
+                }}
+                className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
+              >
+                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
+              </button>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 pt-0.5">
+            <button
+              type="button"
+              className="shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStrategy();
+              }}
+              aria-label="Strategy"
+            >
+              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+            </button>
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+          </div>
+        </div>
+        {!selectMode && (
+          <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+            <button
+              type="button"
+              className="text-[11px] text-stitch-muted hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil className="mr-1 inline h-3 w-3" />
+              Edit
+            </button>
+            <button
+              type="button"
+              className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="mr-1 inline h-3 w-3" />
+              Delete
+            </button>
+          </div>
+        )}
+      </article>
+    );
+  }
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onRowActivate}
+      onKeyDown={onKeyDown}
+      className={cn(
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        isSelected && "ring-2 ring-stitch-accent/60",
+      )}
+    >
+      {selectMode && (
+        <div className="absolute right-2 top-2">
+          {isSelected ? (
+            <CheckSquare className="h-5 w-5 text-stitch-accent" />
+          ) : (
+            <Square className="h-5 w-5 text-stitch-muted/50" />
+          )}
+        </div>
+      )}
+      <div className="mb-2 flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClassForTicker(h.ticker)}`}
+          >
+            {h.ticker.slice(0, 1)}
+          </div>
+          <span className="text-[15px] font-bold">{h.ticker}</span>
+        </div>
+        <button
+          type="button"
+          className="shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onStrategy();
+          }}
+          aria-label="Strategy"
+        >
+          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+        </button>
+      </div>
+
+      <p className="mb-2 text-[22px] font-bold">{price != null ? `${cp}${fmt(price)}` : "—"}</p>
+
+      {!selectMode && price == null && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFetchPrice();
+          }}
+          disabled={fetchingTickers.has(h.ticker)}
+          className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+        >
+          {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
+        </button>
+      )}
+
+      <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
+        <span>Your Average:</span>
+        <span className="text-stitch-muted-soft">
+          {cp}
+          {fmt(h.avg_cost)}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onStrategy();
+        }}
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+      >
+        <span className="leading-tight">
+          Target Average:
+          <br />
+          <span className="text-[15px]">
+            {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0" />
+      </button>
+
+      <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
+        Buy to Reach Target:
+        <br />
+        {scenario && scenario.buy_price != null ? (
+          <>
+            <span className="text-stitch-muted-soft">
+              {fmt(scenario.shares_to_buy)} shares at {cp}
+              {fmt(scenario.buy_price)}
+            </span>
+            <br />
+            {underwater && price != null && price > 0 && (
+              <span className="text-stitch-accent">
+                (+{(((h.avg_cost - price) / price) * 100).toFixed(1)}% vs. market)
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-stitch-muted-soft/80">Save a scenario on the Strategy tab</span>
+        )}
+      </p>
+
+      {!selectMode && (
+        <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+          <button
+            type="button"
+            className="text-[11px] text-stitch-muted hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <Pencil className="mr-1 inline h-3 w-3" />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 className="mr-1 inline h-3 w-3" />
+            Delete
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
 export default function Holdings() {
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(() => !getOnboardingDone());
@@ -98,9 +433,8 @@ export default function Holdings() {
   const [tick, setTick] = useState(0);
   const [csvOpen, setCsvOpen] = useState(false);
   const { refreshing: refreshingAll, refreshAll, lastRefreshed } = useRefreshPrices();
-  const [sortMode, setSortMode] = useState<SortMode>(() => {
-    return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
-  });
+  const [sortMode, setSortMode] = useState<SortMode>(parseStoredSort);
+  const [holdingsLayout, setHoldingsLayout] = useState<HoldingsLayout>(parseStoredLayout);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -142,8 +476,14 @@ export default function Holdings() {
       case "az":
         sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
         break;
+      case "za":
+        sorted.sort((a, b) => b.ticker.localeCompare(a.ticker));
+        break;
       case "position":
         sorted.sort((a, b) => b.shares * b.avg_cost - a.shares * a.avg_cost);
+        break;
+      case "position_small":
+        sorted.sort((a, b) => a.shares * a.avg_cost - b.shares * b.avg_cost);
         break;
       case "loss": {
         sorted.sort((a, b) => {
@@ -161,6 +501,22 @@ export default function Holdings() {
         });
         break;
       }
+      case "loss_pct": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pa?.pnlPct ?? 0) - (pb?.pnlPct ?? 0);
+        });
+        break;
+      }
+      case "gain_pct": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pb?.pnlPct ?? 0) - (pa?.pnlPct ?? 0);
+        });
+        break;
+      }
     }
     return sorted;
   }, [holdings, sortMode, livePrices]);
@@ -168,6 +524,11 @@ export default function Holdings() {
   const handleSortChange = (mode: SortMode) => {
     setSortMode(mode);
     localStorage.setItem(SORT_KEY, mode);
+  };
+
+  const handleLayoutChange = (layout: HoldingsLayout) => {
+    setHoldingsLayout(layout);
+    localStorage.setItem(LAYOUT_KEY, layout);
   };
 
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
@@ -205,7 +566,7 @@ export default function Holdings() {
   const fetchPrice = useCallback(async (ticker: string, exchange: string) => {
     const sym = apiTicker(ticker, exchange as "US" | "TSX");
     setFetchingTickers((prev) => new Set(prev).add(ticker));
-    const result = await fetchStockPrice(sym);
+    const result = await fetchStockPrice(sym, { bypassCache: true });
     setFetchingTickers((prev) => {
       const n = new Set(prev);
       n.delete(ticker);
@@ -361,10 +722,10 @@ export default function Holdings() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 border-stitch-border bg-stitch-card text-white"
+                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
                   >
                     <DropdownMenuItem
-                      className="focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
                       onClick={() => refreshAllPrices()}
                       disabled={refreshingAll}
                     >
@@ -372,20 +733,32 @@ export default function Holdings() {
                       Refresh prices
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
                       onClick={() => navigate("/update-prices")}
                     >
                       Update Prices page
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/what-if")}
+                    >
+                      What-If scenarios
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/progress")}
+                    >
+                      Progress (vs initial snapshot)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
                       onClick={() => setCsvOpen(true)}
                     >
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
                       Import CSV
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
                       onClick={() => setSelectMode(true)}
                     >
                       <CheckSquare className="mr-2 h-4 w-4" />
@@ -394,7 +767,7 @@ export default function Holdings() {
                     {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                       <DropdownMenuItem
                         key={mode}
-                        className="focus:bg-stitch-pill focus:text-white"
+                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
                         onClick={() => handleSortChange(mode)}
                       >
                         <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -487,161 +860,106 @@ export default function Holdings() {
 
             <MostEfficientStep holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
-            <section className="mt-2">
-              <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
-            </section>
+            <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
-            <PortfolioStrategyProgress holdings={holdings} />
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-pill px-3 py-2.5">
+              <h2 className="text-sm font-semibold text-white">Holdings</h2>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex rounded-xl border border-stitch-border/80 bg-stitch-card/50 p-0.5">
+                  <button
+                    type="button"
+                    aria-label="Grid view"
+                    aria-pressed={holdingsLayout === "grid"}
+                    className={cn(
+                      "rounded-lg p-2 transition-colors",
+                      holdingsLayout === "grid"
+                        ? "bg-stitch-pill text-white"
+                        : "text-stitch-muted hover:text-white",
+                    )}
+                    onClick={() => handleLayoutChange("grid")}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="List view"
+                    aria-pressed={holdingsLayout === "list"}
+                    className={cn(
+                      "rounded-lg p-2 transition-colors",
+                      holdingsLayout === "list"
+                        ? "bg-stitch-pill text-white"
+                        : "text-stitch-muted hover:text-white",
+                    )}
+                    onClick={() => handleLayoutChange("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                    >
+                      <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                  >
+                    {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                      <DropdownMenuItem
+                        key={mode}
+                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        onClick={() => handleSortChange(mode)}
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        {SORT_LABELS[mode]}
+                        {sortMode === mode ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
 
-            {/* Asset grid */}
-            <section className="grid grid-cols-2 gap-4">
+            <section
+              className={holdingsLayout === "grid" ? "grid grid-cols-2 gap-4" : "flex flex-col gap-2"}
+            >
               {sortedHoldings.map((h) => {
                 const ex = (h.exchange ?? "US") as "US" | "TSX";
-                const cp = currencyPrefix(ex);
                 const price = livePrices[h.id];
                 const scenario = latestDca[h.id];
                 const isSelected = selected.has(h.id);
-                const underwater = price != null && price < h.avg_cost;
-                const sliderColor = !price ? "text-stitch-muted" : underwater ? "text-stitch-accent" : "text-stitch-danger";
+                const pnlFull = getPnl(h);
+                const pnl = pnlFull ? { pnl: pnlFull.pnl, pnlPct: pnlFull.pnlPct } : null;
 
                 return (
-                  <article
+                  <HoldingPortfolioCard
                     key={h.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => (selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        if (selectMode) toggleSelect(h.id);
-                        else navigate(`/holdings/${h.id}`);
-                      }
+                    holding={h}
+                    layout={holdingsLayout}
+                    price={price}
+                    scenario={scenario}
+                    pnl={pnl}
+                    selectMode={selectMode}
+                    isSelected={isSelected}
+                    fetchingTickers={fetchingTickers}
+                    onRowActivate={() =>
+                      selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`)
+                    }
+                    onStrategy={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                    onFetchPrice={() => fetchPrice(h.ticker, ex)}
+                    onEdit={() => {
+                      setEditing(h);
+                      setFormOpen(true);
                     }}
-                    className={`relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity ${
-                      isSelected ? "ring-2 ring-stitch-accent/60" : ""
-                    }`}
-                  >
-                    {selectMode && (
-                      <div className="absolute right-2 top-2">
-                        {isSelected ? (
-                          <CheckSquare className="h-5 w-5 text-stitch-accent" />
-                        ) : (
-                          <Square className="h-5 w-5 text-stitch-muted/50" />
-                        )}
-                      </div>
-                    )}
-                    <div className="mb-2 flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClassForTicker(h.ticker)}`}
-                        >
-                          {h.ticker.slice(0, 1)}
-                        </div>
-                        <span className="text-[15px] font-bold">{h.ticker}</span>
-                      </div>
-                      <button
-                        type="button"
-                        className="shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/holdings/${h.id}?tab=strategy`);
-                        }}
-                        aria-label="Strategy"
-                      >
-                        <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
-                      </button>
-                    </div>
-
-                    <p className="mb-2 text-[22px] font-bold">
-                      {price != null ? `${cp}${fmt(price)}` : "—"}
-                    </p>
-
-                    {!selectMode && price == null && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fetchPrice(h.ticker, ex);
-                        }}
-                        disabled={fetchingTickers.has(h.ticker)}
-                        className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline"
-                      >
-                        {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
-                      </button>
-                    )}
-
-                    <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
-                      <span>Your Average:</span>
-                      <span className="text-stitch-muted-soft">{cp}{fmt(h.avg_cost)}</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/holdings/${h.id}?tab=strategy`);
-                      }}
-                      className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
-                    >
-                      <span className="leading-tight">
-                        Target Average:
-                        <br />
-                        <span className="text-[15px]">
-                          {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
-                        </span>
-                      </span>
-                      <ChevronRight className="h-4 w-4 shrink-0" />
-                    </button>
-
-                    <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
-                      Buy to Reach Target:
-                      <br />
-                      {scenario && scenario.buy_price != null ? (
-                        <>
-                          <span className="text-stitch-muted-soft">
-                            {fmt(scenario.shares_to_buy)} shares at {cp}
-                            {fmt(scenario.buy_price)}
-                          </span>
-                          <br />
-                          {underwater && price != null && price > 0 && (
-                            <span className="text-stitch-accent">
-                              (+{(((h.avg_cost - price) / price) * 100).toFixed(1)}% vs. market)
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-stitch-muted-soft/80">Save a scenario on the Strategy tab</span>
-                      )}
-                    </p>
-
-                    {!selectMode && (
-                      <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
-                        <button
-                          type="button"
-                          className="text-[11px] text-stitch-muted hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditing(h);
-                            setFormOpen(true);
-                          }}
-                        >
-                          <Pencil className="mr-1 inline h-3 w-3" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleting(h);
-                          }}
-                        >
-                          <Trash2 className="mr-1 inline h-3 w-3" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </article>
+                    onDelete={() => setDeleting(h)}
+                  />
                 );
               })}
             </section>
@@ -742,6 +1060,19 @@ function DcaOpportunities({
 }) {
   const { includeFees } = useSimFees();
   const [showAll, setShowAll] = useState(false);
+  const [sectionExpanded, setSectionExpanded] = useState(() => {
+    const s = localStorage.getItem(OPPORTUNITIES_EXPANDED_KEY);
+    if (s === "0" || s === "false") return false;
+    return true;
+  });
+
+  const toggleSectionExpanded = () => {
+    setSectionExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(OPPORTUNITIES_EXPANDED_KEY, next ? "1" : "0");
+      return next;
+    });
+  };
 
   const scored = useMemo(() => {
     const rows: { holding: Holding; price: number; step: DcaRow }[] = [];
@@ -774,140 +1105,135 @@ function DcaOpportunities({
   const visibleRest = showAll ? rest : rest.slice(0, 3);
 
   return (
-    <div>
-      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Gauge className="h-4.5 w-4.5 text-primary" />
-          <h2 className="section-label">Strategy opportunities</h2>
-        </div>
-        <p className="text-[10px] leading-snug text-muted-foreground/70 sm:max-w-[220px] sm:text-right">
-          Portfolio rank 0–100 = improvement-per-dollar at each holding’s ladder-selected step, normalized to the best in
-          this list (not the Insights standardized test score).
-        </p>
-      </div>
-
-      {!hasRanked ? (
-        <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Add prices below average to rank simulated ladder steps across positions.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {top && top.rankScore > 0 && (() => {
-            const h = top.holding;
-            const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
-            return (
-              <button
-                key={h.id}
-                type="button"
-                onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className="card-glow glow-primary w-full rounded-xl border p-4 text-left transition-colors hover:border-primary/30"
-              >
-                <div className="mb-2 flex items-center gap-1.5">
-                  <Gauge className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
-                    Highest rank in portfolio
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span
-                      style={{
-                        fontFamily: "'Syne', sans-serif",
-                        fontWeight: 800,
-                        fontSize: "1.35rem",
-                        letterSpacing: "-0.02em",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {h.ticker}
-                    </span>
-                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                      Simulated {cp}
-                      {fmt(top.step.amount)} → avg {cp}
-                      {fmt(top.step.newAvg)} (−{cp}
-                      {fmt(top.step.avgImprovement)}/share)
-                    </p>
-                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
-                      Avg {cp}
-                      {fmt(h.avg_cost)} · Price {cp}
-                      {fmt(top.price)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span
-                      style={{
-                        fontFamily: "'Syne', sans-serif",
-                        fontWeight: 800,
-                        fontSize: "2.5rem",
-                        color: "hsl(160 60% 52%)",
-                        letterSpacing: "-0.02em",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {top.rankScore}
-                    </span>
-                    <span className="text-[8px] uppercase tracking-wider text-muted-foreground/50">rank</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })()}
-
-          {rest.length > 0 && (
-            <div className="space-y-0.5">
-              {visibleRest.map(({ holding: h, price, rankScore, step }) => {
-                const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
-                if (!step) return null;
-                return (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/30"
-                  >
-                    <span
-                      style={{
-                        fontFamily: "'Syne', sans-serif",
-                        fontWeight: 800,
-                        fontSize: "1rem",
-                        color: "hsl(160 60% 52% / 0.65)",
-                        width: 28,
-                        flexShrink: 0,
-                        textAlign: "right",
-                      }}
-                    >
-                      {rankScore}
-                    </span>
-                    <span className="w-16 shrink-0 font-mono text-sm font-semibold">{h.ticker}</span>
-                    <span className="flex-1 truncate font-mono text-[11px] text-muted-foreground">
-                      {cp}
-                      {fmt(step.amount)} sim → −{cp}
-                      {fmt(step.avgImprovement)}/share
-                    </span>
-                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/30" />
-                  </button>
-                );
-              })}
-              {rest.length > 3 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAll((v) => !v)}
-                  className="w-full py-1.5 text-center text-[11px] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                >
-                  {showAll ? "Show less" : `Show all ${rest.length} ranked`}
-                </button>
-              )}
-            </div>
+    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+      <div className="relative z-10">
+        <button
+          type="button"
+          onClick={toggleSectionExpanded}
+          className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left transition-colors hover:bg-stitch-pill/20"
+        >
+          <div className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
+            <h2 className="text-[17px] font-semibold text-white">Portfolio simulations (relative scores)</h2>
+          </div>
+          {sectionExpanded ? (
+            <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
+          ) : (
+            <ChevronRight className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
           )}
+        </button>
 
-          <p className="pt-1 text-center text-[9px] text-muted-foreground/40">
-            Illustrative simulations only — not financial advice.
+        {!sectionExpanded && (
+          <p className="text-[11px] leading-relaxed text-stitch-muted">
+            {hasRanked
+              ? `${scored.length} modeled ${scored.length === 1 ? "line" : "lines"} (not buy suggestions) — tap to expand`
+              : "Tap header to expand"}
           </p>
-        </div>
-      )}
-    </div>
+        )}
+
+        {sectionExpanded && (
+          <>
+            <p className="mb-4 text-[10px] leading-relaxed text-stitch-muted">
+              0–100 scores compare each holding’s <strong className="font-medium text-stitch-muted">modeled</strong> ladder
+              step (improvement per dollar spent) to the strongest in this list only. Same ladder rules as your budget-step
+              simulator — not a recommendation to trade, and not the Insights tab’s fixed-$ test score.
+            </p>
+
+            {!hasRanked ? (
+              <div className="rounded-2xl border border-dashed border-stitch-border/60 bg-stitch-pill/20 p-6 text-center">
+                <p className="text-sm text-stitch-muted">
+                  Add prices below average to compare simulated ladder steps across positions.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {top && top.rankScore > 0 && (() => {
+                  const h = top.holding;
+                  const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                      className="w-full rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4 text-left transition-colors hover:border-stitch-accent/40 hover:bg-stitch-pill/40"
+                    >
+                      <div className="mb-2 flex items-center gap-1.5">
+                        <Gauge className="h-3.5 w-3.5 text-stitch-accent" />
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">
+                          Top relative score (this list)
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[17px] font-bold tracking-tight text-white">{h.ticker}</span>
+                          <p className="mt-0.5 font-mono text-xs text-stitch-muted">
+                            Simulated {cp}
+                            {fmt(top.step.amount)} → avg {cp}
+                            {fmt(top.step.newAvg)} (−{cp}
+                            {fmt(top.step.avgImprovement)}/share)
+                          </p>
+                          <p className="mt-0.5 font-mono text-[10px] text-stitch-muted/70">
+                            Avg {cp}
+                            {fmt(h.avg_cost)} · Price {cp}
+                            {fmt(top.price)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-[28px] font-bold leading-none text-stitch-accent">{top.rankScore}</span>
+                          <span className="text-[8px] uppercase tracking-wider text-stitch-muted/60">score</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })()}
+
+                {rest.length > 0 && (
+                  <div className="space-y-0.5">
+                    {visibleRest.map(({ holding: h, price, rankScore, step }) => {
+                      const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
+                      if (!step) return null;
+                      return (
+                        <button
+                          key={h.id}
+                          type="button"
+                          onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                          className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
+                        >
+                          <span className="w-7 shrink-0 text-right text-sm font-bold tabular-nums text-stitch-accent/80">
+                            {rankScore}
+                          </span>
+                          <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
+                          <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
+                            {cp}
+                            {fmt(step.amount)} sim → −{cp}
+                            {fmt(step.avgImprovement)}/share
+                          </span>
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
+                        </button>
+                      );
+                    })}
+                    {rest.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAll((v) => !v)}
+                        className="w-full py-1.5 text-center text-[11px] text-stitch-muted/60 transition-colors hover:text-stitch-muted"
+                      >
+                        {showAll ? "Show less" : `Show all ${rest.length}`}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <p className="pt-1 text-center text-[9px] text-stitch-muted/50">
+                  Illustrative simulations only — not financial advice.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -951,52 +1277,45 @@ function MostEfficientStep({
   const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
 
   return (
-    <section>
-      <div className="mb-3 flex items-center gap-2">
-        <Zap className="h-4 w-4 text-primary" />
-        <h2 className="section-label">Most efficient step (portfolio)</h2>
-      </div>
-      <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
-        Same ladder selection as the Goal Ladder: best improvement-per-dollar among rungs, skipping tiny impact and very
-        large sizes vs. position value. Open the holding to see all rungs.
-      </p>
-      <button
-        type="button"
-        onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-        className="card-glow glow-primary w-full rounded-xl border p-4 text-left transition-colors hover:border-primary/30"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <span
-              style={{
-                fontFamily: "'Syne', sans-serif",
-                fontWeight: 800,
-                fontSize: "1.5rem",
-                letterSpacing: "-0.02em",
-                lineHeight: 1,
-              }}
-            >
-              {h.ticker}
-            </span>
-            <p className="mt-1 font-mono text-sm text-foreground">
-              Simulated deploy {cp}
-              {fmt(best.step.amount)} → avg {cp}
-              {fmt(best.step.newAvg)}
-            </p>
-            <p className="mt-0.5 flex items-center gap-1 font-mono text-sm font-medium text-primary">
-              <ArrowDownRight className="h-3.5 w-3.5" />
-              Avg moves by {cp}
-              {fmt(best.step.avgImprovement)}/share
-            </p>
-            <p className="mt-1.5 font-mono text-[10px] text-muted-foreground/50">
-              Current avg {cp}
-              {fmt(h.avg_cost)} · Price {cp}
-              {fmt(best.price)}
-            </p>
-          </div>
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+      <div className="relative z-10">
+        <div className="mb-3 flex items-center gap-2">
+          <Zap className="h-4 w-4 shrink-0 text-stitch-accent" />
+          <h2 className="text-[17px] font-semibold text-white">Portfolio ladder highlight</h2>
         </div>
-      </button>
+        <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
+          Which holding’s fixed budget-rung simulation currently shows the highest modeled improvement-per-dollar (same
+          rules as the budget-step simulator on each position). For comparison only — not an instruction to trade.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+          className="w-full rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4 text-left transition-colors hover:border-stitch-accent/40 hover:bg-stitch-pill/40"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[17px] font-bold tracking-tight text-white">{h.ticker}</span>
+              <p className="mt-1 font-mono text-sm text-stitch-muted">
+                Simulated deploy {cp}
+                {fmt(best.step.amount)} → avg {cp}
+                {fmt(best.step.newAvg)}
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 font-mono text-sm font-medium text-stitch-accent">
+                <ArrowDownRight className="h-3.5 w-3.5 shrink-0" />
+                Avg moves by {cp}
+                {fmt(best.step.avgImprovement)}/share
+              </p>
+              <p className="mt-1.5 font-mono text-[10px] text-stitch-muted/60">
+                Current avg {cp}
+                {fmt(h.avg_cost)} · Price {cp}
+                {fmt(best.price)}
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+          </div>
+        </button>
+      </div>
     </section>
   );
 }

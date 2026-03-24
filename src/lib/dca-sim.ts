@@ -1,5 +1,5 @@
 /**
- * Shared DCA / average-cost simulation for ladder, portfolio highlights, insights, and capital planner.
+ * Shared DCA / average-cost simulation for ladder, portfolio highlights, insights, and capital optimizer.
  * Single source of truth for step amounts and selection rules.
  *
  * ## CANONICAL: `selectMostEfficientLadderStep` (shipped behavior)
@@ -18,7 +18,7 @@
 
 import type { FeeType, Holding } from "@/lib/storage";
 
-/** Budget rungs shown in Goal Ladder and used for “most efficient step” selection */
+/** Budget rungs shown in the budget-step simulator and used for ladder-based portfolio comparisons */
 export const LADDER_INVESTMENT_STEPS = [250, 500, 1000, 2500] as const;
 
 /** Fixed test size for standardized efficiency score (Insights) and copy */
@@ -84,6 +84,45 @@ export function computeDcaRow(
     newAvg,
     avgImprovement,
     improvementPerDollar,
+  };
+}
+
+/**
+ * What-If / bulk apply: `grossAllocated` is total cash out (matches `computeDcaRow` when fees apply).
+ * Returns fields compatible with `applyBuyToHolding`.
+ */
+export function computeWhatIfAllocationRow(
+  holding: Holding,
+  buyPrice: number,
+  grossAllocated: number,
+  includeFees: boolean
+): {
+  sharesBought: number;
+  newTotalShares: number;
+  newAvg: number;
+  feeApplied: number;
+  budgetInvested: number;
+  totalSpend: number;
+} | null {
+  if (buyPrice <= 0 || grossAllocated <= 0) return null;
+  const row = computeDcaRow(
+    holding.shares,
+    holding.avg_cost,
+    buyPrice,
+    grossAllocated,
+    holdingFeeOpts(holding, includeFees)
+  );
+  if (!row) return null;
+  const budgetForStock = row.sharesBought * buyPrice;
+  const feeApplied = Math.round(Math.max(0, grossAllocated - budgetForStock) * 100) / 100;
+  const budgetInvested = Math.round(budgetForStock * 100) / 100;
+  return {
+    sharesBought: row.sharesBought,
+    newTotalShares: holding.shares + row.sharesBought,
+    newAvg: row.newAvg,
+    feeApplied,
+    budgetInvested,
+    totalSpend: grossAllocated,
   };
 }
 
@@ -170,6 +209,17 @@ export type GreedyAllocationLine = {
   newAvg: number;
   avgImprovementVsInitial: number;
 };
+
+/**
+ * Capital Optimizer modes. Only `greedy_improvement_per_dollar` is implemented; others are explicit roadmap placeholders
+ * so the UI does not imply a global optimum or a single hidden objective.
+ */
+export type CapitalOptimizerModeId =
+  | "greedy_improvement_per_dollar"
+  | "lowest_portfolio_average"
+  | "reach_target_averages_first";
+
+export const CAPITAL_OPTIMIZER_DEFAULT_MODE: CapitalOptimizerModeId = "greedy_improvement_per_dollar";
 
 const MAX_GREEDY_ITERS = 10_000;
 

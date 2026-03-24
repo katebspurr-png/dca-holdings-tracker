@@ -45,7 +45,7 @@ const WORKSPACE_TABS: { key: WorkspaceTab; label: string; icon: React.ElementTyp
   { key: "strategy", label: "Strategy", icon: TargetIcon },
   { key: "calculator", label: "Calculator", icon: Calculator },
   { key: "history", label: "History", icon: History },
-  { key: "insights", label: "Insights", icon: Lightbulb },
+  { key: "insights", label: "Math", icon: Lightbulb },
 ];
 
 const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -360,7 +360,7 @@ export default function HoldingDetail() {
     if (!canSaveScenario(currentCount)) {
       toast({
         title: "Scenario limit reached",
-        description: `Free users can save up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Upgrade to Premium for unlimited scenarios.`,
+        description: `Free tier allows up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Enable premium preview in Settings for unlimited.`,
         variant: "destructive",
       });
       return;
@@ -455,8 +455,8 @@ export default function HoldingDetail() {
 
   if (!holding) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Holding not found.</p>
+      <div className="relative flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 text-white">
+        <p className="text-stitch-muted">Holding not found.</p>
       </div>
     );
   }
@@ -468,23 +468,30 @@ export default function HoldingDetail() {
   const presets2 = getPresets(calcMethod, 2);
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="sticky top-0 z-20 border-b border-stitch-border bg-stitch-bg/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 sm:px-6 py-3">
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate("/")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            onClick={() => navigate("/")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <h1 className="text-lg font-bold tracking-tight truncate">
-              <span className="text-primary font-mono">{holding.ticker}</span>
-              <span className="text-muted-foreground font-normal ml-1.5 text-sm">Position</span>
+              <span className="text-stitch-accent font-mono">{holding.ticker}</span>
+              <span className="text-stitch-muted font-normal ml-1.5 text-sm">Position</span>
             </h1>
-            <Badge variant="outline" className="text-[10px] px-1.5 h-5 shrink-0">{exchangeLabel(exchange)}</Badge>
+            <Badge variant="outline" className="h-5 shrink-0 border-stitch-border px-1.5 text-[10px] text-stitch-muted-soft">
+              {exchangeLabel(exchange)}
+            </Badge>
           </div>
           {canUndo && (
             <Button
-              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-muted-foreground hover:text-destructive"
+              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive"
               disabled={undoing} onClick={() => setShowUndoConfirm(true)}
             >
               <Undo2 className="mr-1 h-3 w-3" /> Undo
@@ -500,8 +507,8 @@ export default function HoldingDetail() {
                 onClick={() => switchTab(key)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                    ? "border-stitch-accent text-stitch-accent"
+                    : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -516,10 +523,10 @@ export default function HoldingDetail() {
         {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
         {activeTab === "overview" && (
           <>
-            <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Position Overview</h2>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Position Overview</h2>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white" onClick={() => setEditOpen(true)}>
                   <Pencil className="mr-1 h-3 w-3" /> Edit
                 </Button>
               </div>
@@ -540,7 +547,7 @@ export default function HoldingDetail() {
               </div>
               {/* Trading data */}
               {quote && quote.todayOpen != null ? (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stitch-muted font-mono mt-3 pt-3 border-t border-stitch-border">
                   <span>Open {cp}{quote.todayOpen.toFixed(2)}</span>
                   {quote.todayLow != null && <span>Low {cp}{quote.todayLow.toFixed(2)}</span>}
                   {quote.todayHigh != null && <span>High {cp}{quote.todayHigh.toFixed(2)}</span>}
@@ -548,7 +555,7 @@ export default function HoldingDetail() {
                   <span>Fee: {feeLabel}</span>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stitch-muted font-mono mt-3 pt-3 border-t border-stitch-border">
                   <span>Fee: {feeLabel} ({holding.fee_type})</span>
                 </div>
               )}
@@ -568,11 +575,11 @@ export default function HoldingDetail() {
             <div className="space-y-3">
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Saved Scenarios</h2>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
+                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Saved Scenarios</h2>
+                  <p className="text-[11px] text-stitch-muted/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
                 </div>
                 {scenarios.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground/50 tabular-nums">{scenarios.length} total</span>
+                  <span className="text-[10px] text-stitch-muted/50 tabular-nums">{scenarios.length} total</span>
                 )}
               </div>
 
@@ -595,18 +602,18 @@ export default function HoldingDetail() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
               {/* Left: Inputs */}
               <div className="lg:col-span-3 space-y-4">
-                <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
+                <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">Method</Label>
+                    <Label className="text-[11px] uppercase tracking-widest text-stitch-muted font-semibold">Method</Label>
                     <Select value={calcMethod} onValueChange={handleMethodChange}>
-                      <SelectTrigger className="w-full bg-background h-9 text-sm">
+                      <SelectTrigger className="w-full bg-stitch-pill h-9 text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
+                      <SelectContent className="z-50 border-stitch-border bg-stitch-card text-white">
                         {METHOD_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             <span className="font-medium">{o.label}</span>
-                            <span className="text-muted-foreground ml-1.5 text-xs hidden sm:inline">— {o.desc}</span>
+                            <span className="text-stitch-muted ml-1.5 text-xs hidden sm:inline">— {o.desc}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -617,33 +624,33 @@ export default function HoldingDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="input1" className="text-xs text-muted-foreground">{fields[0].label}</Label>
+                        <Label htmlFor="input1" className="text-xs text-stitch-muted">{fields[0].label}</Label>
                         {input1IsPrice && (
-                          <button type="button" className="text-[11px] text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
+                          <button type="button" className="text-[11px] text-stitch-accent hover:text-stitch-accent/80 font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
                             disabled={fetchingPrice || !canLookup()} onClick={handleUseCurrentPrice}>
                             <Zap className={`h-3 w-3 ${fetchingPrice ? "animate-pulse" : ""}`} /> Live price
                           </button>
                         )}
                       </div>
                       <Input id="input1" type="number" step="any" placeholder="0.00" value={val1}
-                        onChange={(e) => setVal1(e.target.value)} className="h-9 font-mono text-sm bg-background" />
+                        onChange={(e) => setVal1(e.target.value)} className="h-9 font-mono text-sm bg-stitch-pill" />
                       {presets1.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets1.map((p) => (
-                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-stitch-border bg-stitch-pill/50 hover:bg-stitch-pill/70 text-stitch-muted hover:text-white transition-colors"
                               onClick={() => setVal1(p.value)}>{p.label}</button>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="input2" className="text-xs text-muted-foreground">{fields[1].label}</Label>
+                      <Label htmlFor="input2" className="text-xs text-stitch-muted">{fields[1].label}</Label>
                       <Input id="input2" type="number" step="any" placeholder="0.00" value={val2}
-                        onChange={(e) => setVal2(e.target.value)} className="h-9 font-mono text-sm bg-background" />
+                        onChange={(e) => setVal2(e.target.value)} className="h-9 font-mono text-sm bg-stitch-pill" />
                       {presets2.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets2.map((p) => (
-                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-stitch-border bg-stitch-pill/50 hover:bg-stitch-pill/70 text-stitch-muted hover:text-white transition-colors"
                               onClick={() => setVal2(p.value)}>{p.label}</button>
                           ))}
                         </div>
@@ -653,11 +660,11 @@ export default function HoldingDetail() {
 
                   {isPriceBudget && (
                     <div className="space-y-2 pt-1">
-                      <Label className="text-xs text-muted-foreground">Budget allocation: <span className="text-foreground font-semibold">{budgetPercent}%</span></Label>
+                      <Label className="text-xs text-stitch-muted">Budget allocation: <span className="text-white font-semibold">{budgetPercent}%</span></Label>
                       <Slider min={25} max={100} step={25} value={[budgetPercent]} onValueChange={(v) => setBudgetPercent(v[0])} />
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <div className="flex justify-between text-[10px] text-stitch-muted">
                         {SLIDER_STEPS.map((s) => (
-                          <span key={s} className={budgetPercent === s ? "text-primary font-bold" : ""}>{s}%</span>
+                          <span key={s} className={budgetPercent === s ? "text-stitch-accent font-bold" : ""}>{s}%</span>
                         ))}
                       </div>
                     </div>
@@ -665,7 +672,7 @@ export default function HoldingDetail() {
 
                   <div className="flex items-center gap-2.5 pt-1">
                     <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} className="scale-90" />
-                    <Label htmlFor="include-fees" className="cursor-pointer text-xs text-muted-foreground">Include fees</Label>
+                    <Label htmlFor="include-fees" className="cursor-pointer text-xs text-stitch-muted">Include fees</Label>
                   </div>
                 </div>
 
@@ -676,7 +683,7 @@ export default function HoldingDetail() {
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {err.error}
                     </div>
                   ) : (
-                    <p className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                    <p className="flex items-center gap-2 text-xs text-stitch-muted px-1">
                       <Info className="h-3.5 w-3.5 shrink-0" /> {err.error}
                     </p>
                   );
@@ -685,23 +692,23 @@ export default function HoldingDetail() {
 
               {/* Right: Results */}
               <div className="lg:col-span-2">
-                <div className={`rounded-xl border bg-card transition-all sticky top-28 ${isValid ? "border-primary/20" : "border-border opacity-50"}`}>
+                <div className={`rounded-xl border bg-stitch-card transition-all sticky top-28 ${isValid ? "border-stitch-accent/20" : "border-stitch-border opacity-50"}`}>
                   <div className="p-4 sm:p-5">
-                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted mb-4">
                       {isValid ? "Projected Outcome" : "Results"}
                     </h2>
                     {isValid && r ? (
                       <div className="space-y-4">
-                        <div className="text-center pb-3 border-b border-border">
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                        <div className="text-center pb-3 border-b border-stitch-border">
+                          <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-1">
                             {isPriceBudget ? "Achievable Target" : "New Average Cost"}
                           </p>
-                          <p className="text-3xl font-mono font-bold text-primary leading-none">{cp}{fmt2(r.newAvg)}</p>
+                          <p className="text-3xl font-mono font-bold text-stitch-accent leading-none">{cp}{fmt2(r.newAvg)}</p>
                           <div className="flex items-center justify-center gap-1.5 mt-2">
-                            <span className="text-[11px] text-muted-foreground font-mono">Current {cp}{fmt2(A)}</span>
+                            <span className="text-[11px] text-stitch-muted font-mono">Current {cp}{fmt2(A)}</span>
                             <span className="text-[11px] mx-0.5">→</span>
                             {avgImproves ? (
-                              <span className="text-[11px] font-medium text-primary flex items-center gap-0.5">
+                              <span className="text-[11px] font-medium text-stitch-accent flex items-center gap-0.5">
                                 <TrendingDown className="h-3 w-3" /> −{cp}{fmt2(Math.abs(avgDiff))}/share
                               </span>
                             ) : avgWorsens ? (
@@ -709,7 +716,7 @@ export default function HoldingDetail() {
                                 <TrendingUp className="h-3 w-3" /> +{cp}{fmt2(Math.abs(avgDiff))}/share
                               </span>
                             ) : (
-                              <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-0.5">
+                              <span className="text-[11px] font-medium text-stitch-muted flex items-center gap-0.5">
                                 <Minus className="h-3 w-3" /> No change
                               </span>
                             )}
@@ -723,7 +730,7 @@ export default function HoldingDetail() {
                           <ResultRow label="New total shares" value={fmt4(r.totalShares)} />
                           {r.effectivePrice !== null && <ResultRow label="Eff. buy price" value={`${cp}${fmt2(r.effectivePrice)}`} />}
                         </div>
-                        <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                        <div className="flex flex-col gap-2 pt-2 border-t border-stitch-border">
                           {isPriceBudget && (
                             <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleUseAsTarget}>
                               <TargetIcon className="mr-1.5 h-3.5 w-3.5" /> Use as target
@@ -740,14 +747,14 @@ export default function HoldingDetail() {
                           </div>
                           {!canSaveScenario(scenarios.length) && (
                             <p className="text-[10px] text-destructive text-center">
-                              Limit reached ({FREE_SCENARIO_LIMIT}/{FREE_SCENARIO_LIMIT}). Upgrade to Premium for unlimited.
+                              Limit reached ({FREE_SCENARIO_LIMIT}/{FREE_SCENARIO_LIMIT}). Premium preview in Settings unlocks unlimited.
                             </p>
                           )}
                         </div>
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-stitch-muted">
                           {hasInputs ? "Adjust inputs to see results." : "Enter values to see projected outcome."}
                         </p>
                       </div>
@@ -759,16 +766,16 @@ export default function HoldingDetail() {
 
             {/* Sticky bottom bar on valid result - mobile */}
             {isValid && r && (
-              <div className="fixed bottom-14 left-0 right-0 z-20 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden"
+              <div className="fixed bottom-14 left-0 right-0 z-20 border-t border-stitch-border bg-stitch-card/95 backdrop-blur-sm lg:hidden"
                 style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
                 <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-2.5 gap-3">
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="min-w-0">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
-                      <p className="text-sm font-mono font-bold text-primary">{cp}{fmt2(r.newAvg)}</p>
+                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">New Avg</p>
+                      <p className="text-sm font-mono font-bold text-stitch-accent">{cp}{fmt2(r.newAvg)}</p>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Spend</p>
+                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">Spend</p>
                       <p className="text-sm font-mono font-semibold">{cp}{fmt2(r.totalSpend)}</p>
                     </div>
                   </div>
@@ -789,23 +796,23 @@ export default function HoldingDetail() {
         {/* ═══════════════ HISTORY TAB ═══════════════ */}
         {activeTab === "history" && (
           <div className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">History</h2>
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">History</h2>
             {user && historyLoading && (
-              <p className="text-[10px] text-muted-foreground font-mono">Loading cloud history…</p>
+              <p className="text-[10px] text-stitch-muted font-mono">Loading cloud history…</p>
             )}
             {user && historyError && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive font-mono">
                 Could not load history.
                 {localTransactions.length > 0 ? (
-                  <span className="block text-muted-foreground font-normal mt-1">
+                  <span className="block text-stitch-muted font-normal mt-1">
                     Showing on-device history below.
                   </span>
                 ) : null}
               </div>
             )}
             {historyRows.length === 0 && !(user && historyLoading) ? (
-              <div className="rounded-xl border border-dashed border-border bg-muted/10 p-6 text-center space-y-1 font-mono text-[11px] text-muted-foreground">
-                <History className="h-4 w-4 mx-auto text-muted-foreground/50 mb-1" />
+              <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-6 text-center space-y-1 font-mono text-[11px] text-stitch-muted">
+                <History className="h-4 w-4 mx-auto text-stitch-muted/50 mb-1" />
                 <p>No history yet. Executed buys will appear here.</p>
               </div>
             ) : (
@@ -815,34 +822,34 @@ export default function HoldingDetail() {
                   return (
                     <div
                       key={t.id}
-                      className={`rounded-lg border border-border/80 bg-card/60 px-3 py-2.5 ${
+                      className={`rounded-lg border border-stitch-border/80 bg-stitch-card/60 px-3 py-2.5 ${
                         isUndo ? "opacity-55 border-dashed" : ""
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-muted-foreground">{formatHistoryDate(t.created_at)}</span>
+                        <span className="text-stitch-muted">{formatHistoryDate(t.created_at)}</span>
                         {isUndo ? (
                           <Badge variant="outline" className="text-[8px] px-1 h-4">
                             Undone
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="text-foreground/90">
+                      <p className="text-white/90">
                         Bought {t.shares_bought.toFixed(4)} shares at {cp}
                         {Number(t.buy_price).toFixed(2)}
                       </p>
-                      <p className="text-muted-foreground">
+                      <p className="text-stitch-muted">
                         Total: {cp}
                         {fmt2(t.total_spend)}
                       </p>
                       {t.fee_applied > 0 ? (
-                        <p className="text-muted-foreground">
+                        <p className="text-stitch-muted">
                           Fees: {cp}
                           {fmt2(t.fee_applied)}
                         </p>
                       ) : null}
                       {isUndo && t.undone_at ? (
-                        <p className="text-[10px] text-muted-foreground/70 mt-1 pt-1 border-t border-border/40">
+                        <p className="text-[10px] text-stitch-muted/70 mt-1 pt-1 border-t border-stitch-border/40">
                           Undone {formatHistoryDate(t.undone_at)}
                         </p>
                       ) : null}
@@ -881,7 +888,7 @@ export default function HoldingDetail() {
 
       {/* Undo confirmation */}
       <AlertDialog open={showUndoConfirm} onOpenChange={setShowUndoConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Undo the last applied buy for {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -889,7 +896,9 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmUndo}>Undo</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -897,7 +906,7 @@ export default function HoldingDetail() {
 
       {/* Apply confirmation dialog */}
       <AlertDialog open={showApplyConfirm} onOpenChange={setShowApplyConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Apply this buy to {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -905,7 +914,9 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmApplyBuy}>Apply</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -913,7 +924,7 @@ export default function HoldingDetail() {
 
       {/* Scenario apply confirmation */}
       <AlertDialog open={!!scenarioToApply} onOpenChange={(o) => !o && setScenarioToApply(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Apply this scenario to {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -921,7 +932,9 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmApplyScenario}>Apply</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -936,12 +949,12 @@ function MiniStat({ label, value, accent, sub, positive, negative }: {
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-0.5">{label}</p>
       <p className={`text-sm font-mono font-semibold leading-tight ${
-        accent ? "text-primary" : positive ? "text-primary" : negative ? "text-destructive" : ""
+        accent ? "text-stitch-accent" : positive ? "text-stitch-accent" : negative ? "text-destructive" : ""
       }`}>{value}</p>
       {sub && (
-        <p className={`text-[10px] font-mono ${positive ? "text-primary" : negative ? "text-destructive" : "text-muted-foreground"}`}>{sub}</p>
+        <p className={`text-[10px] font-mono ${positive ? "text-stitch-accent" : negative ? "text-destructive" : "text-stitch-muted"}`}>{sub}</p>
       )}
     </div>
   );
@@ -950,7 +963,7 @@ function MiniStat({ label, value, accent, sub, positive, negative }: {
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[11px] text-stitch-muted">{label}</span>
       <span className="text-xs font-mono font-medium tabular-nums">{value}</span>
     </div>
   );
