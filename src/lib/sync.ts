@@ -64,14 +64,14 @@ export function transactionFromDbRow(t: Record<string, unknown>): Transaction {
  */
 export async function pullFromCloud(userId: string): Promise<AppData | null> {
   try {
-    const [holdingsRes, scenariosRes, transactionsRes, whatIfRes, optimizationRes] =
+    const [holdingsRes, scenariosRes, transactionsRes, whatIfRes, optimizationRes]: any[] =
       await Promise.all([
-        supabase
+        db
           .from("holdings")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: true }),
-        supabase
+        db
           .from("dca_scenarios")
           .select("*, holdings!inner(user_id)")
           .eq("holdings.user_id", userId)
