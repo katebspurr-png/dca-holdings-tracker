@@ -34,6 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
+import { DemoDataTag } from "@/components/DemoDataTag";
 import { transactionFromDbRow } from "@/lib/sync";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
@@ -501,6 +502,7 @@ export default function HoldingDetail() {
             <Badge variant="outline" className="h-5 shrink-0 border-stitch-border px-1.5 text-[10px] text-stitch-muted-soft">
               {exchangeLabel(exchange)}
             </Badge>
+            {isDemoMode && <DemoDataTag />}
           </div>
           {canUndo && (
             <Button

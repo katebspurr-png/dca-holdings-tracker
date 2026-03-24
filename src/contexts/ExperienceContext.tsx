@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useDemoMode, type EnterDemoOptions } from "@/contexts/DemoModeContext";
 import {
   type ExperiencePrefs,
   type UserLevel,
@@ -23,10 +23,17 @@ import { GUIDED_DEMO_STEPS } from "@/walkthrough/guidedDemoSteps";
 import { PRE_AUTH_GUIDED_DEMO_STEPS } from "@/walkthrough/preAuthGuidedDemoSteps";
 import {
   DEMO_FULL_RESET_EVENT,
+  PRE_AUTH_GUIDED_STORAGE_EVENT,
   loadPreAuthGuidedState,
   savePreAuthGuidedState,
   type PreAuthGuidedState,
 } from "@/lib/preAuthDemoTour";
+import {
+  clearPreAuthConversionDismissed,
+  isPreAuthConversionDismissed,
+  setPreAuthConversionDismissed,
+} from "@/lib/preAuthConversionModal";
+import PostWalkthroughConversionModal from "@/components/PostWalkthroughConversionModal";
 
 export type ClassificationAnswers = {
   q1: 0 | 1 | 2;
@@ -38,7 +45,7 @@ type ExperienceContextValue = {
   userLevel: UserLevel;
   setUserLevel: (level: UserLevel) => void;
   isDemoMode: boolean;
-  enterDemo: () => void;
+  enterDemo: (options?: EnterDemoOptions) => void;
   exitDemo: () => void;
   classificationDone: boolean;
   completeClassification: (answers: ClassificationAnswers) => void;
@@ -55,6 +62,8 @@ type ExperienceContextValue = {
   prefs: ExperiencePrefs;
   refreshPrefs: () => void;
   trySamplePortfolio: () => void;
+  postWalkthroughConversionOpen: boolean;
+  settlePostWalkthroughConversion: () => void;
 };
 
 const ExperienceContext = createContext<ExperienceContextValue | null>(null);
@@ -70,8 +79,14 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefsState] = useState<ExperiencePrefs>(defaultExperiencePrefs);
   const [preAuthTour, setPreAuthTour] = useState<PreAuthGuidedState>(() => loadPreAuthGuidedState());
   const [storageTick, setStorageTick] = useState(0);
+  const [postWalkthroughConversionOpen, setPostWalkthroughConversionOpen] = useState(false);
 
   const preAuthGuidedFlow = !session && isDemoMode;
+
+  const settlePostWalkthroughConversion = useCallback(() => {
+    setPreAuthConversionDismissed();
+    setPostWalkthroughConversionOpen(false);
+  }, []);
 
   const refreshPrefs = useCallback(() => {
     setPrefsState(loadExperiencePrefs());
@@ -80,14 +95,25 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const onDemoReset = () => setPreAuthTour(loadPreAuthGuidedState());
-    window.addEventListener(DEMO_FULL_RESET_EVENT, onDemoReset);
-    return () => window.removeEventListener(DEMO_FULL_RESET_EVENT, onDemoReset);
+    const syncTourFromStorage = () => setPreAuthTour(loadPreAuthGuidedState());
+    window.addEventListener(DEMO_FULL_RESET_EVENT, syncTourFromStorage);
+    window.addEventListener(PRE_AUTH_GUIDED_STORAGE_EVENT, syncTourFromStorage);
+    return () => {
+      window.removeEventListener(DEMO_FULL_RESET_EVENT, syncTourFromStorage);
+      window.removeEventListener(PRE_AUTH_GUIDED_STORAGE_EVENT, syncTourFromStorage);
+    };
   }, []);
 
+  /** Re-read tour from storage whenever guest demo is on so enterDemo / dev force-demo always aligns with UI. */
   useEffect(() => {
-    if (preAuthGuidedFlow) {
+    if (!session && isDemoMode) {
       setPreAuthTour(loadPreAuthGuidedState());
+    }
+  }, [session, isDemoMode]);
+
+  useEffect(() => {
+    if (!preAuthGuidedFlow) {
+      setPostWalkthroughConversionOpen(false);
     }
   }, [preAuthGuidedFlow]);
 
@@ -163,6 +189,12 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
         const next = { stepIndex: last, finished: true };
         savePreAuthGuidedState(next);
         setPreAuthTour(next);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event(PRE_AUTH_GUIDED_STORAGE_EVENT));
+        }
+        if (!isPreAuthConversionDismissed()) {
+          queueMicrotask(() => setPostWalkthroughConversionOpen(true));
+        }
         return;
       }
       const next = { stepIndex: cur.stepIndex + 1, finished: false };
@@ -196,6 +228,11 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       const next = { stepIndex: 0, finished: false };
       savePreAuthGuidedState(next);
       setPreAuthTour(next);
+      clearPreAuthConversionDismissed();
+      setPostWalkthroughConversionOpen(false);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(PRE_AUTH_GUIDED_STORAGE_EVENT));
+      }
       return;
     }
     persist({
@@ -244,6 +281,8 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       prefs,
       refreshPrefs,
       trySamplePortfolio,
+      postWalkthroughConversionOpen,
+      settlePostWalkthroughConversion,
     };
   }, [
     prefs,
@@ -262,9 +301,16 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     resetGuidedDemo,
     refreshPrefs,
     trySamplePortfolio,
+    postWalkthroughConversionOpen,
+    settlePostWalkthroughConversion,
   ]);
 
-  return <ExperienceContext.Provider value={value}>{children}</ExperienceContext.Provider>;
+  return (
+    <ExperienceContext.Provider value={value}>
+      {children}
+      <PostWalkthroughConversionModal />
+    </ExperienceContext.Provider>
+  );
 }
 
 export function useExperience() {

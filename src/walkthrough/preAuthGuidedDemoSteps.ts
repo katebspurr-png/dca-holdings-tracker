@@ -1,5 +1,5 @@
 /**
- * Pre-auth demo walkthrough — educational copy only, no recommendations.
+ * Pre-auth demo walkthrough — plain language; math and visualization only, not advice.
  */
 export type PreAuthGuidedDemoStep = {
   id: string;
@@ -10,32 +10,32 @@ export type PreAuthGuidedDemoStep = {
 export const PRE_AUTH_GUIDED_DEMO_STEPS: PreAuthGuidedDemoStep[] = [
   {
     id: "portfolio",
-    title: "Your sample portfolio",
-    body: "This list is made-up data so you can tap around safely. It’s for learning how the tools work—not a real account or suggestion to buy anything.",
+    title: "You’re on the Portfolio screen",
+    body: "This is the first screen after you enter the demo. The list below is made-up sample data so you can tap around without risk. It is not a real account and not a suggestion to buy or sell anything.",
   },
   {
     id: "metric",
-    title: "Average cost at a glance",
-    body: "Each row shows what you’ve tracked for shares and average cost. The app uses your numbers to model “what if I bought more?”—math practice, not advice.",
+    title: "What each row is showing",
+    body: "Each row is one stock you’re pretending to track. You’ll see how many shares and your average price per share (a simple average of what you “paid”). The app uses those numbers to run what-if math—for example, if I bought more at this price, how would my average change? That’s calculator-style practice, not advice.",
   },
   {
     id: "whatif",
-    title: "Compare ideas with What-if",
-    body: "Open What-if from the menu to split pretend money across holdings and see how the math changes side by side. You’re exploring scenarios, not picking investments.",
+    title: "The What-If screen",
+    body: "Open What-If from the ⋯ menu on the Portfolio tab. There you can split play money across rows and see the numbers side by side. You’re comparing stories on paper, not getting a recommendation on what to do.",
   },
   {
     id: "optimizer",
-    title: "Optimizer and next moves",
-    body: "The Optimizer tab plays with budgets and fees on this sample set. Think of it as a sandbox for planning, not a recommendation to trade.",
+    title: "The Optimizer screen",
+    body: "The Optimizer tab lets you try different dollar amounts and fees on this same sample list. Think of it as a scratch pad for how the math might look—not a signal to trade or rebalance for real.",
   },
   {
     id: "progress",
-    title: "Track progress over time",
-    body: "Progress shows how you might follow goals in the app. With your own account, you’d connect this to positions you actually track.",
+    title: "The Progress screen",
+    body: "Progress is where you’d watch things change over time as you update your own tracker. In the demo it’s just for show. With a real account, you’d connect it to positions you actually own—still tracking and charts, not tips.",
   },
   {
     id: "done",
-    title: "When you’re ready",
-    body: "Create an account when you want to save your own portfolio on this device and sync it. Everything here stays in demo until then.",
+    title: "Saving your own data",
+    body: "When you’re ready, create an account to save your portfolio on this device and sync it. Everything in demo stays separate. PositionPilot is a math and visualization tool; it does not provide financial advice.",
   },
 ];

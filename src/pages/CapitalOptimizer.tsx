@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, Zap, Target, BarChart3, DollarSign } from "lucide-react";
+import { Zap, Target, BarChart3, DollarSign } from "lucide-react";
 import WaitlistForm from "@/components/WaitlistForm";
 import PremiumGate from "@/components/PremiumGate";
 import { hasFeature } from "@/lib/feature-access";
@@ -59,19 +59,10 @@ export default function CapitalOptimizer() {
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
-      <header className="mb-8 px-4 pt-12 text-center sm:px-6 md:px-8">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-1">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Sparkles className="h-6 w-6 shrink-0 text-stitch-accent" />
-            <h1 className="text-3xl font-bold leading-tight tracking-tight">Capital Optimizer</h1>
-          </div>
-          <p className="text-xs text-stitch-muted">
-            One heuristic mode runs today (see below). Not a globally optimal portfolio solver — illustrative only.
-          </p>
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pb-8 sm:px-6 md:px-8">
+      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pb-8 pt-12 sm:px-6 md:px-8">
+        <p className="text-xs text-stitch-muted">
+          One heuristic mode runs today (see below). Not a globally optimal portfolio solver — illustrative only.
+        </p>
         {!optimizerUnlocked ? (
           <PremiumGate feature="optimizer" className="min-h-[280px]" />
         ) : (

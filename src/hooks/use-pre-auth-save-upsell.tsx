@@ -51,7 +51,7 @@ export function usePreAuthSaveUpsell() {
   const handleCreateAccount = useCallback(() => {
     setOpen(false);
     pending.current = null;
-    navigate("/auth");
+    navigate("/auth?mode=signup");
   }, [navigate]);
 
   const dialog = (

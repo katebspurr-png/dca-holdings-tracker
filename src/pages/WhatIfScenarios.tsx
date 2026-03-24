@@ -489,7 +489,7 @@ export default function WhatIfScenarios() {
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">What-If Scenarios</h1>
+          <h1 className="sr-only">What-If Scenarios</h1>
         </div>
       </header>
 

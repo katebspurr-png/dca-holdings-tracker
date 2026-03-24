@@ -140,20 +140,33 @@ export function notifyStorageChange() {
   }
 }
 
+/** Demo on/off flag — persisted in localStorage so refresh and new tabs stay in sync; clears on sign-out / exit demo. */
 export function isDemoModeSessionActive(): boolean {
-  if (typeof sessionStorage === "undefined") return false;
+  if (typeof window === "undefined") return false;
   try {
-    return sessionStorage.getItem(DEMO_MODE_SESSION_KEY) === "1";
+    if (localStorage.getItem(DEMO_MODE_SESSION_KEY) === "1") return true;
+    const legacy = sessionStorage.getItem(DEMO_MODE_SESSION_KEY);
+    if (legacy === "1") {
+      localStorage.setItem(DEMO_MODE_SESSION_KEY, "1");
+      sessionStorage.removeItem(DEMO_MODE_SESSION_KEY);
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
 }
 
 export function setDemoModeSessionActive(active: boolean) {
-  if (typeof sessionStorage === "undefined") return;
+  if (typeof window === "undefined") return;
   try {
-    if (active) sessionStorage.setItem(DEMO_MODE_SESSION_KEY, "1");
-    else sessionStorage.removeItem(DEMO_MODE_SESSION_KEY);
+    if (active) {
+      localStorage.setItem(DEMO_MODE_SESSION_KEY, "1");
+      sessionStorage.removeItem(DEMO_MODE_SESSION_KEY);
+    } else {
+      localStorage.removeItem(DEMO_MODE_SESSION_KEY);
+      sessionStorage.removeItem(DEMO_MODE_SESSION_KEY);
+    }
   } catch {
     /* ignore */
   }

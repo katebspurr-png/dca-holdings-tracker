@@ -1,15 +1,17 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 
 /** Enables demo sandbox and sends the user to the portfolio. Public route. */
 export default function DemoEntry() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { enterDemo } = useDemoMode();
 
   useEffect(() => {
-    enterDemo();
+    const skipWalkthrough = searchParams.get("skipWalkthrough") === "1";
+    enterDemo({ skipPreAuthGuidedTour: skipWalkthrough });
     navigate("/", { replace: true });
     // Intentionally once on mount — enterDemo is stable but we avoid re-navigation loops.
     // eslint-disable-next-line react-hooks/exhaustive-deps

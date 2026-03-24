@@ -59,6 +59,8 @@ import { getCachedPrice } from "@/lib/price-cache";
 import { toast } from "sonner";
 import { useSimFees } from "@/contexts/SimFeesContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
+import { getDemoEntryPath } from "@/lib/demoWelcome";
+import { DemoDataTag } from "@/components/DemoDataTag";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import {
   selectMostEfficientLadderStep,
@@ -444,7 +446,7 @@ export default function Holdings() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const { includeFees, setIncludeFees } = useSimFees();
-  const { enterDemo, isDemoMode } = useDemoMode();
+  const { isDemoMode } = useDemoMode();
   useStorageRevision();
 
   useEffect(() => {
@@ -657,7 +659,7 @@ export default function Holdings() {
             setFormOpen(true);
           }}
           showSetUpPortfolioCta={holdings.length === 0}
-          onTryDemo={() => enterDemo()}
+          onTryDemo={() => navigate(getDemoEntryPath())}
         />
       )}
       {holdings.length === 0 ? (
@@ -686,7 +688,7 @@ export default function Holdings() {
               variant="outline"
               size="lg"
               className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-              onClick={() => enterDemo()}
+              onClick={() => navigate(getDemoEntryPath())}
             >
               Try demo
             </Button>
@@ -728,8 +730,11 @@ export default function Holdings() {
             {/* Total Portfolio */}
             <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
               <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
-              <div className="relative z-10 mb-4 flex items-center justify-between">
-                <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+              <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+                  {isDemoMode && <DemoDataTag />}
+                </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button

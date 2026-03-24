@@ -13,13 +13,14 @@ import { getActivePlan, setUserPlan, type PlanType } from "@/lib/feature-access"
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
+import { getDemoEntryPath } from "@/lib/demoWelcome";
 import { useExperience } from "@/contexts/ExperienceContext";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { isDemoMode, enterDemo, exitDemo } = useDemoMode();
+  const { isDemoMode, exitDemo } = useDemoMode();
   const { resetGuidedDemo } = useExperience();
 
   const handleSignOut = useCallback(async () => {
@@ -96,11 +97,7 @@ export default function Settings() {
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
-      <header className="mb-8 px-4 pt-12 text-center sm:px-6 md:px-8">
-        <h1 className="text-3xl font-bold leading-tight tracking-tight">Settings</h1>
-      </header>
-
-      <main className="relative z-10 mx-auto flex max-w-lg flex-1 flex-col gap-4 px-4 sm:px-6 md:px-8">
+      <main className="relative z-10 mx-auto flex max-w-lg flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
         {/* Plan */}
         <section className={cardClass}>
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
@@ -217,7 +214,7 @@ export default function Settings() {
               {isDemoMode ? (
                 <>
                   <Button size="sm" variant="outline" className={outlineBtn} onClick={() => resetGuidedDemo()}>
-                    Replay demo tour
+                    Restart walkthrough
                   </Button>
                   <Button size="sm" variant="outline" className={outlineBtn} onClick={exitDemo}>
                     Exit demo mode
@@ -227,7 +224,7 @@ export default function Settings() {
                 <Button
                   size="sm"
                   className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
-                  onClick={enterDemo}
+                  onClick={() => navigate(getDemoEntryPath())}
                 >
                   Enter demo mode
                 </Button>

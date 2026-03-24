@@ -1,7 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { clearPreAuthGuidedState, DEMO_FULL_RESET_EVENT } from "@/lib/preAuthDemoTour";
+import {
+  DEMO_FULL_RESET_EVENT,
+  PRE_AUTH_GUIDED_STORAGE_EVENT,
+  resetPreAuthGuidedToStart,
+  savePreAuthGuidedState,
+} from "@/lib/preAuthDemoTour";
+import { PRE_AUTH_GUIDED_DEMO_STEPS } from "@/walkthrough/preAuthGuidedDemoSteps";
+import { clearDemoWelcomeDismissed } from "@/lib/demoWelcome";
+import { clearPreAuthConversionDismissed } from "@/lib/preAuthConversionModal";
 import { clearPreAuthSaveUpsellFlag } from "@/lib/preAuthDemoUpsell";
 import {
   clearDemoModeSessionFlag,
@@ -13,9 +21,14 @@ import {
   setDemoModeSessionActive,
 } from "@/lib/storage";
 
+export type EnterDemoOptions = {
+  /** If true, pre-auth guided coach stays off after entering demo. */
+  skipPreAuthGuidedTour?: boolean;
+};
+
 type DemoModeContextValue = {
   isDemoMode: boolean;
-  enterDemo: () => void;
+  enterDemo: (options?: EnterDemoOptions) => void;
   exitDemo: () => void;
   resetDemo: () => void;
 };
@@ -34,6 +47,8 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
         if (localStorage.getItem("positionpilot-force-demo") === "1" && !isDemoModeSessionActive()) {
           setDemoModeSessionActive(true);
           initializeDemoStorageIfNeeded();
+          resetPreAuthGuidedToStart();
+          window.dispatchEvent(new Event(PRE_AUTH_GUIDED_STORAGE_EVENT));
           setIsDemoMode(true);
           notifyStorageChange();
         }
@@ -53,12 +68,21 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
     hadSessionRef.current = hasSession;
   }, [session?.user?.id]);
 
-  const enterDemo = useCallback(() => {
+  const enterDemo = useCallback((options?: EnterDemoOptions) => {
     setDemoModeSessionActive(true);
     initializeDemoStorageIfNeeded();
     if (!session) {
-      clearPreAuthGuidedState();
+      if (options?.skipPreAuthGuidedTour) {
+        const last = PRE_AUTH_GUIDED_DEMO_STEPS.length - 1;
+        savePreAuthGuidedState({ stepIndex: last, finished: true });
+      } else {
+        resetPreAuthGuidedToStart();
+        clearPreAuthConversionDismissed();
+      }
       clearPreAuthSaveUpsellFlag();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(PRE_AUTH_GUIDED_STORAGE_EVENT));
+      }
     }
     setIsDemoMode(true);
     notifyStorageChange();
@@ -82,8 +106,10 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
 
   const resetDemo = useCallback(() => {
     resetDemoToInitialSample();
-    clearPreAuthGuidedState();
+    resetPreAuthGuidedToStart();
     clearPreAuthSaveUpsellFlag();
+    clearDemoWelcomeDismissed();
+    clearPreAuthConversionDismissed();
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event(DEMO_FULL_RESET_EVENT));
     }

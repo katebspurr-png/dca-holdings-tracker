@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowRight, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { getDemoEntryPath } from "@/lib/demoWelcome";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -49,9 +50,15 @@ export default function Auth() {
 
   useEffect(() => {
     if (searchParams.get("demo") === "true") {
-      navigate("/demo", { replace: true });
+      navigate(getDemoEntryPath(), { replace: true });
     }
   }, [searchParams, navigate]);
+
+  const authModeParam = searchParams.get("mode");
+  useEffect(() => {
+    if (authModeParam === "signup") setMode("signup");
+    else if (authModeParam === "login") setMode("login");
+  }, [authModeParam]);
 
   const redirectTo = authCallbackUrl();
   const resetRedirectTo = authResetPasswordUrl();
@@ -164,39 +171,44 @@ export default function Auth() {
         : "Start managing your positions smarter.";
 
   return (
-    <div className="relative flex min-h-[max(884px,100dvh)] flex-col items-center justify-center bg-stitch-bg px-6 font-sans text-white antialiased">
-      <div className="mb-10 text-center">
+    <div className="relative flex min-h-dvh flex-col items-center bg-stitch-bg px-5 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] font-sans text-white antialiased sm:justify-center sm:py-8">
+      {/* Above-the-fold: explore-first — demo is the dominant action */}
+      <div className="w-full max-w-sm shrink-0 text-center">
         <div className="leading-none">
-          <span className="font-[family-name:var(--font-heading)] text-[2rem] font-extrabold tracking-tight">
+          <span className="font-[family-name:var(--font-heading)] text-[1.75rem] font-extrabold tracking-tight sm:text-[2rem]">
             Position<span className="text-stitch-accent">Pilot</span>
           </span>
           <div className="mt-1 text-[0.6rem] uppercase tracking-[0.14em] text-stitch-muted">Strategy Engine</div>
         </div>
-        <p className="mt-4 max-w-xs text-sm text-stitch-muted">
-          Smart tools for managing your average cost and planning your next move.
+        <p
+          id="auth-demo-hint"
+          className="mx-auto mt-4 max-w-[22rem] text-[13px] leading-snug text-stitch-muted sm:text-sm"
+        >
+          Explore a sample portfolio and see how the app works — no account required
         </p>
-        <div className="mt-6 flex w-full max-w-sm flex-col gap-2 sm:flex-row sm:justify-center">
-          <Button
-            type="button"
-            size="lg"
-            className="h-11 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 sm:max-w-[200px]"
-            onClick={() => navigate("/demo")}
-          >
-            Try demo
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="h-11 w-full border-stitch-border bg-stitch-pill font-medium text-white hover:bg-stitch-card hover:text-white sm:max-w-[200px]"
-            onClick={() => setMode("signup")}
-          >
-            Get started
-          </Button>
-        </div>
+        <Button
+          type="button"
+          size="lg"
+          aria-describedby="auth-demo-hint"
+          className="mt-5 h-12 w-full max-w-sm bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/20 hover:bg-stitch-accent/90"
+          onClick={() => navigate(getDemoEntryPath())}
+        >
+          Try Demo
+        </Button>
+        <button
+          type="button"
+          onClick={() => setMode("signup")}
+          className="mt-3 text-[13px] font-medium text-stitch-muted/90 underline-offset-4 transition-colors hover:text-white hover:underline"
+        >
+          Create account
+        </button>
       </div>
 
-      <div className="w-full max-w-sm space-y-5 rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+      <p className="mt-5 w-full max-w-sm text-center text-[11px] text-stitch-muted/70">
+        Already saving a portfolio? Sign in below.
+      </p>
+
+      <div className="mt-4 w-full max-w-sm space-y-4 rounded-[28px] border border-stitch-border bg-stitch-card p-5 shadow-lg sm:mt-5 sm:rounded-[32px] sm:p-6 sm:space-y-5">
         <div>
           <h1 className="text-lg font-bold tracking-tight text-white">{title}</h1>
           <p className="mt-0.5 text-sm text-stitch-muted">{subtitle}</p>
@@ -364,7 +376,7 @@ export default function Auth() {
         )}
       </div>
 
-      <p className="mt-8 max-w-xs text-center text-[11px] text-stitch-muted/50">
+      <p className="mt-5 max-w-xs text-center text-[11px] text-stitch-muted/50">
         Not financial advice. Always do your own research before investing.
       </p>
     </div>

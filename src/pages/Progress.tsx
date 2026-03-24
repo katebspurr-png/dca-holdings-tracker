@@ -1,4 +1,3 @@
-import { TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
 import { getHoldings } from "@/lib/storage";
@@ -11,16 +10,7 @@ export default function Progress() {
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
-      <header className="mb-8 px-4 pt-12 text-center sm:px-6 md:px-8">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-2">
-          <div className="flex items-center justify-center gap-2">
-            <TrendingUp className="h-6 w-6 shrink-0 text-stitch-accent" />
-            <h1 className="text-3xl font-bold leading-tight tracking-tight">Progress</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 sm:px-6 md:px-8">
+      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
         <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
           <div className="relative z-10">

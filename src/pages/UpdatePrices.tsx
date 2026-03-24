@@ -173,10 +173,7 @@ export default function UpdatePrices() {
   if (holdings.length === 0) {
     return (
       <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
-        <header className="mb-6 px-4 pt-12 text-center sm:px-6 md:px-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight">Update Market Prices</h1>
-        </header>
-        <main className="mx-auto max-w-md px-4 py-12 text-center sm:px-6 md:px-8">
+        <main className="mx-auto max-w-md px-4 pb-12 pt-12 text-center sm:px-6 md:px-8">
           <p className="text-sm text-stitch-muted">No holdings yet. Add a holding before updating prices.</p>
         </main>
       </div>
@@ -191,7 +188,7 @@ export default function UpdatePrices() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">Update Market Prices</h1>
+              <h1 className="sr-only">Update Market Prices</h1>
               <Button
                 size="sm"
                 variant="outline"

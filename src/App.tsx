@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import AuthResetPassword from "./pages/AuthResetPassword";
 import DemoEntry from "./pages/DemoEntry";
+import DemoWelcome from "./pages/DemoWelcome";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 import DemoOrAuthRoute from "./components/DemoOrAuthRoute";
@@ -26,6 +27,7 @@ import { DemoModeProvider, useDemoMode } from "./contexts/DemoModeContext";
 import { ExperienceProvider } from "./contexts/ExperienceContext";
 import { SimFeesProvider } from "./contexts/SimFeesContext";
 import DemoModeBanner from "./components/DemoModeBanner";
+import DemoModeWatermark from "./components/DemoModeWatermark";
 import GuidedDemoCoach from "./components/GuidedDemoCoach";
 import { Loader2 } from "lucide-react";
 
@@ -50,6 +52,7 @@ const AppRoutes = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/auth/reset-password" element={<AuthResetPassword />} />
+      <Route path="/demo-welcome" element={<DemoWelcome />} />
       <Route path="/demo" element={<DemoEntry />} />
 
       {/* Authenticated or active demo session */}
@@ -97,13 +100,14 @@ function AppChrome() {
   const { pathname } = useLocation();
 
   const onAuthFlow =
-    pathname.startsWith("/auth") || pathname === "/demo";
+    pathname.startsWith("/auth") || pathname === "/demo" || pathname === "/demo-welcome";
 
   if (onAuthFlow) return null;
   if (!session && !isDemoMode) return null;
 
   return (
     <>
+      <DemoModeWatermark />
       <DemoModeBanner />
       <GuidedDemoCoach />
       <BottomTabBar />

@@ -47,7 +47,7 @@ export default function Scenarios() {
               <ArrowLeft className="mr-1 h-4 w-4" />
               Portfolio
             </Button>
-            <h1 className="text-2xl font-bold tracking-tight">Saved Scenarios</h1>
+            <h1 className="sr-only">Saved Scenarios</h1>
           </div>
         </div>
       </header>
