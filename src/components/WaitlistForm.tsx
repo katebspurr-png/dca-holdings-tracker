@@ -42,7 +42,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from("waitlist").upsert({
+      const { error } = await (supabase as any).from("waitlist").upsert({
         user_id: user?.id,
         email: user?.email,
         features: Array.from(selected),

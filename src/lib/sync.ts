@@ -309,6 +309,6 @@ export async function pushOptimizationScenario(opt: OptimizationScenario, userId
 }
 
 export async function deleteOptimizationScenario(id: string) {
-  const { error } = await supabase.from("optimization_scenarios").delete().eq("id", id);
+  const { error } = await db.from("optimization_scenarios").delete().eq("id", id);
   if (error) log("deleteOptimizationScenario failed", error);
 }
