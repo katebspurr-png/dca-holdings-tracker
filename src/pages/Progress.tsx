@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
 import { getHoldings } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 
 export default function Progress() {
+  useStorageRevision();
   const holdings = getHoldings();
 
   return (

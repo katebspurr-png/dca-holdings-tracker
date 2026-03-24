@@ -17,11 +17,13 @@ import {
   CAPITAL_OPTIMIZER_DEFAULT_MODE,
 } from "@/lib/dca-sim";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function CapitalOptimizer() {
+  useStorageRevision();
   const optimizerUnlocked = hasFeature("optimizer");
   const holdings = getHoldings();
   const { includeFees, setIncludeFees } = useSimFees();

@@ -11,10 +11,12 @@ import ProSettings from "@/components/ProSettings";
 import { toast } from "sonner";
 import { getActivePlan, setUserPlan, type PlanType } from "@/lib/feature-access";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { user, signOut } = useAuth();
+  const { isDemoMode, enterDemo, exitDemo } = useDemoMode();
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -68,8 +70,10 @@ export default function Settings() {
 
   const handleReset = useCallback(() => {
     resetAll();
-    toast.success("Reset to demo data");
-  }, []);
+    toast.success(
+      isDemoMode ? "Demo reset to the original sample data" : "Portfolio cleared on this device",
+    );
+  }, [isDemoMode]);
 
   const [plan, setPlan] = useState(getActivePlan);
 
@@ -200,6 +204,30 @@ export default function Settings() {
         <section className={cardClass}>
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
           <div className="relative z-10 space-y-4">
+            <h2 className={sectionTitle}>Demo mode</h2>
+            <p className="text-[11px] leading-relaxed text-stitch-muted">
+              Explore the app with sample positions and sandboxed changes. Nothing you do in demo is saved to your real
+              portfolio or synced to the cloud.
+            </p>
+            {isDemoMode ? (
+              <Button size="sm" variant="outline" className={outlineBtn} onClick={exitDemo}>
+                Exit demo mode
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                onClick={enterDemo}
+              >
+                Enter demo mode
+              </Button>
+            )}
+          </div>
+        </section>
+
+        <section className={cardClass}>
+          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -232,9 +260,14 @@ export default function Settings() {
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
             </div>
             <div className="border-t border-stitch-border pt-4">
+              <p className="mb-2 text-[10px] leading-relaxed text-stitch-muted/80">
+                {isDemoMode
+                  ? "Resets the demo sandbox to the original sample dataset."
+                  : "Removes all holdings and scenarios stored on this device for your account."}
+              </p>
               <Button onClick={handleReset} size="sm" variant="destructive">
                 <RotateCcw className="mr-1.5 h-4 w-4" />
-                Reset to Demo Data
+                {isDemoMode ? "Reset demo sample" : "Clear portfolio"}
               </Button>
             </div>
           </div>
@@ -279,8 +312,8 @@ export default function Settings() {
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-stitch-border pt-4">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-white">App Tutorial</p>
-                <p className="mt-0.5 text-xs text-stitch-muted">Replay the getting started walkthrough</p>
+                <p className="text-sm font-medium text-white">Product tour</p>
+                <p className="mt-0.5 text-xs text-stitch-muted">Replay the first-run walkthrough from the Portfolio tab</p>
               </div>
               <Button
                 variant="outline"
@@ -292,7 +325,7 @@ export default function Settings() {
                 }}
               >
                 <BookOpen className="h-3.5 w-3.5" />
-                Replay
+                Replay tour
               </Button>
             </div>
           </div>

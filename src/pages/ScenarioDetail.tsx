@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getScenario } from "@/lib/storage";
@@ -19,8 +21,9 @@ const cardClass =
 export default function ScenarioDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const storageRevision = useStorageRevision();
 
-  const scenario = id ? getScenario(id) : undefined;
+  const scenario = useMemo(() => (id ? getScenario(id) : undefined), [id, storageRevision]);
 
   if (!scenario) {
     return (

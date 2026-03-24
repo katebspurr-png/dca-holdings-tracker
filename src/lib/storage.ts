@@ -3,6 +3,8 @@
  * Replaces Supabase for local-first data storage.
  */
 
+import { createInitialDemoAppData } from "./demoSampleData";
+
 export type FeeType = "flat" | "percent";
 export type Exchange = "US" | "TSX";
 
@@ -112,9 +114,83 @@ export interface AppData {
   optimizationScenarios?: OptimizationScenario[];
 }
 
+export const STORAGE_CHANGE_EVENT = "positionpilot-storage-change";
+export const DEMO_MODE_SESSION_KEY = "positionpilot-demo-mode";
+
 const BASE_KEY = "positionpilot-data";
+const DEMO_DATA_PREFIX = "positionpilot-demo";
+
 let STORAGE_KEY = BASE_KEY;
 let CURRENT_USER_ID: string | null = null;
+
+function emptyAppData(): AppData {
+  return {
+    version: 1,
+    holdings: [],
+    scenarios: [],
+    transactions: [],
+    whatIfComparisons: [],
+    optimizationScenarios: [],
+  };
+}
+
+export function notifyStorageChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(STORAGE_CHANGE_EVENT));
+  }
+}
+
+export function isDemoModeSessionActive(): boolean {
+  if (typeof sessionStorage === "undefined") return false;
+  try {
+    return sessionStorage.getItem(DEMO_MODE_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setDemoModeSessionActive(active: boolean) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    if (active) sessionStorage.setItem(DEMO_MODE_SESSION_KEY, "1");
+    else sessionStorage.removeItem(DEMO_MODE_SESSION_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearDemoModeSessionFlag() {
+  setDemoModeSessionActive(false);
+}
+
+/** Ensure demo localStorage bucket exists with the initial sample (call after enabling demo session flag). */
+export function initializeDemoStorageIfNeeded() {
+  if (!isDemoModeSessionActive()) return;
+  const key = getDemoDataKey();
+  if (!localStorage.getItem(key)) {
+    localStorage.setItem(key, JSON.stringify(createInitialDemoAppData()));
+  }
+  notifyStorageChange();
+}
+
+/** Replace demo sandbox with the original sample dataset. */
+export function resetDemoToInitialSample() {
+  if (!isDemoModeSessionActive()) return;
+  localStorage.setItem(getDemoDataKey(), JSON.stringify(createInitialDemoAppData()));
+  notifyStorageChange();
+}
+
+function getDemoDataKey(): string {
+  return `${DEMO_DATA_PREFIX}-${CURRENT_USER_ID ?? "guest"}`;
+}
+
+function getActiveDataKey(): string {
+  return isDemoModeSessionActive() ? getDemoDataKey() : STORAGE_KEY;
+}
+
+function shouldSyncToCloud(): boolean {
+  return Boolean(CURRENT_USER_ID) && !isDemoModeSessionActive();
+}
 
 /**
  * Called by AuthContext on login — scopes storage to the logged-in user.
@@ -138,78 +214,93 @@ export function getCurrentUserId(): string | null {
 
 /**
  * Seeds localStorage with data pulled from Supabase.
- * Called by AuthContext after a successful cloud pull.
+ * Always writes the real user key (never the demo bucket).
  */
 export function seedFromCloud(data: AppData) {
-  write(data);
+  const key = CURRENT_USER_ID ? `${BASE_KEY}-${CURRENT_USER_ID}` : BASE_KEY;
+  localStorage.setItem(key, JSON.stringify(data));
+  notifyStorageChange();
 }
 
-// ── Demo data ────────────────────────────────────────────────
-const DEMO_HOLDINGS: Holding[] = [
-  { id: "demo-aapl", ticker: "AAPL", exchange: "US", shares: 75, avg_cost: 198.5, initial_avg_cost: 210, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-nvda", ticker: "NVDA", exchange: "US", shares: 30, avg_cost: 142.8, initial_avg_cost: 155, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-  { id: "demo-shop", ticker: "SHOP", exchange: "TSX", shares: 15, avg_cost: 132.5, initial_avg_cost: 132.5, fee: 0, fee_type: "flat", fee_value: 0, created_at: new Date().toISOString() },
-];
+function migrateParsed(parsed: any): AppData | null {
+  if (!parsed || parsed.version !== 1) return null;
+  if (Array.isArray(parsed.holdings)) {
+    parsed.holdings = parsed.holdings.map((h: any) => ({
+      ...h,
+      exchange: h.exchange ?? "US",
+      initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
+    }));
+  }
+  if (Array.isArray(parsed.transactions)) {
+    parsed.transactions = parsed.transactions.map((t: any) => ({
+      ...t,
+      is_undone: t.is_undone ?? false,
+      undone_at: t.undone_at ?? null,
+    }));
+  }
+  return parsed as AppData;
+}
 
-const DEMO_SCENARIOS: Scenario[] = [
-  {
-    id: "demo-calc-1", holding_id: "demo-nvda", ticker: "NVDA", method: "price_target",
-    input1_label: "Buy price", input1_value: 112.5, input2_label: "Target average cost", input2_value: 125,
-    include_fees: false, fee_amount: 0, buy_price: 112.5, shares_to_buy: 43,
-    budget_invested: 4837.5, fee_applied: 0, total_spend: 4837.5,
-    new_total_shares: 73, new_avg_cost: 125, recommended_target: null,
-    budget_percent_used: null, notes: null, created_at: new Date().toISOString(),
-  },
-  {
-    id: "demo-calc-2", holding_id: "demo-shop", ticker: "SHOP", method: "price_budget",
-    input1_label: "Buy price", input1_value: 115, input2_label: "Max budget", input2_value: 1000,
-    include_fees: false, fee_amount: 0, buy_price: 115, shares_to_buy: 8.7,
-    budget_invested: 1000, fee_applied: 0, total_spend: 1000,
-    new_total_shares: 23.7, new_avg_cost: 125.38, recommended_target: 125.38,
-    budget_percent_used: 100, notes: null, created_at: new Date().toISOString(),
-  },
-  {
-    id: "demo-calc-3", holding_id: "demo-aapl", ticker: "AAPL", method: "price_target",
-    input1_label: "Buy price", input1_value: 172, input2_label: "Target average cost", input2_value: 185,
-    include_fees: false, fee_amount: 0, buy_price: 172, shares_to_buy: 78,
-    budget_invested: 13416, fee_applied: 0, total_spend: 13416,
-    new_total_shares: 153, new_avg_cost: 185, recommended_target: null,
-    budget_percent_used: null, notes: null, created_at: new Date().toISOString(),
-  },
-];
+function persistInitialDemoIfNeeded(key: string): AppData {
+  const initial = createInitialDemoAppData();
+  localStorage.setItem(key, JSON.stringify(initial));
+  notifyStorageChange();
+  return initial;
+}
 
-function demoData(): AppData {
-  return { version: 1, holdings: [...DEMO_HOLDINGS], scenarios: [...DEMO_SCENARIOS] };
+function readFromKey(key: string): AppData {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      if (isDemoModeSessionActive() && key === getDemoDataKey()) {
+        return persistInitialDemoIfNeeded(key);
+      }
+      return emptyAppData();
+    }
+    const parsed = JSON.parse(raw);
+    const migrated = migrateParsed(parsed);
+    if (!migrated) {
+      if (isDemoModeSessionActive() && key === getDemoDataKey()) {
+        return persistInitialDemoIfNeeded(key);
+      }
+      return emptyAppData();
+    }
+    return migrated;
+  } catch {
+    if (isDemoModeSessionActive() && key === getDemoDataKey()) {
+      return persistInitialDemoIfNeeded(key);
+    }
+    return emptyAppData();
+  }
 }
 
 // ── Core read/write ──────────────────────────────────────────
 
 function read(): AppData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return demoData();
-    const parsed = JSON.parse(raw);
-    if (!parsed || parsed.version !== 1) return demoData();
-    // Migrate: add exchange field if missing
-    if (Array.isArray(parsed.holdings)) {
-      parsed.holdings = parsed.holdings.map((h: any) => ({
-        ...h,
-        exchange: h.exchange ?? "US",
-        initial_avg_cost: h.initial_avg_cost ?? h.avg_cost,
-      }));
-    }
-    // Migrate: add is_undone/undone_at to transactions if missing
-    if (Array.isArray(parsed.transactions)) {
-      parsed.transactions = parsed.transactions.map((t: any) => ({
-        ...t,
-        is_undone: t.is_undone ?? false,
-        undone_at: t.undone_at ?? null,
-      }));
-    }
-    return parsed as AppData;
-  } catch {
-    return demoData();
-  }
+  return readFromKey(getActiveDataKey());
+}
+
+/**
+ * Holdings for the real user bucket only (ignores demo session flag).
+ * Used after exiting demo to validate routes against real data.
+ */
+export function getRealHoldings(): Holding[] {
+  const data = readFromKey(STORAGE_KEY);
+  return data.holdings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+function write(data: AppData) {
+  localStorage.setItem(getActiveDataKey(), JSON.stringify(data));
+  notifyStorageChange();
+}
+
+function uid(): string {
+  return crypto.randomUUID();
+}
+
+// Lazy import sync to avoid circular deps — fires and forgets
+function sync() {
+  return import("./sync");
 }
 
 // ── Currency helpers ─────────────────────────────────────────
@@ -225,19 +316,6 @@ export function exchangeLabel(exchange: Exchange): string {
 /** Yahoo / Finnhub symbol: TSX uses `.TO`; TSX Venture uses `.V` (the price API retries `.V` if `.TO` fails). */
 export function apiTicker(ticker: string, exchange: Exchange): string {
   return exchange === "TSX" ? `${ticker}.TO` : ticker;
-}
-
-function write(data: AppData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function uid(): string {
-  return crypto.randomUUID();
-}
-
-// Lazy import sync to avoid circular deps — fires and forgets
-function sync() {
-  return import("./sync");
 }
 
 // ── Holdings CRUD ────────────────────────────────────────────
@@ -261,7 +339,7 @@ export function addHolding(h: Omit<Holding, "id" | "created_at" | "initial_avg_c
   data.holdings.push(holding);
   write(data);
   const uid_ = CURRENT_USER_ID;
-  if (uid_) sync().then((s) => s.pushHolding(holding, uid_));
+  if (uid_ && shouldSyncToCloud()) sync().then((s) => s.pushHolding(holding, uid_));
   return holding;
 }
 
@@ -272,7 +350,7 @@ export function editHolding(id: string, patch: Partial<Omit<Holding, "id" | "cre
   data.holdings[idx] = { ...data.holdings[idx], ...patch };
   write(data);
   const uid_ = CURRENT_USER_ID;
-  if (uid_) sync().then((s) => s.pushHolding(data.holdings[idx], uid_));
+  if (uid_ && shouldSyncToCloud()) sync().then((s) => s.pushHolding(data.holdings[idx], uid_));
   return data.holdings[idx];
 }
 
@@ -281,7 +359,7 @@ export function removeHolding(id: string) {
   data.holdings = data.holdings.filter((h) => h.id !== id);
   data.scenarios = data.scenarios.filter((s) => s.holding_id !== id);
   write(data);
-  sync().then((s) => s.deleteHolding(id));
+  if (shouldSyncToCloud()) sync().then((s) => s.deleteHolding(id));
 }
 
 // ── Scenarios CRUD ───────────────────────────────────────────
@@ -307,7 +385,7 @@ export function addScenario(s: Omit<Scenario, "id" | "created_at">): Scenario {
   const scenario: Scenario = { ...s, id: uid(), created_at: new Date().toISOString() };
   data.scenarios.push(scenario);
   write(data);
-  sync().then((m) => m.pushScenario(scenario));
+  if (shouldSyncToCloud()) sync().then((m) => m.pushScenario(scenario));
   return scenario;
 }
 
@@ -315,14 +393,18 @@ export function removeScenario(id: string) {
   const data = read();
   data.scenarios = data.scenarios.filter((s) => s.id !== id);
   write(data);
-  sync().then((s) => s.deleteScenario(id));
+  if (shouldSyncToCloud()) sync().then((s) => s.deleteScenario(id));
 }
 
 // ── Reset ────────────────────────────────────────────────────
 
 export function resetAll() {
-  localStorage.removeItem(STORAGE_KEY);
-  // Next read() will return demo data
+  if (isDemoModeSessionActive()) {
+    localStorage.setItem(getDemoDataKey(), JSON.stringify(createInitialDemoAppData()));
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  notifyStorageChange();
 }
 
 // ── Export / Import ──────────────────────────────────────────
@@ -352,7 +434,7 @@ export function addWhatIfComparison(c: Omit<WhatIfComparison, "id" | "created_at
   data.whatIfComparisons.push(comp);
   write(data);
   const uid_ = CURRENT_USER_ID;
-  if (uid_) sync().then((s) => s.pushWhatIfComparison(comp, uid_));
+  if (uid_ && shouldSyncToCloud()) sync().then((s) => s.pushWhatIfComparison(comp, uid_));
   return comp;
 }
 
@@ -360,7 +442,7 @@ export function removeWhatIfComparison(id: string) {
   const data = read();
   data.whatIfComparisons = (data.whatIfComparisons ?? []).filter((c) => c.id !== id);
   write(data);
-  sync().then((s) => s.deleteWhatIfComparison(id));
+  if (shouldSyncToCloud()) sync().then((s) => s.deleteWhatIfComparison(id));
 }
 
 // ── Transactions ─────────────────────────────────────────────
@@ -431,18 +513,15 @@ export function applyBuyToHolding(params: {
     created_at: new Date().toISOString(),
   };
 
-  // Update holding
   data.holdings[idx] = { ...h, shares: params.newTotalShares, avg_cost: params.newAvgCost };
 
-  // Save transaction
   if (!data.transactions) data.transactions = [];
   data.transactions.push(tx);
 
   write(data);
 
-  // Background sync
   const uid_ = CURRENT_USER_ID;
-  if (uid_) {
+  if (uid_ && shouldSyncToCloud()) {
     sync().then((s) => {
       s.pushHolding(data.holdings[idx], uid_);
       s.pushTransaction(tx);
@@ -467,7 +546,6 @@ export function undoLastBuy(holdingId: string): void {
   if (latest.transaction_type !== "buy") throw new Error("Latest transaction is not a buy");
   if (latest.is_undone) throw new Error("Latest transaction is already undone");
 
-  // Restore holding
   const hIdx = data.holdings.findIndex((h) => h.id === holdingId);
   if (hIdx === -1) throw new Error("Holding not found");
   data.holdings[hIdx] = {
@@ -476,7 +554,6 @@ export function undoLastBuy(holdingId: string): void {
     avg_cost: latest.previous_avg_cost,
   };
 
-  // Mark transaction as undone
   const tIdx = (data.transactions ?? []).findIndex((t) => t.id === latest.id);
   if (tIdx === -1) throw new Error("Transaction not found");
   const updatedTx = {
@@ -488,9 +565,8 @@ export function undoLastBuy(holdingId: string): void {
 
   write(data);
 
-  // Background sync
   const uid_ = CURRENT_USER_ID;
-  if (uid_) {
+  if (uid_ && shouldSyncToCloud()) {
     sync().then((s) => {
       s.pushHolding(data.holdings[hIdx], uid_);
       s.patchTransaction(updatedTx.id, { is_undone: true, undone_at: updatedTx.undone_at });
@@ -511,7 +587,7 @@ export function addOptimizationScenario(s: Omit<OptimizationScenario, "id" | "cr
   data.optimizationScenarios.push(opt);
   write(data);
   const uid_ = CURRENT_USER_ID;
-  if (uid_) sync().then((m) => m.pushOptimizationScenario(opt, uid_));
+  if (uid_ && shouldSyncToCloud()) sync().then((m) => m.pushOptimizationScenario(opt, uid_));
   return opt;
 }
 
@@ -519,5 +595,5 @@ export function removeOptimizationScenario(id: string) {
   const data = read();
   data.optimizationScenarios = (data.optimizationScenarios ?? []).filter((s) => s.id !== id);
   write(data);
-  sync().then((s) => s.deleteOptimizationScenario(id));
+  if (shouldSyncToCloud()) sync().then((s) => s.deleteOptimizationScenario(id));
 }

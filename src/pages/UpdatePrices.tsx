@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { getHoldings, currencyPrefix, apiTicker, type Holding } from "@/lib/storage";
 import { getCachedQuote, type StockQuote } from "@/lib/stock-price";
 import { useToast } from "@/hooks/use-toast";
@@ -57,12 +58,14 @@ function glColor(val: number | null) {
 /* ── Page ──────────────────────────────────────────────── */
 export default function UpdatePrices() {
   const { toast } = useToast();
+  const storageRevision = useStorageRevision();
   const [tick, setTick] = useState(0);
 
   const holdings = useMemo(() => {
     void tick;
+    void storageRevision;
     return getHoldings().sort((a, b) => a.ticker.localeCompare(b.ticker));
-  }, [tick]);
+  }, [tick, storageRevision]);
 
   const initialPrices = useMemo(() => {
     const map: Record<string, string> = {};

@@ -20,7 +20,11 @@ import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 import AppEducationalDisclaimer from "./components/AppEducationalDisclaimer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { DemoModeProvider } from "./contexts/DemoModeContext";
+import { ExperienceProvider } from "./contexts/ExperienceContext";
 import { SimFeesProvider } from "./contexts/SimFeesContext";
+import DemoModeBanner from "./components/DemoModeBanner";
+import GuidedDemoCoach from "./components/GuidedDemoCoach";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -86,11 +90,15 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <SimFeesProvider>
-              <AppRoutes />
-              <AppEducationalDisclaimer />
-              <BottomTabBarGuard />
-            </SimFeesProvider>
+            <DemoModeProvider>
+              <ExperienceProvider>
+                <SimFeesProvider>
+                  <AppRoutes />
+                  <AppEducationalDisclaimer />
+                  <AuthenticatedChrome />
+                </SimFeesProvider>
+              </ExperienceProvider>
+            </DemoModeProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
@@ -98,11 +106,16 @@ const App = () => {
   );
 };
 
-// Only show the tab bar when authenticated
-function BottomTabBarGuard() {
+function AuthenticatedChrome() {
   const { session } = useAuth();
   if (!session) return null;
-  return <BottomTabBar />;
+  return (
+    <>
+      <DemoModeBanner />
+      <GuidedDemoCoach />
+      <BottomTabBar />
+    </>
+  );
 }
 
 export default App;

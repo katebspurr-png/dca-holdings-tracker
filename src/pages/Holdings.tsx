@@ -57,6 +57,8 @@ import { fetchStockPrice } from "@/lib/stock-price";
 import { getCachedPrice } from "@/lib/price-cache";
 import { toast } from "sonner";
 import { useSimFees } from "@/contexts/SimFeesContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import {
   selectMostEfficientLadderStep,
   holdingFeeOpts,
@@ -439,6 +441,8 @@ export default function Holdings() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const { includeFees, setIncludeFees } = useSimFees();
+  const { enterDemo } = useDemoMode();
+  useStorageRevision();
 
   const refresh = () => setTick((t) => t + 1);
 
@@ -639,16 +643,25 @@ export default function Holdings() {
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {showOnboarding && (
-        <Onboarding onDone={() => setShowOnboarding(false)} />
+        <Onboarding
+          onDone={() => setShowOnboarding(false)}
+          onSetUpPortfolio={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+          showSetUpPortfolioCta={holdings.length === 0}
+          onTryDemo={() => enterDemo()}
+        />
       )}
       {holdings.length === 0 ? (
         <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-24 pt-20 text-center">
           <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
             <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-white">No holdings yet</h3>
+          <h3 className="text-lg font-semibold text-white">Start your portfolio or explore a demo</h3>
           <p className="mt-2 max-w-sm text-sm text-stitch-muted">
-            Add your first holding to start tracking average cost and DCA scenarios.
+            Add your positions to model averages and scenarios, or use sample data to see how the tools work — all
+            modeling, not advice.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
@@ -660,7 +673,15 @@ export default function Holdings() {
               size="lg"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Stock
+              Add your portfolio
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              onClick={() => enterDemo()}
+            >
+              Try demo
             </Button>
             <Button
               variant="outline"

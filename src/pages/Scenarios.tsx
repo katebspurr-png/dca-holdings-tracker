@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,11 @@ const outlineBtn =
 
 export default function Scenarios() {
   const navigate = useNavigate();
+  const storageRevision = useStorageRevision();
   const [tickerFilter, setTickerFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("all");
 
-  const scenarios = getScenarios();
+  const scenarios = useMemo(() => getScenarios(), [storageRevision]);
 
   const filtered = useMemo(() => {
     return scenarios.filter((s) => {

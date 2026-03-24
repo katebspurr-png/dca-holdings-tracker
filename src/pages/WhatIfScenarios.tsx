@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,12 +79,14 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 
 export default function WhatIfScenarios() {
   const navigate = useNavigate();
-  const holdings = getHoldings();
+  const storageRevision = useStorageRevision();
+  const holdings = useMemo(() => getHoldings(), [storageRevision]);
+  const holdingIdsKey = useMemo(() => holdings.map((h) => h.id).sort().join(","), [holdings]);
   const { includeFees, setIncludeFees } = useSimFees();
 
   const [totalBudget, setTotalBudget] = useState("");
-  const [scenarios, setScenarios] = useState<WhatIfScenarioTab[]>([
-    makeScenario(DEFAULT_NAMES[0], holdings),
+  const [scenarios, setScenarios] = useState<WhatIfScenarioTab[]>(() => [
+    makeScenario(DEFAULT_NAMES[0], getHoldings()),
   ]);
   const [activeTab, setActiveTab] = useState(0);
   const [inputMode, setInputMode] = useState<"dollar" | "percent">("dollar");
@@ -95,7 +98,7 @@ export default function WhatIfScenarios() {
 
   const [livePrices, setLivePrices] = useState<Record<string, number>>(() => {
     const prices: Record<string, number> = {};
-    holdings.forEach((h) => {
+    getHoldings().forEach((h) => {
       const ex = h.exchange ?? "US";
       const p = getCachedPrice(h.ticker, ex);
       if (p) prices[apiTicker(h.ticker, ex)] = p;
@@ -103,7 +106,23 @@ export default function WhatIfScenarios() {
     return prices;
   });
 
-  const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh]);
+  // Only reset builder tabs when the set of holding *ids* changes (e.g. demo toggle, add/remove).
+  // Do not depend on `holdings` — it gets a new array reference on every storageRevision, which would
+  // wipe tabs after any write (save comparison, apply buy, etc.).
+  useEffect(() => {
+    const nextHoldings = getHoldings();
+    setScenarios([makeScenario(DEFAULT_NAMES[0], nextHoldings)]);
+    setActiveTab(0);
+    const prices: Record<string, number> = {};
+    nextHoldings.forEach((h) => {
+      const ex = h.exchange ?? "US";
+      const p = getCachedPrice(h.ticker, ex);
+      if (p) prices[apiTicker(h.ticker, ex)] = p;
+    });
+    setLivePrices(prices);
+  }, [holdingIdsKey]);
+
+  const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh, storageRevision]);
 
   const budget = parseFloat(totalBudget) || 0;
 

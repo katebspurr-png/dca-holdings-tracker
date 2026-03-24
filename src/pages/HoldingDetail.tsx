@@ -31,6 +31,8 @@ import {
 } from "@/lib/storage";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { transactionFromDbRow } from "@/lib/sync";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
@@ -179,6 +181,8 @@ export default function HoldingDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const { isDemoMode } = useDemoMode();
+  const storageRevision = useStorageRevision();
   const { toast } = useToast();
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
@@ -215,11 +219,11 @@ export default function HoldingDetail() {
   const [scenarioToApply, setScenarioToApply] = useState<Scenario | null>(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, version]);
+  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, version, storageRevision]);
   const scenarios = id ? getScenariosForHolding(id) : [];
   const localTransactions = useMemo(
     () => (id ? getTransactionsForHolding(id) : []),
-    [id, version]
+    [id, version, storageRevision],
   );
   void calcTick;
 
@@ -238,11 +242,11 @@ export default function HoldingDetail() {
       if (error) throw error;
       return (data ?? []).map((row) => transactionFromDbRow(row as Record<string, unknown>));
     },
-    enabled: Boolean(user?.id && id && activeTab === "history"),
+    enabled: Boolean(user?.id && id && activeTab === "history" && !isDemoMode),
   });
 
   const historyRows: Transaction[] = useMemo(() => {
-    if (!user || cloudTransactions === undefined || historyError) return localTransactions;
+    if (!user || isDemoMode || cloudTransactions === undefined || historyError) return localTransactions;
     const byId = new Map<string, Transaction>();
     for (const t of cloudTransactions) byId.set(t.id, t);
     for (const t of localTransactions) {
@@ -251,7 +255,7 @@ export default function HoldingDetail() {
     return [...byId.values()].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [user, cloudTransactions, historyError, localTransactions]);
+  }, [user, isDemoMode, cloudTransactions, historyError, localTransactions]);
 
   const latestTx = localTransactions[0];
   const canUndo = latestTx && latestTx.transaction_type === "buy" && !latestTx.is_undone;

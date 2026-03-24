@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { initStorageForUser, clearStorageUser, seedFromCloud } from "@/lib/storage";
+import { initStorageForUser, clearStorageUser, seedFromCloud, clearDemoModeSessionFlag } from "@/lib/storage";
 import { pullFromCloud } from "@/lib/sync";
 
 interface AuthContextType {
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    clearDemoModeSessionFlag();
     clearStorageUser();
     await supabase.auth.signOut();
   };
