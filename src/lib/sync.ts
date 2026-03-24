@@ -10,6 +10,9 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+
+// Cast for tables not yet in the generated types but present in the DB
+const db = supabase as any;
 import type {
   Holding,
   Scenario,
@@ -61,29 +64,29 @@ export function transactionFromDbRow(t: Record<string, unknown>): Transaction {
  */
 export async function pullFromCloud(userId: string): Promise<AppData | null> {
   try {
-    const [holdingsRes, scenariosRes, transactionsRes, whatIfRes, optimizationRes] =
+    const [holdingsRes, scenariosRes, transactionsRes, whatIfRes, optimizationRes]: any[] =
       await Promise.all([
-        supabase
+        db
           .from("holdings")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: true }),
-        supabase
+        db
           .from("dca_scenarios")
           .select("*, holdings!inner(user_id)")
           .eq("holdings.user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("transactions")
           .select("*, holdings!inner(user_id)")
           .eq("holdings.user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("what_if_comparisons")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("optimization_scenarios")
           .select("*")
           .eq("user_id", userId)
@@ -236,7 +239,7 @@ export async function deleteScenario(scenarioId: string) {
 // ── Push: Transactions ───────────────────────────────────────
 
 export async function pushTransaction(tx: Transaction) {
-  const { error } = await supabase.from("transactions").upsert({
+  const { error } = await db.from("transactions").upsert({
     id: tx.id,
     holding_id: tx.holding_id,
     ticker: tx.ticker,
@@ -263,14 +266,14 @@ export async function pushTransaction(tx: Transaction) {
 }
 
 export async function patchTransaction(txId: string, patch: Partial<Transaction>) {
-  const { error } = await supabase.from("transactions").update(patch).eq("id", txId);
+  const { error } = await db.from("transactions").update(patch).eq("id", txId);
   if (error) log("patchTransaction failed", error);
 }
 
 // ── Push: What-If Comparisons ────────────────────────────────
 
 export async function pushWhatIfComparison(comp: WhatIfComparison, userId: string) {
-  const { error } = await supabase.from("what_if_comparisons").upsert({
+  const { error } = await db.from("what_if_comparisons").upsert({
     id: comp.id,
     user_id: userId,
     total_budget: comp.totalBudget,
@@ -281,14 +284,14 @@ export async function pushWhatIfComparison(comp: WhatIfComparison, userId: strin
 }
 
 export async function deleteWhatIfComparison(id: string) {
-  const { error } = await supabase.from("what_if_comparisons").delete().eq("id", id);
+  const { error } = await db.from("what_if_comparisons").delete().eq("id", id);
   if (error) log("deleteWhatIfComparison failed", error);
 }
 
 // ── Push: Optimization Scenarios ─────────────────────────────
 
 export async function pushOptimizationScenario(opt: OptimizationScenario, userId: string) {
-  const { error } = await supabase.from("optimization_scenarios").upsert({
+  const { error } = await db.from("optimization_scenarios").upsert({
     id: opt.id,
     user_id: userId,
     name: opt.name,
@@ -306,6 +309,6 @@ export async function pushOptimizationScenario(opt: OptimizationScenario, userId
 }
 
 export async function deleteOptimizationScenario(id: string) {
-  const { error } = await supabase.from("optimization_scenarios").delete().eq("id", id);
+  const { error } = await db.from("optimization_scenarios").delete().eq("id", id);
   if (error) log("deleteOptimizationScenario failed", error);
 }

@@ -237,7 +237,7 @@ export default function HoldingDetail() {
   } = useQuery({
     queryKey: ["holding-transactions", id, user?.id],
     queryFn: async (): Promise<Transaction[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("transactions")
         .select("*")
         .eq("holding_id", id!)
