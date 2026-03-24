@@ -1,5 +1,8 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { clearPreAuthGuidedState, DEMO_FULL_RESET_EVENT } from "@/lib/preAuthDemoTour";
+import { clearPreAuthSaveUpsellFlag } from "@/lib/preAuthDemoUpsell";
 import {
   clearDemoModeSessionFlag,
   getRealHoldings,
@@ -21,14 +24,45 @@ const DemoModeContext = createContext<DemoModeContextValue | null>(null);
 
 export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [isDemoMode, setIsDemoMode] = useState(() => isDemoModeSessionActive());
+  const hadSessionRef = useRef(false);
+
+  useEffect(() => {
+    if (import.meta.env.DEV && typeof window !== "undefined") {
+      try {
+        if (localStorage.getItem("positionpilot-force-demo") === "1" && !isDemoModeSessionActive()) {
+          setDemoModeSessionActive(true);
+          initializeDemoStorageIfNeeded();
+          setIsDemoMode(true);
+          notifyStorageChange();
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const hasSession = Boolean(session?.user);
+    if (hasSession && !hadSessionRef.current) {
+      clearDemoModeSessionFlag();
+      setIsDemoMode(false);
+      notifyStorageChange();
+    }
+    hadSessionRef.current = hasSession;
+  }, [session?.user?.id]);
 
   const enterDemo = useCallback(() => {
     setDemoModeSessionActive(true);
     initializeDemoStorageIfNeeded();
+    if (!session) {
+      clearPreAuthGuidedState();
+      clearPreAuthSaveUpsellFlag();
+    }
     setIsDemoMode(true);
     notifyStorageChange();
-  }, []);
+  }, [session]);
 
   const exitDemo = useCallback(() => {
     clearDemoModeSessionFlag();
@@ -48,6 +82,11 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
 
   const resetDemo = useCallback(() => {
     resetDemoToInitialSample();
+    clearPreAuthGuidedState();
+    clearPreAuthSaveUpsellFlag();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(DEMO_FULL_RESET_EVENT));
+    }
   }, []);
 
   const value = useMemo(

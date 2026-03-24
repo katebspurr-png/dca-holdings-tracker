@@ -33,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
+import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
 import { transactionFromDbRow } from "@/lib/sync";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
@@ -184,6 +185,7 @@ export default function HoldingDetail() {
   const { isDemoMode } = useDemoMode();
   const storageRevision = useStorageRevision();
   const { toast } = useToast();
+  const { requestPersist, preAuthUpsellDialog } = usePreAuthSaveUpsell();
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
   const [showUndoConfirm, setShowUndoConfirm] = useState(false);
@@ -375,23 +377,25 @@ export default function HoldingDetail() {
     if (calcMethod !== "budget_target") buyPrice = n1;
     else if (r.effectivePrice !== null) buyPrice = r.effectivePrice;
 
-    addScenario({
-      holding_id: holding.id, ticker: holding.ticker, method: calcMethod,
-      input1_label: flds[0].label, input1_value: n1,
-      input2_label: flds[1].label, input2_value: n2,
-      include_fees: includeFees, fee_amount: r.feeApplied,
-      buy_price: buyPrice, shares_to_buy: r.x,
-      budget_invested: r.budget, fee_applied: r.feeApplied,
-      total_spend: r.totalSpend, new_total_shares: r.totalShares,
-      new_avg_cost: r.newAvg,
-      recommended_target: isPriceBudget ? r.newAvg : null,
-      budget_percent_used: isPriceBudget ? budgetPercent : null,
-      notes: null,
+    requestPersist(() => {
+      addScenario({
+        holding_id: holding.id, ticker: holding.ticker, method: calcMethod,
+        input1_label: flds[0].label, input1_value: n1,
+        input2_label: flds[1].label, input2_value: n2,
+        include_fees: includeFees, fee_amount: r.feeApplied,
+        buy_price: buyPrice, shares_to_buy: r.x,
+        budget_invested: r.budget, fee_applied: r.feeApplied,
+        total_spend: r.totalSpend, new_total_shares: r.totalShares,
+        new_avg_cost: r.newAvg,
+        recommended_target: isPriceBudget ? r.newAvg : null,
+        budget_percent_used: isPriceBudget ? budgetPercent : null,
+        notes: null,
+      });
+      toast({ title: "Scenario saved" });
+      setVal1(""); setVal2(""); setBudgetPercent(100);
+      setCalcTick((t) => t + 1);
+      setVersion((v) => v + 1);
     });
-    toast({ title: "Scenario saved" });
-    setVal1(""); setVal2(""); setBudgetPercent(100);
-    setCalcTick((t) => t + 1);
-    setVersion((v) => v + 1);
   };
 
   const handleApplyBuy = () => {
@@ -401,23 +405,25 @@ export default function HoldingDetail() {
 
   const confirmApplyBuy = () => {
     if (!holding || !r || applying) return;
-    setApplying(true);
     setShowApplyConfirm(false);
-    try {
-      applyBuyToHolding({
-        holdingId: holding.id, buyPrice: getBuyPrice(), sharesBought: r.x,
-        budgetInvested: r.budget, feeApplied: r.feeApplied, totalSpend: r.totalSpend,
-        includeFees, newTotalShares: r.totalShares, newAvgCost: r.newAvg, method: calcMethod,
-      });
-      toast({ title: "Buy applied successfully" });
-      setVal1(""); setVal2(""); setBudgetPercent(100);
-      setVersion((v) => v + 1);
-      setCalcTick((t) => t + 1);
-    } catch (e: any) {
-      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
-    } finally {
-      setApplying(false);
-    }
+    requestPersist(() => {
+      setApplying(true);
+      try {
+        applyBuyToHolding({
+          holdingId: holding.id, buyPrice: getBuyPrice(), sharesBought: r.x,
+          budgetInvested: r.budget, feeApplied: r.feeApplied, totalSpend: r.totalSpend,
+          includeFees, newTotalShares: r.totalShares, newAvgCost: r.newAvg, method: calcMethod,
+        });
+        toast({ title: "Buy applied successfully" });
+        setVal1(""); setVal2(""); setBudgetPercent(100);
+        setVersion((v) => v + 1);
+        setCalcTick((t) => t + 1);
+      } catch (e: any) {
+        toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+      } finally {
+        setApplying(false);
+      }
+    });
   };
 
   const handleApplyScenario = (s: Scenario) => {
@@ -428,24 +434,26 @@ export default function HoldingDetail() {
   const confirmApplyScenario = () => {
     if (!holding || !scenarioToApply || applying) return;
     const s = scenarioToApply;
-    setApplying(true);
     setScenarioToApply(null);
-    try {
-      applyBuyToHolding({
-        holdingId: holding.id, buyPrice: s.buy_price ?? s.input1_value,
-        sharesBought: s.shares_to_buy, budgetInvested: s.budget_invested,
-        feeApplied: s.fee_applied, totalSpend: s.total_spend,
-        includeFees: s.include_fees, newTotalShares: s.new_total_shares,
-        newAvgCost: s.new_avg_cost, method: s.method,
-      });
-      toast({ title: "Buy applied successfully" });
-      setVersion((v) => v + 1);
-      setCalcTick((t) => t + 1);
-    } catch (e: any) {
-      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
-    } finally {
-      setApplying(false);
-    }
+    requestPersist(() => {
+      setApplying(true);
+      try {
+        applyBuyToHolding({
+          holdingId: holding.id, buyPrice: s.buy_price ?? s.input1_value,
+          sharesBought: s.shares_to_buy, budgetInvested: s.budget_invested,
+          feeApplied: s.fee_applied, totalSpend: s.total_spend,
+          includeFees: s.include_fees, newTotalShares: s.new_total_shares,
+          newAvgCost: s.new_avg_cost, method: s.method,
+        });
+        toast({ title: "Buy applied successfully" });
+        setVersion((v) => v + 1);
+        setCalcTick((t) => t + 1);
+      } catch (e: any) {
+        toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+      } finally {
+        setApplying(false);
+      }
+    });
   };
 
   // ── Navigate to calculator tab with prefill ─────────────────
@@ -472,6 +480,7 @@ export default function HoldingDetail() {
   const presets2 = getPresets(calcMethod, 2);
 
   return (
+    <>
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-stitch-border bg-stitch-bg/95 backdrop-blur-md">
@@ -943,7 +952,10 @@ export default function HoldingDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
+    {preAuthUpsellDialog}
+    </>
   );
 }
 

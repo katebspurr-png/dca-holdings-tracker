@@ -127,6 +127,155 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          id: string
+          holding_id: string
+          ticker: string
+          transaction_type: string
+          buy_price: number
+          shares_bought: number
+          budget_invested: number
+          fee_applied: number
+          total_spend: number
+          include_fees: boolean
+          fee_type_snapshot: string
+          fee_value_snapshot: number
+          previous_shares: number
+          previous_avg_cost: number
+          new_total_shares: number
+          new_avg_cost: number
+          method: string
+          notes: string | null
+          is_undone: boolean
+          undone_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          holding_id: string
+          ticker: string
+          transaction_type?: string
+          buy_price: number
+          shares_bought: number
+          budget_invested: number
+          fee_applied?: number
+          total_spend: number
+          include_fees?: boolean
+          fee_type_snapshot?: string
+          fee_value_snapshot?: number
+          previous_shares: number
+          previous_avg_cost: number
+          new_total_shares: number
+          new_avg_cost: number
+          method: string
+          notes?: string | null
+          is_undone?: boolean
+          undone_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          holding_id?: string
+          ticker?: string
+          transaction_type?: string
+          buy_price?: number
+          shares_bought?: number
+          budget_invested?: number
+          fee_applied?: number
+          total_spend?: number
+          include_fees?: boolean
+          fee_type_snapshot?: string
+          fee_value_snapshot?: number
+          previous_shares?: number
+          previous_avg_cost?: number
+          new_total_shares?: number
+          new_avg_cost?: number
+          method?: string
+          notes?: string | null
+          is_undone?: boolean
+          undone_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_holding_id_fkey"
+            columns: ["holding_id"]
+            isOneToOne: false
+            referencedRelation: "holdings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      what_if_comparisons: {
+        Row: {
+          created_at: string
+          id: string
+          scenarios: Json
+          total_budget: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scenarios?: Json
+          total_budget: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scenarios?: Json
+          total_budget?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      optimization_scenarios: {
+        Row: {
+          allocation_results_json: string
+          created_at: string
+          id: string
+          include_fees: boolean
+          name: string
+          optimization_mode: string
+          projected_portfolio_avg: number
+          selected_holdings_json: string
+          total_budget: number
+          total_fees: number
+          total_spend: number
+          user_id: string
+        }
+        Insert: {
+          allocation_results_json?: string
+          created_at?: string
+          id?: string
+          include_fees?: boolean
+          name: string
+          optimization_mode: string
+          projected_portfolio_avg?: number
+          selected_holdings_json?: string
+          total_budget: number
+          total_fees?: number
+          total_spend?: number
+          user_id: string
+        }
+        Update: {
+          allocation_results_json?: string
+          created_at?: string
+          id?: string
+          include_fees?: boolean
+          name?: string
+          optimization_mode?: string
+          projected_portfolio_avg?: number
+          selected_holdings_json?: string
+          total_budget?: number
+          total_fees?: number
+          total_spend?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

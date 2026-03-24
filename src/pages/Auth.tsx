@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { authCallbackUrl, authResetPasswordUrl } from "@/lib/authRedirectUrls";
@@ -36,6 +36,8 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export default function Auth() {
   const { session } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +46,12 @@ export default function Auth() {
   const [magicLoading, setMagicLoading] = useState(false);
 
   if (session) return <Navigate to="/" replace />;
+
+  useEffect(() => {
+    if (searchParams.get("demo") === "true") {
+      navigate("/demo", { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   const redirectTo = authCallbackUrl();
   const resetRedirectTo = authResetPasswordUrl();
@@ -167,6 +175,25 @@ export default function Auth() {
         <p className="mt-4 max-w-xs text-sm text-stitch-muted">
           Smart tools for managing your average cost and planning your next move.
         </p>
+        <div className="mt-6 flex w-full max-w-sm flex-col gap-2 sm:flex-row sm:justify-center">
+          <Button
+            type="button"
+            size="lg"
+            className="h-11 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 sm:max-w-[200px]"
+            onClick={() => navigate("/demo")}
+          >
+            Try demo
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-11 w-full border-stitch-border bg-stitch-pill font-medium text-white hover:bg-stitch-card hover:text-white sm:max-w-[200px]"
+            onClick={() => setMode("signup")}
+          >
+            Get started
+          </Button>
+        </div>
       </div>
 
       <div className="w-full max-w-sm space-y-5 rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">

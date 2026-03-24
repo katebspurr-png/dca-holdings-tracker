@@ -10,6 +10,7 @@ import {
 } from "@/lib/storage";
 import { canSaveScenario, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
 import { useToast } from "@/hooks/use-toast";
+import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
 import { useSimFees } from "@/contexts/SimFeesContext";
 import {
   STANDARD_TEST_INVESTMENT,
@@ -69,6 +70,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   const { includeFees } = useSimFees();
   const feeOpts = holdingFeeOpts(holding, includeFees);
   const { toast } = useToast();
+  const { requestPersist, preAuthUpsellDialog } = usePreAuthSaveUpsell();
   const [customTarget, setCustomTarget] = useState("");
   const [customError, setCustomError] = useState("");
 
@@ -119,18 +121,20 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
     // recomputing fee from B in a way that can drift from the target-average math).
     const totalSpend = target.newAvg * sharesAfter - S * A;
     const feeApplied = totalSpend - B;
-    addScenario({
-      holding_id: holding.id, ticker: holding.ticker, method: "price_target",
-      input1_label: "Buy price", input1_value: marketPrice,
-      input2_label: "Target average cost", input2_value: target.target,
-      include_fees: true, fee_amount: feeApplied, buy_price: marketPrice, shares_to_buy: target.shares,
-      budget_invested: B, fee_applied: feeApplied, total_spend: totalSpend,
-      new_total_shares: S + target.shares, new_avg_cost: target.newAvg,
-      recommended_target: null, budget_percent_used: null,
-      notes: `Insight: Average rescue to ${cp}${fmt2(target.target)}`,
+    requestPersist(() => {
+      addScenario({
+        holding_id: holding.id, ticker: holding.ticker, method: "price_target",
+        input1_label: "Buy price", input1_value: marketPrice,
+        input2_label: "Target average cost", input2_value: target.target,
+        include_fees: true, fee_amount: feeApplied, buy_price: marketPrice, shares_to_buy: target.shares,
+        budget_invested: B, fee_applied: feeApplied, total_spend: totalSpend,
+        new_total_shares: S + target.shares, new_avg_cost: target.newAvg,
+        recommended_target: null, budget_percent_used: null,
+        notes: `Insight: Average rescue to ${cp}${fmt2(target.target)}`,
+      });
+      toast({ title: "Scenario saved" });
+      onSaved();
     });
-    toast({ title: "Scenario saved" });
-    onSaved();
   };
 
   const handleCustomRescue = () => {
@@ -158,6 +162,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   const band = getEfficiencyBand(efficiencyScore);
 
   return (
+    <>
     <div className="space-y-5">
 
       <p className="text-[10px] text-stitch-muted/60 uppercase tracking-widest">
@@ -346,5 +351,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         </div>
       )}
     </div>
+    {preAuthUpsellDialog}
+    </>
   );
 }

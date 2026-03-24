@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, type KeyboardEvent } from "react";
+import { useState, useCallback, useMemo, useEffect, type KeyboardEvent } from "react";
 import Onboarding, { getOnboardingDone } from "@/components/onboarding";
 import { useNavigate } from "react-router-dom";
 import {
@@ -48,6 +48,7 @@ import {
   editHolding,
   removeHolding,
   getScenariosForHolding,
+  isDemoModeSessionActive,
   type Holding,
   type Scenario,
   currencyPrefix,
@@ -428,7 +429,9 @@ function HoldingPortfolioCard({
 
 export default function Holdings() {
   const navigate = useNavigate();
-  const [showOnboarding, setShowOnboarding] = useState(() => !getOnboardingDone());
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !getOnboardingDone() && !isDemoModeSessionActive(),
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Holding | null>(null);
   const [deleting, setDeleting] = useState<Holding | null>(null);
@@ -441,8 +444,12 @@ export default function Holdings() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const { includeFees, setIncludeFees } = useSimFees();
-  const { enterDemo } = useDemoMode();
+  const { enterDemo, isDemoMode } = useDemoMode();
   useStorageRevision();
+
+  useEffect(() => {
+    if (isDemoMode) setShowOnboarding(false);
+  }, [isDemoMode]);
 
   const refresh = () => setTick((t) => t + 1);
 

@@ -31,6 +31,7 @@ import {
 import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
 import { computeWhatIfAllocationRow } from "@/lib/dca-sim";
 import { useSimFees } from "@/contexts/SimFeesContext";
+import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 
@@ -79,6 +80,7 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 
 export default function WhatIfScenarios() {
   const navigate = useNavigate();
+  const { requestPersist, preAuthUpsellDialog } = usePreAuthSaveUpsell();
   const storageRevision = useStorageRevision();
   const holdings = useMemo(() => getHoldings(), [storageRevision]);
   const holdingIdsKey = useMemo(() => holdings.map((h) => h.id).sort().join(","), [holdings]);
@@ -376,45 +378,47 @@ export default function WhatIfScenarios() {
   }, [activeResult, selectedRows]);
 
   const handleApplyConfirm = () => {
-    try {
-      for (const t of selectedTrades) {
-        const h = getHolding(t.holdingId);
-        if (!h) continue;
-        const row = computeWhatIfAllocationRow(h, t.buyPrice, t.allocated, includeFees);
-        if (!row || row.sharesBought <= 0) continue;
-        applyBuyToHolding({
-          holdingId: h.id,
-          buyPrice: t.buyPrice,
-          sharesBought: row.sharesBought,
-          budgetInvested: row.budgetInvested,
-          feeApplied: row.feeApplied,
-          totalSpend: row.totalSpend,
-          includeFees,
-          newTotalShares: row.newTotalShares,
-          newAvgCost: row.newAvg,
-          method: "what_if",
-          notes: "What-If scenario apply",
+    requestPersist(() => {
+      try {
+        for (const t of selectedTrades) {
+          const h = getHolding(t.holdingId);
+          if (!h) continue;
+          const row = computeWhatIfAllocationRow(h, t.buyPrice, t.allocated, includeFees);
+          if (!row || row.sharesBought <= 0) continue;
+          applyBuyToHolding({
+            holdingId: h.id,
+            buyPrice: t.buyPrice,
+            sharesBought: row.sharesBought,
+            budgetInvested: row.budgetInvested,
+            feeApplied: row.feeApplied,
+            totalSpend: row.totalSpend,
+            includeFees,
+            newTotalShares: row.newTotalShares,
+            newAvgCost: row.newAvg,
+            method: "what_if",
+            notes: "What-If scenario apply",
+          });
+        }
+        const now = new Date();
+        const label = `Applied on ${now.toLocaleDateString()}`;
+        addWhatIfComparison({
+          totalBudget: budget,
+          scenarios: scenarios.map((s) => ({
+            ...s,
+            name: `${s.name} — ${label}`,
+          })),
         });
+        const tickers = selectedTrades.map((t) => t.ticker).join(", ");
+        toast.success(`Updated holdings for ${tickers}`);
+        setShowApplyDialog(false);
+        setSelectedRows(new Set());
+        setSavedRefresh((r) => r + 1);
+        navigate("/");
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        toast.error(`Apply failed: ${msg}`);
       }
-      const now = new Date();
-      const label = `Applied on ${now.toLocaleDateString()}`;
-      addWhatIfComparison({
-        totalBudget: budget,
-        scenarios: scenarios.map((s) => ({
-          ...s,
-          name: `${s.name} — ${label}`,
-        })),
-      });
-      const tickers = selectedTrades.map((t) => t.ticker).join(", ");
-      toast.success(`Updated holdings for ${tickers}`);
-      setShowApplyDialog(false);
-      setSelectedRows(new Set());
-      setSavedRefresh((r) => r + 1);
-      navigate("/");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      toast.error(`Apply failed: ${msg}`);
-    }
+    });
   };
 
 
@@ -426,9 +430,11 @@ export default function WhatIfScenarios() {
       toast.error("Add allocations before saving");
       return;
     }
-    addWhatIfComparison({ totalBudget: budget, scenarios });
-    toast.success("Comparison saved");
-    setSavedRefresh((r) => r + 1);
+    requestPersist(() => {
+      addWhatIfComparison({ totalBudget: budget, scenarios });
+      toast.success("Comparison saved");
+      setSavedRefresh((r) => r + 1);
+    });
   };
 
   const handleDeleteSaved = (id: string) => {
@@ -470,6 +476,7 @@ export default function WhatIfScenarios() {
   };
 
   return (
+    <>
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
@@ -982,5 +989,7 @@ export default function WhatIfScenarios() {
         </p>
       </main>
     </div>
+    {preAuthUpsellDialog}
+    </>
   );
 }

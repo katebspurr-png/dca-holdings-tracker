@@ -2,7 +2,7 @@
  * Initial dataset for Demo Mode — static values for modeling / exploration only.
  */
 
-import type { AppData, Holding, Scenario } from "./storage";
+import type { AppData, Holding, Scenario, WhatIfComparison } from "./storage";
 
 const T0 = "2024-06-01T12:00:00.000Z";
 
@@ -67,19 +67,71 @@ const HOLDINGS: Holding[] = [
     fee_value: 0,
     created_at: T0,
   },
-  {
-    id: "demo-jpm",
-    ticker: "JPM",
-    exchange: "US",
-    shares: 35,
-    avg_cost: 198.75,
-    initial_avg_cost: 205,
-    fee: 0,
-    fee_type: "flat",
-    fee_value: 0,
-    created_at: T0,
-  },
 ];
+
+const WHAT_IF_SAMPLE: WhatIfComparison = {
+  id: "demo-wif-1",
+  totalBudget: 10000,
+  scenarios: [
+    {
+      name: "Split evenly",
+      allocations: [
+        {
+          holdingId: "demo-vti",
+          ticker: "VTI",
+          exchange: "US",
+          currentShares: 40,
+          currentAvg: 248.2,
+          buyPrice: 242,
+          allocated: 5000,
+        },
+        {
+          holdingId: "demo-aapl",
+          ticker: "AAPL",
+          exchange: "US",
+          currentShares: 55,
+          currentAvg: 198.5,
+          buyPrice: 190,
+          allocated: 5000,
+        },
+      ],
+    },
+    {
+      name: "More to one name",
+      allocations: [
+        {
+          holdingId: "demo-msft",
+          ticker: "MSFT",
+          exchange: "US",
+          currentShares: 22,
+          currentAvg: 382.4,
+          buyPrice: 375,
+          allocated: 6500,
+        },
+        {
+          holdingId: "demo-nvda",
+          ticker: "NVDA",
+          exchange: "US",
+          currentShares: 28,
+          currentAvg: 142.8,
+          buyPrice: 128,
+          allocated: 3500,
+        },
+      ],
+    },
+  ],
+  created_at: T0,
+};
+
+function cloneWhatIf(w: WhatIfComparison): WhatIfComparison {
+  return {
+    ...w,
+    scenarios: w.scenarios.map((s) => ({
+      ...s,
+      allocations: s.allocations.map((a) => ({ ...a })),
+    })),
+  };
+}
 
 const SCENARIOS: Scenario[] = [
   {
@@ -183,7 +235,7 @@ export function createInitialDemoAppData(): AppData {
     holdings: HOLDINGS.map((h) => ({ ...h })),
     scenarios: SCENARIOS.map((s) => ({ ...s })),
     transactions: [],
-    whatIfComparisons: [],
+    whatIfComparisons: [cloneWhatIf(WHAT_IF_SAMPLE)],
     optimizationScenarios: [],
   };
 }

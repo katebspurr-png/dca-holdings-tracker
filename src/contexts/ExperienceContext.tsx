@@ -20,6 +20,13 @@ import {
 import { getRealHoldings } from "@/lib/storage";
 import { setOnboardingDone } from "@/components/onboarding";
 import { GUIDED_DEMO_STEPS } from "@/walkthrough/guidedDemoSteps";
+import { PRE_AUTH_GUIDED_DEMO_STEPS } from "@/walkthrough/preAuthGuidedDemoSteps";
+import {
+  DEMO_FULL_RESET_EVENT,
+  loadPreAuthGuidedState,
+  savePreAuthGuidedState,
+  type PreAuthGuidedState,
+} from "@/lib/preAuthDemoTour";
 
 export type ClassificationAnswers = {
   q1: 0 | 1 | 2;
@@ -61,19 +68,35 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const { isDemoMode, enterDemo, exitDemo } = useDemoMode();
   const [prefs, setPrefsState] = useState<ExperiencePrefs>(defaultExperiencePrefs);
+  const [preAuthTour, setPreAuthTour] = useState<PreAuthGuidedState>(() => loadPreAuthGuidedState());
   const [storageTick, setStorageTick] = useState(0);
+
+  const preAuthGuidedFlow = !session && isDemoMode;
 
   const refreshPrefs = useCallback(() => {
     setPrefsState(loadExperiencePrefs());
+    setPreAuthTour(loadPreAuthGuidedState());
     setStorageTick((t) => t + 1);
   }, []);
 
   useEffect(() => {
-    if (!session) {
-      setPrefsState(defaultExperiencePrefs());
-      return;
+    const onDemoReset = () => setPreAuthTour(loadPreAuthGuidedState());
+    window.addEventListener(DEMO_FULL_RESET_EVENT, onDemoReset);
+    return () => window.removeEventListener(DEMO_FULL_RESET_EVENT, onDemoReset);
+  }, []);
+
+  useEffect(() => {
+    if (preAuthGuidedFlow) {
+      setPreAuthTour(loadPreAuthGuidedState());
     }
-    setPrefsState(loadExperiencePrefs());
+  }, [preAuthGuidedFlow]);
+
+  useEffect(() => {
+    if (session) {
+      setPrefsState(loadExperiencePrefs());
+    } else {
+      setPrefsState(defaultExperiencePrefs());
+    }
   }, [session?.user?.id, storageTick]);
 
   const persist = useCallback((next: ExperiencePrefs) => {
@@ -133,6 +156,20 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   const advanceGuidedDemo = useCallback(() => {
+    if (!session && isDemoMode) {
+      const last = PRE_AUTH_GUIDED_DEMO_STEPS.length - 1;
+      const cur = loadPreAuthGuidedState();
+      if (cur.stepIndex >= last) {
+        const next = { stepIndex: last, finished: true };
+        savePreAuthGuidedState(next);
+        setPreAuthTour(next);
+        return;
+      }
+      const next = { stepIndex: cur.stepIndex + 1, finished: false };
+      savePreAuthGuidedState(next);
+      setPreAuthTour(next);
+      return;
+    }
     const prev = loadExperiencePrefs();
     const last = GUIDED_DEMO_STEPS.length - 1;
     const idx = prev.guidedDemoStepIndex;
@@ -141,19 +178,32 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       return;
     }
     persist({ ...prev, guidedDemoStepIndex: idx + 1 });
-  }, [persist]);
+  }, [session, isDemoMode, persist]);
 
   const skipGuidedDemo = useCallback(() => {
+    if (!session && isDemoMode) {
+      const cur = loadPreAuthGuidedState();
+      const next = { stepIndex: cur.stepIndex, finished: true };
+      savePreAuthGuidedState(next);
+      setPreAuthTour(next);
+      return;
+    }
     persist({ ...loadExperiencePrefs(), guidedDemoFinished: true });
-  }, [persist]);
+  }, [session, isDemoMode, persist]);
 
   const resetGuidedDemo = useCallback(() => {
+    if (!session && isDemoMode) {
+      const next = { stepIndex: 0, finished: false };
+      savePreAuthGuidedState(next);
+      setPreAuthTour(next);
+      return;
+    }
     persist({
       ...loadExperiencePrefs(),
       guidedDemoStepIndex: 0,
       guidedDemoFinished: false,
     });
-  }, [persist]);
+  }, [session, isDemoMode, persist]);
 
   const trySamplePortfolio = useCallback(() => {
     enterDemo();
@@ -167,8 +217,11 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   const value = useMemo((): ExperienceContextValue => {
     const showTooltips = prefs.userLevel === "beginner";
     const showSubtleHints = prefs.userLevel === "intermediate";
-    const guidedDemoActive =
-      prefs.userLevel === "beginner" && isDemoMode && !prefs.guidedDemoFinished;
+    const loggedInBeginnerGuided =
+      Boolean(session) && prefs.userLevel === "beginner" && isDemoMode && !prefs.guidedDemoFinished;
+    const preAuthGuidedActive = preAuthGuidedFlow && !preAuthTour.finished;
+    const guidedDemoActive = loggedInBeginnerGuided || preAuthGuidedActive;
+    const guidedDemoStepIndex = preAuthGuidedFlow ? preAuthTour.stepIndex : prefs.guidedDemoStepIndex;
 
     return {
       userLevel: prefs.userLevel,
@@ -184,7 +237,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       hasInteractedOnce: prefs.hasInteractedOnce,
       markInteracted,
       guidedDemoActive,
-      guidedDemoStepIndex: prefs.guidedDemoStepIndex,
+      guidedDemoStepIndex,
       advanceGuidedDemo,
       skipGuidedDemo,
       resetGuidedDemo,
@@ -194,6 +247,9 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     };
   }, [
     prefs,
+    preAuthTour,
+    preAuthGuidedFlow,
+    session,
     isDemoMode,
     enterDemo,
     exitDemo,

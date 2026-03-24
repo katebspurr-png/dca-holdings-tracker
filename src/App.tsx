@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Holdings from "./pages/Holdings";
 import HoldingDetail from "./pages/HoldingDetail";
 import Scenarios from "./pages/Scenarios";
@@ -16,11 +16,13 @@ import Progress from "./pages/Progress";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import AuthResetPassword from "./pages/AuthResetPassword";
+import DemoEntry from "./pages/DemoEntry";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
+import DemoOrAuthRoute from "./components/DemoOrAuthRoute";
 import AppEducationalDisclaimer from "./components/AppEducationalDisclaimer";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { DemoModeProvider } from "./contexts/DemoModeContext";
+import { DemoModeProvider, useDemoMode } from "./contexts/DemoModeContext";
 import { ExperienceProvider } from "./contexts/ExperienceContext";
 import { SimFeesProvider } from "./contexts/SimFeesContext";
 import DemoModeBanner from "./components/DemoModeBanner";
@@ -40,24 +42,6 @@ function useInitTheme() {
   }, []);
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg">
-        <Loader2 className="h-6 w-6 animate-spin text-stitch-accent" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
-}
-
 const AppRoutes = () => {
   useInitTheme();
   return (
@@ -66,17 +50,18 @@ const AppRoutes = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/auth/reset-password" element={<AuthResetPassword />} />
+      <Route path="/demo" element={<DemoEntry />} />
 
-      {/* Protected */}
-      <Route path="/" element={<ProtectedRoute><Holdings /></ProtectedRoute>} />
-      <Route path="/holdings/:id" element={<ProtectedRoute><HoldingDetail /></ProtectedRoute>} />
-      <Route path="/scenarios" element={<ProtectedRoute><Scenarios /></ProtectedRoute>} />
-      <Route path="/scenarios/:id" element={<ProtectedRoute><ScenarioDetail /></ProtectedRoute>} />
-      <Route path="/what-if" element={<ProtectedRoute><WhatIfScenarios /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/update-prices" element={<ProtectedRoute><UpdatePrices /></ProtectedRoute>} />
-      <Route path="/optimizer" element={<ProtectedRoute><CapitalOptimizer /></ProtectedRoute>} />
-      <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+      {/* Authenticated or active demo session */}
+      <Route path="/" element={<DemoOrAuthRoute><Holdings /></DemoOrAuthRoute>} />
+      <Route path="/holdings/:id" element={<DemoOrAuthRoute><HoldingDetail /></DemoOrAuthRoute>} />
+      <Route path="/scenarios" element={<DemoOrAuthRoute><Scenarios /></DemoOrAuthRoute>} />
+      <Route path="/scenarios/:id" element={<DemoOrAuthRoute><ScenarioDetail /></DemoOrAuthRoute>} />
+      <Route path="/what-if" element={<DemoOrAuthRoute><WhatIfScenarios /></DemoOrAuthRoute>} />
+      <Route path="/settings" element={<DemoOrAuthRoute><Settings /></DemoOrAuthRoute>} />
+      <Route path="/update-prices" element={<DemoOrAuthRoute><UpdatePrices /></DemoOrAuthRoute>} />
+      <Route path="/optimizer" element={<DemoOrAuthRoute><CapitalOptimizer /></DemoOrAuthRoute>} />
+      <Route path="/progress" element={<DemoOrAuthRoute><Progress /></DemoOrAuthRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -95,7 +80,7 @@ const App = () => {
                 <SimFeesProvider>
                   <AppRoutes />
                   <AppEducationalDisclaimer />
-                  <AuthenticatedChrome />
+                  <AppChrome />
                 </SimFeesProvider>
               </ExperienceProvider>
             </DemoModeProvider>
@@ -106,9 +91,17 @@ const App = () => {
   );
 };
 
-function AuthenticatedChrome() {
+function AppChrome() {
   const { session } = useAuth();
-  if (!session) return null;
+  const { isDemoMode } = useDemoMode();
+  const { pathname } = useLocation();
+
+  const onAuthFlow =
+    pathname.startsWith("/auth") || pathname === "/demo";
+
+  if (onAuthFlow) return null;
+  if (!session && !isDemoMode) return null;
+
   return (
     <>
       <DemoModeBanner />

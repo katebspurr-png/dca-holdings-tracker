@@ -10,13 +10,17 @@ import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
 import ProSettings from "@/components/ProSettings";
 import { toast } from "sonner";
 import { getActivePlan, setUserPlan, type PlanType } from "@/lib/feature-access";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useExperience } from "@/contexts/ExperienceContext";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { isDemoMode, enterDemo, exitDemo } = useDemoMode();
+  const { resetGuidedDemo } = useExperience();
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -209,19 +213,26 @@ export default function Settings() {
               Explore the app with sample positions and sandboxed changes. Nothing you do in demo is saved to your real
               portfolio or synced to the cloud.
             </p>
-            {isDemoMode ? (
-              <Button size="sm" variant="outline" className={outlineBtn} onClick={exitDemo}>
-                Exit demo mode
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
-                onClick={enterDemo}
-              >
-                Enter demo mode
-              </Button>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {isDemoMode ? (
+                <>
+                  <Button size="sm" variant="outline" className={outlineBtn} onClick={() => resetGuidedDemo()}>
+                    Replay demo tour
+                  </Button>
+                  <Button size="sm" variant="outline" className={outlineBtn} onClick={exitDemo}>
+                    Exit demo mode
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  onClick={enterDemo}
+                >
+                  Enter demo mode
+                </Button>
+              )}
+            </div>
           </div>
         </section>
 
@@ -289,16 +300,32 @@ export default function Settings() {
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Account</h2>
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white">Signed in as</p>
-                <p className="mt-0.5 truncate text-xs text-stitch-muted">{user?.email}</p>
+            {user ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white">Signed in as</p>
+                  <p className="mt-0.5 truncate text-xs text-stitch-muted">{user.email}</p>
+                </div>
+                <Button size="sm" variant="outline" className={`h-8 shrink-0 text-xs ${outlineBtn}`} onClick={handleSignOut}>
+                  <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                  Sign Out
+                </Button>
               </div>
-              <Button size="sm" variant="outline" className={`h-8 shrink-0 text-xs ${outlineBtn}`} onClick={handleSignOut}>
-                <LogOut className="mr-1.5 h-3.5 w-3.5" />
-                Sign Out
-              </Button>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-stitch-muted">
+                  Create an account to save your portfolio on this device and sync when you sign in. Demo mode never writes to
+                  your real account.
+                </p>
+                <Button
+                  size="sm"
+                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  onClick={() => navigate("/auth")}
+                >
+                  Create account
+                </Button>
+              </div>
+            )}
           </div>
         </section>
 
