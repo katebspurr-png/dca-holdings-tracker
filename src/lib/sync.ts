@@ -266,7 +266,7 @@ export async function pushTransaction(tx: Transaction) {
 }
 
 export async function patchTransaction(txId: string, patch: Partial<Transaction>) {
-  const { error } = await supabase.from("transactions").update(patch).eq("id", txId);
+  const { error } = await db.from("transactions").update(patch).eq("id", txId);
   if (error) log("patchTransaction failed", error);
 }
 
