@@ -10,6 +10,9 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+
+// Cast for tables not yet in the generated types but present in the DB
+const db = supabase as any;
 import type {
   Holding,
   Scenario,
