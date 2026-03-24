@@ -10,11 +10,15 @@ import {
 } from "@/lib/storage";
 import { canSaveScenario, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
 import { useToast } from "@/hooks/use-toast";
+import { useSimFees } from "@/contexts/SimFeesContext";
+import {
+  STANDARD_TEST_INVESTMENT,
+  computeStandardizedEfficiencyScore,
+  holdingFeeOpts,
+} from "@/lib/dca-sim";
 
 const fmt2 = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const TEST_INVESTMENT = 500;
 
 function computeRescueTarget(
   S: number, A: number, targetAvg: number, buyPrice: number,
@@ -42,23 +46,12 @@ function computeRescueTarget(
   return { budget: B, shares: x, newAvg };
 }
 
-function computeEfficiencyScore(
-  shares: number, avgCost: number, marketPrice: number
-): { score: number; improvement: number } {
-  if (marketPrice >= avgCost || avgCost <= 0) return { score: 0, improvement: 0 };
-  const sharesBought = TEST_INVESTMENT / marketPrice;
-  const newAvg = (shares * avgCost + TEST_INVESTMENT) / (shares + sharesBought);
-  const improvement = Math.max(0, avgCost - newAvg);
-  const score = Math.max(0, Math.min(100, Math.round((improvement / avgCost) * 10_000)));
-  return { score, improvement };
-}
-
 function getEfficiencyBand(score: number): { label: string; colorClass: string } {
-  if (score >= 80) return { label: "Very strong opportunity", colorClass: "text-primary" };
-  if (score >= 60) return { label: "Good opportunity", colorClass: "text-primary" };
-  if (score >= 40) return { label: "Neutral", colorClass: "text-muted-foreground" };
-  if (score >= 20) return { label: "Weak", colorClass: "text-muted-foreground" };
-  return { label: "Inefficient", colorClass: "text-destructive" };
+  if (score >= 80) return { label: "Large avg move vs. cost", colorClass: "text-primary" };
+  if (score >= 60) return { label: "Meaningful avg move", colorClass: "text-primary" };
+  if (score >= 40) return { label: "Moderate avg move", colorClass: "text-muted-foreground" };
+  if (score >= 20) return { label: "Small avg move", colorClass: "text-muted-foreground" };
+  return { label: "Minimal / none", colorClass: "text-destructive" };
 }
 
 interface InsightsTabProps {
@@ -72,6 +65,8 @@ interface InsightsTabProps {
 export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculator, onSaved }: InsightsTabProps) {
   const S = Number(holding.shares);
   const A = Number(holding.avg_cost);
+  const { includeFees } = useSimFees();
+  const feeOpts = holdingFeeOpts(holding, includeFees);
   const { toast } = useToast();
   const [customTarget, setCustomTarget] = useState("");
   const [customError, setCustomError] = useState("");
@@ -99,8 +94,11 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
 
   const efficiencyData = useMemo(() => {
     if (marketPrice == null) return null;
-    return computeEfficiencyScore(S, A, marketPrice);
-  }, [S, A, marketPrice]);
+    return computeStandardizedEfficiencyScore(S, A, marketPrice, {
+      ...feeOpts,
+      testAmount: STANDARD_TEST_INVESTMENT,
+    });
+  }, [S, A, marketPrice, feeOpts.includeFees, feeOpts.feeType, feeOpts.feeValue]);
 
   const startTodayDiff = useMemo(() => {
     if (marketPrice == null || A <= 0) return null;
@@ -170,7 +168,9 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         </p>
         {rescueTargets.length === 0 ? (
           <p className="text-xs text-muted-foreground/70">
-            {marketPrice >= A ? "Current price is at or above your average — no rescue needed." : "Unable to compute rescue targets."}
+            {marketPrice >= A
+              ? "Current price is at or above your average — rescue estimates do not apply."
+              : "Unable to compute rescue targets."}
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -246,12 +246,18 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         )}
       </div>
 
-      {/* DCA Efficiency Score */}
+      {/* Standardized test score (same fixed amount as documented in Insights) */}
       <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3">
           <Gauge className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold">DCA Efficiency Score</h3>
+          <h3 className="text-sm font-semibold">Standardized test score</h3>
         </div>
+        <p className="text-[10px] text-muted-foreground/80 mb-2 leading-relaxed">
+          0–100 from a fixed {cp}
+          {fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price: score = round(10,000 × avg
+          improvement ÷ your current average), capped at 100. Uses the same “include fees in simulations” setting as the
+          Goal Ladder.
+        </p>
         <div className="flex items-baseline gap-3 mb-2">
           <span className={`text-4xl font-mono font-bold ${band.colorClass}`}>
             {efficiencyScore}
@@ -260,15 +266,21 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         </div>
         {efficiencyScore > 0 && efficiencyImprovement > 0 && (
           <p className="text-sm font-mono font-semibold text-primary mb-1">
-            ${TEST_INVESTMENT} → Avg drops {cp}{fmt2(efficiencyImprovement)}
+            {cp}
+            {fmt2(STANDARD_TEST_INVESTMENT)} simulated → avg moves by {cp}
+            {fmt2(efficiencyImprovement)}/share
           </p>
         )}
         <p className="text-xs text-muted-foreground">
-          {efficiencyScore >= 80 ? "A $500 test investment significantly lowers your average. Averaging down is highly effective."
-            : efficiencyScore >= 60 ? "Good impact from a $500 investment. Averaging down meaningfully improves your position."
-            : efficiencyScore >= 40 ? "Moderate impact. Averaging down has some effect but larger capital is needed for meaningful change."
-            : efficiencyScore >= 20 ? "Small impact from $500. A larger investment is needed to noticeably move your average."
-            : "Price is near or above your average. Averaging down is not effective."}
+          {efficiencyScore >= 80
+            ? "At this size of simulated buy, your modeled average cost moves a lot relative to your current average."
+            : efficiencyScore >= 60
+              ? "Meaningful modeled movement in average cost for this test size."
+              : efficiencyScore >= 40
+                ? "Some modeled movement; larger simulated sizes would show bigger changes."
+                : efficiencyScore >= 20
+                  ? "Small modeled movement at this test size."
+                  : "Price is at or above average, or the modeled move is negligible."}
         </p>
         <div className="mt-3 pt-3 border-t border-border">
           <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-muted">
@@ -278,21 +290,21 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
             />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-muted-foreground">Inefficient</span>
+            <span className="text-[9px] text-muted-foreground">Low</span>
             <span className={`text-[9px] font-medium ${band.colorClass}`}>
               {band.label}
             </span>
-            <span className="text-[9px] text-muted-foreground">Very Strong</span>
+            <span className="text-[9px] text-muted-foreground">High</span>
           </div>
         </div>
       </div>
 
-      {/* What If I Started Today */}
+      {/* Average vs current price (not a full counterfactual entry) */}
       {startTodayDiff != null && (
         <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">What If I Started Today</h3>
+            <h3 className="text-sm font-semibold">Average vs current price</h3>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
@@ -307,15 +319,15 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
           <div className="rounded-lg bg-muted/30 border border-border/50 p-3">
             {startTodayDiff > 0 ? (
               <p className="text-xs text-muted-foreground">
-                A new buyer would start{" "}
-                <span className="font-semibold text-primary">{Math.abs(startTodayDiff).toFixed(1)}% better</span>{" "}
-                than your current position. Averaging down can help close this gap.
+                Current price is about{" "}
+                <span className="font-semibold text-primary">{Math.abs(startTodayDiff).toFixed(1)}%</span> below your
+                average cost (as a share of your average). Illustrative only.
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Your position is{" "}
-                <span className="font-semibold text-primary">{Math.abs(startTodayDiff).toFixed(1)}% better</span>{" "}
-                than a new buyer entering today. Strong positioning.
+                Current price is about{" "}
+                <span className="font-semibold text-primary">{Math.abs(startTodayDiff).toFixed(1)}%</span> above your
+                average cost (as a share of your average). Illustrative only.
               </p>
             )}
           </div>

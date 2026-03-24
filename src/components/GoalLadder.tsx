@@ -3,25 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { TrendingDown, Zap } from "lucide-react";
 import { type Holding, apiTicker, currencyPrefix } from "@/lib/storage";
 import { getCachedQuote } from "@/lib/stock-price";
-
-const INVESTMENT_STEPS = [250, 500, 1000, 2500] as const;
-const NEXT_BEST_AMOUNT = 500;
+import { useSimFees } from "@/contexts/SimFeesContext";
+import {
+  LADDER_INVESTMENT_STEPS,
+  buildLadderRows,
+  selectMostEfficientLadderStep,
+  holdingFeeOpts,
+} from "@/lib/dca-sim";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-function computeDcaRow(
-  shares: number,
-  avgCost: number,
-  currentPrice: number,
-  investment: number
-): { sharesBought: number; newAvg: number; avgImprovement: number } | null {
-  if (currentPrice <= 0 || investment <= 0) return null;
-  const sharesBought = investment / currentPrice;
-  const newAvg = (shares * avgCost + investment) / (shares + sharesBought);
-  const avgImprovement = avgCost - newAvg;
-  return { sharesBought, newAvg, avgImprovement };
-}
 
 interface Props {
   holding: Holding;
@@ -29,9 +22,11 @@ interface Props {
 
 export default function GoalLadder({ holding }: Props) {
   const navigate = useNavigate();
+  const { includeFees, setIncludeFees } = useSimFees();
   const cp = currencyPrefix(holding.exchange ?? "US");
   const S = holding.shares;
   const A = holding.avg_cost;
+  const feeOpts = holdingFeeOpts(holding, includeFees);
 
   const currentPrice = useMemo(() => {
     const key = apiTicker(holding.ticker, holding.exchange ?? "US").toUpperCase();
@@ -43,21 +38,13 @@ export default function GoalLadder({ holding }: Props) {
 
   const ladderRows = useMemo(() => {
     if (currentPrice == null || !underwater) return [];
-    return INVESTMENT_STEPS.map((amount) => {
-      const row = computeDcaRow(S, A, currentPrice, amount);
-      return row ? { amount, ...row } : null;
-    }).filter(Boolean) as Array<{
-      amount: number;
-      sharesBought: number;
-      newAvg: number;
-      avgImprovement: number;
-    }>;
-  }, [S, A, currentPrice, underwater]);
+    return buildLadderRows(S, A, currentPrice, feeOpts);
+  }, [S, A, currentPrice, underwater, feeOpts.includeFees, feeOpts.feeType, feeOpts.feeValue]);
 
-  const nextBest = useMemo(() => {
+  const efficientStep = useMemo(() => {
     if (currentPrice == null || !underwater) return null;
-    return computeDcaRow(S, A, currentPrice, NEXT_BEST_AMOUNT);
-  }, [S, A, currentPrice, underwater]);
+    return selectMostEfficientLadderStep(S, A, currentPrice, feeOpts);
+  }, [S, A, currentPrice, underwater, feeOpts.includeFees, feeOpts.feeType, feeOpts.feeValue]);
 
   if (currentPrice == null) {
     return (
@@ -90,8 +77,14 @@ export default function GoalLadder({ holding }: Props) {
             Goal Ladder
           </h2>
           <p className="text-muted-foreground">
-            Position is above water — no averaging needed.
+            Current price is at or above your average — ladder simulations apply when price is below average.
           </p>
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-[#34d399]/30 bg-card/40 px-4 py-3 font-mono text-sm">
+          <Label htmlFor="goal-ladder-fees" className="text-[11px] text-muted-foreground cursor-pointer">
+            Include fees in ladder math
+          </Label>
+          <Switch id="goal-ladder-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
         </div>
       </div>
     );
@@ -99,6 +92,13 @@ export default function GoalLadder({ holding }: Props) {
 
   return (
     <div className="space-y-5">
+      <div className="flex items-center justify-between rounded-xl border border-[#34d399]/20 bg-background/80 px-4 py-3 font-mono text-sm">
+        <Label htmlFor="goal-ladder-fees-active" className="text-[11px] text-muted-foreground cursor-pointer">
+          Include fees in ladder math
+        </Label>
+        <Switch id="goal-ladder-fees-active" checked={includeFees} onCheckedChange={setIncludeFees} />
+      </div>
+
       <div className="rounded-xl border border-[#34d399]/20 bg-background/80 p-5 font-mono text-sm">
         <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-1 flex items-center gap-2">
           <TrendingDown className="h-4 w-4" />
@@ -106,7 +106,10 @@ export default function GoalLadder({ holding }: Props) {
         </h2>
         <p className="text-[11px] text-muted-foreground/80 mb-4">
           Simulated buys at {cp}
-          {fmt(currentPrice)}/share (analytical only).
+          {fmt(currentPrice)}/share (illustrative only; not a forecast or instruction).
+        </p>
+        <p className="text-[10px] text-muted-foreground/60 mb-3">
+          Steps: {LADDER_INVESTMENT_STEPS.map((n) => `${cp}${n}`).join(" · ")} — outcomes if each full amount were deployed at the current price.
         </p>
         <ul className="space-y-3">
           {ladderRows.map(({ amount, newAvg, avgImprovement }) => (
@@ -123,18 +126,29 @@ export default function GoalLadder({ holding }: Props) {
         </ul>
       </div>
 
-      {nextBest && (
+      {efficientStep && (
         <div className="rounded-xl border border-[#34d399]/30 bg-card/40 p-5 font-mono text-sm card-glow">
           <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#34d399] mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4" />
-            Next Best Move
+            Most efficient step (from ladder)
           </h3>
-          <p className="text-foreground/90 leading-relaxed">
-            Invest {cp}
-            {fmt(NEXT_BEST_AMOUNT)} → Avg becomes {cp}
-            {fmt(nextBest.newAvg)} · Improves by {cp}
-            {fmt(nextBest.avgImprovement)}/share
+          <p className="text-[10px] text-muted-foreground/70 mb-3">
+            Selected from the ladder by improvement per dollar, skipping tiny impact and very large steps vs. position size.
           </p>
+          <div className="text-foreground/90 space-y-1.5 leading-relaxed">
+            <p>
+              Simulated deploy {cp}
+              {fmt(efficientStep.amount)}
+            </p>
+            <p>
+              Avg becomes {cp}
+              {fmt(efficientStep.newAvg)}
+            </p>
+            <p>
+              Avg moves by {cp}
+              {fmt(efficientStep.avgImprovement)}/share
+            </p>
+          </div>
         </div>
       )}
     </div>

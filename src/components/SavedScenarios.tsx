@@ -105,7 +105,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
   const filters: { key: FilterMode; label: string; icon: React.ReactNode }[] = [
     { key: "all", label: "All", icon: <SlidersHorizontal className="h-3 w-3" /> },
-    { key: "best_avg", label: "Best Avg", icon: <Award className="h-3 w-3" /> },
+    { key: "best_avg", label: "Lowest modeled avg", icon: <Award className="h-3 w-3" /> },
     { key: "lowest_spend", label: "Lowest Spend", icon: <DollarSign className="h-3 w-3" /> },
     { key: "most_recent", label: "Most Recent", icon: <Clock className="h-3 w-3" /> },
   ];
@@ -198,11 +198,9 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
       {filteredScenarios.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center space-y-2">
           <BookOpen className="h-5 w-5 mx-auto text-muted-foreground/50" />
-          <p className="text-xs text-muted-foreground">
-            No scenarios saved yet. Save a scenario to compare different DCA strategies.
-          </p>
+          <p className="text-xs text-muted-foreground font-medium">No saved scenarios yet.</p>
           <p className="text-[11px] text-muted-foreground/50">
-            Use the Save button after running a calculation.
+            Use the Calculator tab, then Save — or add a note when saving to label your plan.
           </p>
         </div>
       ) : (
@@ -214,6 +212,10 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               const improves = avgDiff > 0.005;
               const worsens = avgDiff < -0.005;
               const isSelected = selectedIds.has(s.id);
+
+              const scenarioTitle = (s.notes?.trim() || METHOD_LABELS[s.method] || s.method).slice(0, 120);
+              const priceUsed = s.buy_price ?? s.input1_value;
+              const savePerShare = Math.max(0, currentAvg - s.new_avg_cost);
 
               return (
                 <div
@@ -231,7 +233,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 >
                   {/* Top line */}
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       {compareMode && (
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                           isSelected ? "bg-primary border-primary" : "border-muted-foreground/30"
@@ -239,24 +241,36 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                           {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
                         </div>
                       )}
-                      <span className="text-[11px] font-medium text-foreground/80">
-                        {METHOD_LABELS[s.method] ?? s.method}
+                      <span className="text-[11px] font-semibold text-foreground/90 truncate" title={scenarioTitle}>
+                        {scenarioTitle}
                       </span>
                       {isBest && (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-primary/10 text-primary border-0">
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-primary/10 text-primary border-0 shrink-0">
                           <Award className="h-2.5 w-2.5" />
-                          Best Avg
+                          Lowest modeled avg
                         </Badge>
                       )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground/50 tabular-nums">
+                    <span className="text-[10px] text-muted-foreground/50 tabular-nums shrink-0">
                       {new Date(s.created_at).toLocaleDateString()}
                     </span>
                   </div>
 
-                  {/* Inputs */}
-                  <p className="text-[11px] text-muted-foreground font-mono mb-2.5">
-                    {s.input1_label} {cp}{fmt(s.input1_value)} · {s.input2_label} {s.input2_label.toLowerCase().includes("share") ? s.input2_value.toFixed(4) : `${cp}${fmt(s.input2_value)}`}
+                  <p className="text-[11px] text-muted-foreground font-mono mb-1.5 leading-relaxed">
+                    Invest {cp}
+                    {fmt(s.budget_invested)} at {cp}
+                    {fmt(priceUsed)}
+                  </p>
+                  <p className="text-[11px] text-foreground/90 font-mono mb-2.5 leading-relaxed">
+                    Avg becomes {cp}
+                    {fmt(s.new_avg_cost)}
+                    {savePerShare > 0.005 ? (
+                      <>
+                        {" "}
+                        · Saves {cp}
+                        {fmt(savePerShare)}/share
+                      </>
+                    ) : null}
                   </p>
 
                   {/* Results row */}

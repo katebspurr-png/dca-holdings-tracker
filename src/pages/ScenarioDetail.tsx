@@ -5,7 +5,7 @@ import { getScenario } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
-  price_budget: "Price + Budget (Recommended target)",
+  price_budget: "Price + Budget",
   price_target: "Price + Target Avg",
   budget_target: "Budget + Target Avg",
 };

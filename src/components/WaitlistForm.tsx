@@ -6,7 +6,7 @@ import { Sparkles, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const FEATURES = [
-  { id: "optimizer", label: "Capital Allocation Optimizer", description: "Auto-allocate a budget across positions for max impact" },
+  { id: "optimizer", label: "Capital Planner", description: "Model budget splits across positions and resulting average costs" },
   { id: "scenario_compare", label: "Scenario Comparison", description: "Compare saved strategies side-by-side" },
   { id: "alerts", label: "Opportunity Alerts", description: "Get notified when a position hits your DCA zone" },
   { id: "auto_price", label: "Auto Price Refresh", description: "Prices update automatically without manual refresh" },

@@ -1,6 +1,6 @@
 /**
  * Stock price fetching with 5-minute cache.
- * Quotes come from the Supabase `stock-price` edge function (Yahoo/Finnhub server-side).
+ * Quotes are fetched directly from Yahoo Finance chart API in the browser (no edge function).
  */
 
 import { canLookup, recordLookup } from "./pro";
@@ -54,6 +54,22 @@ function setCache(quote: StockQuote) {
   writeCache(cache);
 }
 
+function n(x: unknown): number | null {
+  return typeof x === "number" && Number.isFinite(x) ? x : null;
+}
+
+/** Last non-null close from OHLC arrays (fallback when meta has no live price). */
+function lastClose(chart: Record<string, unknown>): number | null {
+  const indicators = chart.indicators as { quote?: Array<{ close?: (number | null)[] }> } | undefined;
+  const closes = indicators?.quote?.[0]?.close;
+  if (!Array.isArray(closes)) return null;
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const v = n(closes[i]);
+    if (v != null) return v;
+  }
+  return null;
+}
+
 export type FetchResult =
   | { ok: true; quote: StockQuote; fromCache: boolean }
   | { ok: false; error: string };
@@ -73,54 +89,65 @@ export async function fetchStockPrice(ticker: string): Promise<FetchResult> {
   }
 
   try {
-    const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-    if (!projectUrl || !anonKey) {
-      return { ok: false, error: "Missing Supabase URL or key" };
-    }
-
-    const resp = await fetch(
-      `${projectUrl}/functions/v1/stock-price?ticker=${encodeURIComponent(upper)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${anonKey}`,
-          apikey: anonKey,
-        },
-      }
-    );
+    const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(upper)}?interval=1d&range=5d`;
+    const resp = await fetch(yahooUrl);
 
     if (!resp.ok) {
-      if (resp.status === 401) {
-        return { ok: false, error: "Unauthorized — use Supabase anon key in .env" };
-      }
-      const errData = (await resp.json().catch(() => ({}))) as { error?: string };
-      return { ok: false, error: errData.error || "Price unavailable" };
-    }
-
-    const data = (await resp.json()) as Record<string, unknown>;
-    if (typeof data.error === "string") {
-      return { ok: false, error: data.error };
-    }
-    if (typeof data.price !== "number") {
       return { ok: false, error: "Price unavailable" };
     }
 
-    const quote: StockQuote = {
-      ticker: String(data.ticker ?? upper),
-      price: data.price,
-      previousClose: typeof data.previousClose === "number" ? data.previousClose : 0,
-      change: typeof data.change === "number" ? data.change : 0,
-      changePercent: typeof data.changePercent === "number" ? data.changePercent : 0,
-      fetchedAt: Date.now(),
-      week52High: typeof data.week52High === "number" ? data.week52High : null,
-      week52Low: typeof data.week52Low === "number" ? data.week52Low : null,
-      todayOpen: typeof data.todayOpen === "number" ? data.todayOpen : null,
-      todayHigh: typeof data.todayHigh === "number" ? data.todayHigh : null,
-      todayLow: typeof data.todayLow === "number" ? data.todayLow : null,
-      todayVolume: typeof data.todayVolume === "number" ? data.todayVolume : null,
-      avgVolume: typeof data.avgVolume === "number" ? data.avgVolume : null,
+    const data = (await resp.json()) as {
+      chart?: { result?: Array<Record<string, unknown>>; error?: { description?: string } };
     };
+
+    if (data.chart?.error?.description) {
+      return { ok: false, error: "Price unavailable" };
+    }
+
+    const chart = data.chart?.result?.[0];
+    if (!chart) {
+      return { ok: false, error: "Price unavailable" };
+    }
+
+    const meta = chart.meta as Record<string, unknown> | undefined;
+    if (!meta) {
+      return { ok: false, error: "Price unavailable" };
+    }
+
+    const price =
+      n(meta.regularMarketPrice) ??
+      n(meta.regularMarketPreviousClose) ??
+      lastClose(chart);
+
+    if (price == null || price <= 0) {
+      return { ok: false, error: "Price unavailable" };
+    }
+
+    const previousClose =
+      n(meta.chartPreviousClose) ??
+      n(meta.previousClose) ??
+      n(meta.regularMarketPreviousClose) ??
+      price;
+
+    const change = price - previousClose;
+    const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
+
+    const quote: StockQuote = {
+      ticker: String(meta.symbol ?? upper).toUpperCase(),
+      price,
+      previousClose,
+      change,
+      changePercent,
+      fetchedAt: Date.now(),
+      week52High: n(meta.fiftyTwoWeekHigh),
+      week52Low: n(meta.fiftyTwoWeekLow),
+      todayOpen: n(meta.regularMarketOpen),
+      todayHigh: n(meta.regularMarketDayHigh),
+      todayLow: n(meta.regularMarketDayLow),
+      todayVolume: n(meta.regularMarketVolume),
+      avgVolume: n(meta.averageDailyVolume10Day) ?? n(meta.averageDailyVolume3Month),
+    };
+
     setCache(quote);
     recordLookup();
     return { ok: true, quote, fromCache: false };

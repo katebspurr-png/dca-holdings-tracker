@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight,
@@ -26,8 +27,11 @@ import {
 import {
   getHolding, getScenariosForHolding, getTransactionsForHolding,
   undoLastBuy, removeScenario, currencyPrefix, exchangeLabel, apiTicker,
-  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding,
+  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding, type Transaction,
 } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { transactionFromDbRow } from "@/lib/sync";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { canSaveScenario, scenariosRemaining, hasFeature, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
@@ -47,6 +51,10 @@ const WORKSPACE_TABS: { key: WorkspaceTab; label: string; icon: React.ElementTyp
 const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt4 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
+function formatHistoryDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function formatVolume(vol: number): string {
   if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
   if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
@@ -59,7 +67,7 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 
 const METHOD_OPTIONS: { value: Method; label: string; desc: string }[] = [
   { value: "price_shares", label: "Price + Shares", desc: "Set buy price & share count" },
-  { value: "price_budget", label: "Price + Budget", desc: "Recommended target workflow" },
+  { value: "price_budget", label: "Price + Budget", desc: "Set buy price and max budget" },
   { value: "price_target", label: "Price + Target Avg", desc: "Target a specific average" },
   { value: "budget_target", label: "Budget + Target Avg", desc: "Fixed budget, target avg" },
 ];
@@ -170,6 +178,7 @@ export default function HoldingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
@@ -208,10 +217,43 @@ export default function HoldingDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, version]);
   const scenarios = id ? getScenariosForHolding(id) : [];
-  const transactions = id ? getTransactionsForHolding(id) : [];
-  void version; void calcTick;
+  const localTransactions = useMemo(
+    () => (id ? getTransactionsForHolding(id) : []),
+    [id, version]
+  );
+  void calcTick;
 
-  const latestTx = transactions[0];
+  const {
+    data: cloudTransactions,
+    isPending: historyLoading,
+    isError: historyError,
+  } = useQuery({
+    queryKey: ["holding-transactions", id, user?.id],
+    queryFn: async (): Promise<Transaction[]> => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("holding_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((row) => transactionFromDbRow(row as Record<string, unknown>));
+    },
+    enabled: Boolean(user?.id && id && activeTab === "history"),
+  });
+
+  const historyRows: Transaction[] = useMemo(() => {
+    if (!user || cloudTransactions === undefined || historyError) return localTransactions;
+    const byId = new Map<string, Transaction>();
+    for (const t of cloudTransactions) byId.set(t.id, t);
+    for (const t of localTransactions) {
+      if (!byId.has(t.id)) byId.set(t.id, t);
+    }
+    return [...byId.values()].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [user, cloudTransactions, historyError, localTransactions]);
+
+  const latestTx = localTransactions[0];
   const canUndo = latestTx && latestTx.transaction_type === "buy" && !latestTx.is_undone;
 
   const exchange = holding?.exchange ?? "US";
@@ -747,59 +789,63 @@ export default function HoldingDetail() {
         {/* ═══════════════ HISTORY TAB ═══════════════ */}
         {activeTab === "history" && (
           <div className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Transaction History</h2>
-            {transactions.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center space-y-1.5">
-                <History className="h-5 w-5 mx-auto text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No transactions yet.</p>
-                <p className="text-[11px] text-muted-foreground/50">Applied buys and undo actions will appear here.</p>
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">History</h2>
+            {user && historyLoading && (
+              <p className="text-[10px] text-muted-foreground font-mono">Loading cloud history…</p>
+            )}
+            {user && historyError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive font-mono">
+                Could not load history.
+                {localTransactions.length > 0 ? (
+                  <span className="block text-muted-foreground font-normal mt-1">
+                    Showing on-device history below.
+                  </span>
+                ) : null}
+              </div>
+            )}
+            {historyRows.length === 0 && !(user && historyLoading) ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/10 p-6 text-center space-y-1 font-mono text-[11px] text-muted-foreground">
+                <History className="h-4 w-4 mx-auto text-muted-foreground/50 mb-1" />
+                <p>No history yet. Executed buys will appear here.</p>
               </div>
             ) : (
-              <div className="grid gap-2">
-                {transactions.map((t) => {
+              <div className="space-y-1.5 font-mono text-[11px] leading-snug">
+                {historyRows.map((t) => {
                   const isUndo = t.is_undone;
                   return (
-                    <div key={t.id} className={`rounded-xl border border-border bg-card p-3.5 transition-all ${isUndo ? "opacity-50" : ""}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={isUndo ? "outline" : "secondary"} className="text-[9px] px-1.5 h-4">
-                            {isUndo ? "Undone" : t.transaction_type === "buy" ? "Buy" : t.transaction_type}
+                    <div
+                      key={t.id}
+                      className={`rounded-lg border border-border/80 bg-card/60 px-3 py-2.5 ${
+                        isUndo ? "opacity-55 border-dashed" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-muted-foreground">{formatHistoryDate(t.created_at)}</span>
+                        {isUndo ? (
+                          <Badge variant="outline" className="text-[8px] px-1 h-4">
+                            Undone
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground tabular-nums">
-                            {new Date(t.created_at).toLocaleDateString()} {new Date(t.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {METHOD_LABELS[t.method] ?? t.method}
-                        </span>
+                        ) : null}
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Shares</span>
-                          <span className="font-mono font-medium">{t.shares_bought.toFixed(4)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Price</span>
-                          <span className="font-mono font-medium">{cp}{Number(t.buy_price).toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Total Spend</span>
-                          <span className="font-mono font-medium">{cp}{fmt2(t.total_spend)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">New Avg</span>
-                          <span className="font-mono font-medium text-primary">{cp}{fmt2(t.new_avg_cost)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Total Shares</span>
-                          <span className="font-mono font-medium">{t.new_total_shares.toFixed(4)}</span>
-                        </div>
-                      </div>
-                      {isUndo && t.undone_at && (
-                        <p className="text-[10px] text-muted-foreground mt-2 pt-1.5 border-t border-border/50 italic">
-                          Undone on {new Date(t.undone_at).toLocaleDateString()}
+                      <p className="text-foreground/90">
+                        Bought {t.shares_bought.toFixed(4)} shares at {cp}
+                        {Number(t.buy_price).toFixed(2)}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Total: {cp}
+                        {fmt2(t.total_spend)}
+                      </p>
+                      {t.fee_applied > 0 ? (
+                        <p className="text-muted-foreground">
+                          Fees: {cp}
+                          {fmt2(t.fee_applied)}
                         </p>
-                      )}
+                      ) : null}
+                      {isUndo && t.undone_at ? (
+                        <p className="text-[10px] text-muted-foreground/70 mt-1 pt-1 border-t border-border/40">
+                          Undone {formatHistoryDate(t.undone_at)}
+                        </p>
+                      ) : null}
                     </div>
                   );
                 })}

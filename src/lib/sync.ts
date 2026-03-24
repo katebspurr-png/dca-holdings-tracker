@@ -25,6 +25,33 @@ function log(msg: string, err?: unknown) {
   if (err) console.error(`[sync] ${msg}`, err);
 }
 
+/** Map a Supabase `transactions` row to local `Transaction` shape. */
+export function transactionFromDbRow(t: Record<string, unknown>): Transaction {
+  return {
+    id: String(t.id),
+    holding_id: String(t.holding_id),
+    ticker: String(t.ticker),
+    transaction_type: String(t.transaction_type ?? "buy"),
+    buy_price: Number(t.buy_price),
+    shares_bought: Number(t.shares_bought),
+    budget_invested: Number(t.budget_invested),
+    fee_applied: Number(t.fee_applied ?? 0),
+    total_spend: Number(t.total_spend),
+    include_fees: Boolean(t.include_fees),
+    fee_type_snapshot: String(t.fee_type_snapshot ?? "flat"),
+    fee_value_snapshot: Number(t.fee_value_snapshot ?? 0),
+    previous_shares: Number(t.previous_shares),
+    previous_avg_cost: Number(t.previous_avg_cost),
+    new_total_shares: Number(t.new_total_shares),
+    new_avg_cost: Number(t.new_avg_cost),
+    method: String(t.method),
+    notes: t.notes != null ? String(t.notes) : null,
+    is_undone: Boolean(t.is_undone),
+    undone_at: t.undone_at != null ? String(t.undone_at) : null,
+    created_at: String(t.created_at),
+  };
+}
+
 // ── Pull: Supabase → localStorage ───────────────────────────
 
 /**
@@ -102,29 +129,9 @@ export async function pullFromCloud(userId: string): Promise<AppData | null> {
       created_at: s.created_at,
     }));
 
-    const transactions: Transaction[] = (transactionsRes.data ?? []).map((t: any) => ({
-      id: t.id,
-      holding_id: t.holding_id,
-      ticker: t.ticker,
-      transaction_type: t.transaction_type,
-      buy_price: Number(t.buy_price),
-      shares_bought: Number(t.shares_bought),
-      budget_invested: Number(t.budget_invested),
-      fee_applied: Number(t.fee_applied),
-      total_spend: Number(t.total_spend),
-      include_fees: t.include_fees,
-      fee_type_snapshot: t.fee_type_snapshot,
-      fee_value_snapshot: Number(t.fee_value_snapshot),
-      previous_shares: Number(t.previous_shares),
-      previous_avg_cost: Number(t.previous_avg_cost),
-      new_total_shares: Number(t.new_total_shares),
-      new_avg_cost: Number(t.new_avg_cost),
-      method: t.method,
-      notes: t.notes ?? null,
-      is_undone: t.is_undone,
-      undone_at: t.undone_at ?? null,
-      created_at: t.created_at,
-    }));
+    const transactions: Transaction[] = (transactionsRes.data ?? []).map((t: Record<string, unknown>) =>
+      transactionFromDbRow(t)
+    );
 
     const whatIfComparisons: WhatIfComparison[] = (whatIfRes.data ?? []).map((w: any) => ({
       id: w.id,

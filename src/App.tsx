@@ -12,10 +12,12 @@ import WhatIfScenarios from "./pages/WhatIfScenarios";
 import Settings from "./pages/Settings";
 import UpdatePrices from "./pages/UpdatePrices";
 import CapitalOptimizer from "./pages/CapitalOptimizer";
+import Progress from "./pages/Progress";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SimFeesProvider } from "./contexts/SimFeesContext";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -65,6 +67,7 @@ const AppRoutes = () => {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/update-prices" element={<ProtectedRoute><UpdatePrices /></ProtectedRoute>} />
       <Route path="/optimizer" element={<ProtectedRoute><CapitalOptimizer /></ProtectedRoute>} />
+      <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -78,8 +81,10 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
-            <BottomTabBarGuard />
+            <SimFeesProvider>
+              <AppRoutes />
+              <BottomTabBarGuard />
+            </SimFeesProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

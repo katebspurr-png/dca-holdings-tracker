@@ -76,17 +76,17 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 <div className="flex flex-wrap gap-1">
                   {isBestAvg && (
                     <Badge variant="secondary" className="text-[8px] px-1.5 py-0 h-4 gap-0.5 bg-primary/10 text-primary border-0">
-                      <Award className="h-2 w-2" /> Best Avg
+                      <Award className="h-2 w-2" /> Lowest modeled avg
                     </Badge>
                   )}
                   {isLowestSpend && (
                     <Badge variant="secondary" className="text-[8px] px-1.5 py-0 h-4 gap-0.5 bg-accent text-accent-foreground border-0">
-                      <DollarSign className="h-2 w-2" /> Lowest Spend
+                      <DollarSign className="h-2 w-2" /> Lowest total spend
                     </Badge>
                   )}
                   {isBestImprovement && improves && (
                     <Badge variant="secondary" className="text-[8px] px-1.5 py-0 h-4 gap-0.5 bg-primary/10 text-primary border-0">
-                      <TrendingDown className="h-2 w-2" /> Best Improvement
+                      <TrendingDown className="h-2 w-2" /> Largest modeled avg reduction
                     </Badge>
                   )}
                 </div>
@@ -135,17 +135,17 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 {/* Divider */}
                 <div className="border-t border-border/50" />
 
-                {/* Cost efficiency */}
+                {/* Modeled efficiency */}
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Cost Efficiency</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Modeled efficiency</p>
                   {efficiency > 0 ? (
                     <p className="text-xs font-mono font-semibold text-primary">
-                      {(efficiency * 1000).toFixed(3)}¢ / $1
+                      {(efficiency * 1000).toFixed(2)}¢ / $1
                     </p>
                   ) : (
                     <p className="text-xs font-mono text-muted-foreground/50">N/A</p>
                   )}
-                  <p className="text-[9px] text-muted-foreground/50 mt-0.5">Improvement per $ invested</p>
+                  <p className="text-[9px] text-muted-foreground/50 mt-0.5">Modeled avg change per $ in this scenario</p>
                 </div>
 
                 {/* Actions */}

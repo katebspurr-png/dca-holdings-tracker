@@ -22,11 +22,13 @@ function onLogin(userId: string) {
   initStorageForUser(userId);
   // Sync from cloud in background — don't block rendering
   // localStorage already has data on repeat visits so app loads instantly
-  pullFromCloud(userId).then((cloudData) => {
-    if (cloudData && cloudData.holdings.length > 0) {
-      seedFromCloud(cloudData);
-    }
-  });
+  pullFromCloud(userId)
+    .then((cloudData) => {
+      if (cloudData && cloudData.holdings.length > 0) {
+        seedFromCloud(cloudData);
+      }
+    })
+    .catch(console.error);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

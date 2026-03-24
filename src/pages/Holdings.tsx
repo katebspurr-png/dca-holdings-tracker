@@ -50,8 +50,18 @@ import {
   currencyPrefix,
   apiTicker,
 } from "@/lib/storage";
-import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
+import { fetchStockPrice } from "@/lib/stock-price";
+import { getCachedPrice } from "@/lib/price-cache";
 import { toast } from "sonner";
+import { useSimFees } from "@/contexts/SimFeesContext";
+import {
+  selectMostEfficientLadderStep,
+  holdingFeeOpts,
+  type DcaRow,
+} from "@/lib/dca-sim";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
 
 const SORT_KEY = "dca-holdings-sort";
 type SortMode = "az" | "position" | "loss" | "gain";
@@ -62,8 +72,6 @@ const SORT_LABELS: Record<SortMode, string> = {
   loss: "Biggest Loss",
   gain: "Biggest Gain",
 };
-
-const CACHE_KEY = "dca-price-cache";
 
 const AVATAR_PALETTE = [
   "bg-white text-black",
@@ -76,22 +84,6 @@ function avatarClassForTicker(ticker: string): string {
   let h = 0;
   for (let i = 0; i < ticker.length; i++) h = (h + ticker.charCodeAt(i) * (i + 1)) % 997;
   return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
-}
-
-function readPriceCache(): Record<string, StockQuote> {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function getCachedPrice(ticker: string, exchange: string): number | null {
-  const cache = readPriceCache();
-  const key = apiTicker(ticker, exchange as "US" | "TSX").toUpperCase();
-  const entry = cache[key];
-  return entry ? entry.price : null;
 }
 
 const fmt = (n: number) =>
@@ -112,6 +104,7 @@ export default function Holdings() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const { includeFees, setIncludeFees } = useSimFees();
 
   const refresh = () => setTick((t) => t + 1);
 
@@ -181,8 +174,8 @@ export default function Holdings() {
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
   const totalUsdInvested = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
   const totalCadInvested = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
-  const totalCostBasis = totalUsdInvested + totalCadInvested;
-  const hasAnyPrice = holdings.some((h) => livePrices[h.id] != null);
+  const hasUsdPrice = usdHoldings.some((h) => livePrices[h.id] != null);
+  const hasCadPrice = cadHoldings.some((h) => livePrices[h.id] != null);
 
   const usdValue = usdHoldings.reduce((sum, h) => {
     const p = livePrices[h.id];
@@ -192,9 +185,10 @@ export default function Holdings() {
     const p = livePrices[h.id];
     return sum + (p != null ? h.shares * p : h.shares * h.avg_cost);
   }, 0);
-  const totalMarketValue = usdValue + cadValue;
-  const totalPnl = totalMarketValue - totalCostBasis;
-  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
+  const usdPnl = usdValue - totalUsdInvested;
+  const cadPnl = cadValue - totalCadInvested;
+  const usdPnlPct = totalUsdInvested > 0 ? (usdPnl / totalUsdInvested) * 100 : 0;
+  const cadPnlPct = totalCadInvested > 0 ? (cadPnl / totalCadInvested) * 100 : 0;
 
   const refreshAllPrices = useCallback(async () => {
     const result = await refreshAll(() => refresh());
@@ -278,7 +272,8 @@ export default function Holdings() {
     setSelected(new Set());
   };
 
-  const displayDollar = (n: number) => `$${fmt(n)}`;
+  const fmtUsd = (n: number) => `$${fmt(n)}`;
+  const fmtCad = (n: number) => `C$${fmt(n)}`;
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -411,34 +406,71 @@ export default function Holdings() {
                 </DropdownMenu>
               </div>
 
-              <div className="relative z-10 mb-6 flex items-end justify-between">
-                <div>
-                  <p className="mb-1 text-[15px] text-stitch-muted">Current Value:</p>
-                  <p className="text-[34px] font-bold leading-none text-stitch-accent">
-                    {hasAnyPrice ? displayDollar(totalMarketValue) : "—"}
-                  </p>
+              {usdHoldings.length > 0 && (
+                <div className="relative z-10 mb-5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted mb-2">US positions</p>
+                  <div className="flex justify-between gap-4">
+                    <div>
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Value</p>
+                      <p className="text-[22px] font-bold leading-none text-stitch-accent">
+                        {hasUsdPrice ? fmtUsd(usdValue) : "—"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
+                      <p className="text-[16px] font-medium text-white">{fmtUsd(totalUsdInvested)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
+                    <span className="text-[13px] text-stitch-muted">P&amp;L</span>
+                    <span
+                      className={`text-[15px] font-medium ${
+                        !hasUsdPrice ? "text-stitch-muted" : usdPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
+                      }`}
+                    >
+                      {hasUsdPrice
+                        ? `${usdPnl >= 0 ? "+" : ""}${fmtUsd(usdPnl)} (${usdPnlPct >= 0 ? "+" : ""}${usdPnlPct.toFixed(2)}%)`
+                        : "—"}
+                    </span>
+                  </div>
                 </div>
-                <PortfolioSparkline positive={totalPnl >= 0} />
-              </div>
+              )}
 
-              <div className="relative z-10 flex justify-between">
-                <div>
-                  <p className="mb-1 text-[15px] text-stitch-muted">Total Invested:</p>
-                  <p className="text-[20px] font-medium text-white">{displayDollar(totalCostBasis)}</p>
+              {cadHoldings.length > 0 && (
+                <div className="relative z-10 mb-5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted mb-2">CAD (TSX) positions</p>
+                  <div className="flex justify-between gap-4">
+                    <div>
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Value</p>
+                      <p className="text-[22px] font-bold leading-none text-stitch-accent">
+                        {hasCadPrice ? fmtCad(cadValue) : "—"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
+                      <p className="text-[16px] font-medium text-white">{fmtCad(totalCadInvested)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
+                    <span className="text-[13px] text-stitch-muted">P&amp;L</span>
+                    <span
+                      className={`text-[15px] font-medium ${
+                        !hasCadPrice ? "text-stitch-muted" : cadPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
+                      }`}
+                    >
+                      {hasCadPrice
+                        ? `${cadPnl >= 0 ? "+" : ""}${fmtCad(cadPnl)} (${cadPnlPct >= 0 ? "+" : ""}${cadPnlPct.toFixed(2)}%)`
+                        : "—"}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="mb-1 text-[15px] text-stitch-muted">P&amp;L:</p>
-                  <p
-                    className={`text-[20px] font-medium ${
-                      !hasAnyPrice ? "text-stitch-muted" : totalPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
-                    }`}
-                  >
-                    {hasAnyPrice
-                      ? `${totalPnl >= 0 ? "+" : ""}${displayDollar(totalPnl)} (${totalPnlPct >= 0 ? "+" : ""}${totalPnlPct.toFixed(2)}%)`
-                      : "—"}
-                  </p>
-                </div>
-              </div>
+              )}
+
+              {usdHoldings.length > 0 && cadHoldings.length > 0 && (
+                <p className="relative z-10 mb-3 text-[10px] leading-relaxed text-stitch-muted/80">
+                  US and Canadian totals are shown separately — they are not converted or summed into one number.
+                </p>
+              )}
               {lastRefreshed && (
                 <p className="relative z-10 mt-3 text-[10px] text-stitch-muted/70">
                   Updated {formatLastRefreshed(lastRefreshed)}
@@ -446,13 +478,20 @@ export default function Holdings() {
               )}
             </section>
 
-            <NextBestMove holdings={holdings} livePrices={livePrices} navigate={navigate} />
+            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+              <Label htmlFor="portfolio-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
+                Include fees in portfolio simulations
+              </Label>
+              <Switch id="portfolio-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            </div>
+
+            <MostEfficientStep holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
             <section className="mt-2">
               <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
             </section>
 
-            <StrategyImpact holdings={holdings} />
+            <PortfolioStrategyProgress holdings={holdings} />
 
             {/* Asset grid */}
             <section className="grid grid-cols-2 gap-4">
@@ -474,7 +513,8 @@ export default function Holdings() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`);
+                        if (selectMode) toggleSelect(h.id);
+                        else navigate(`/holdings/${h.id}`);
                       }
                     }}
                     className={`relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity ${
@@ -690,36 +730,7 @@ export default function Holdings() {
   );
 }
 
-function PortfolioSparkline({ positive }: { positive: boolean }) {
-  const stroke = positive ? "#C4FB35" : "#ff453a";
-  const fillId = positive ? "stitch-graph-grad-pos" : "stitch-graph-grad-neg";
-  return (
-    <div className="relative h-16 w-32">
-      <svg className="h-full w-full overflow-visible" viewBox="0 0 100 50" aria-hidden>
-        <defs>
-          <linearGradient id={fillId} x1="0%" x2="0%" y1="0%" y2="100%">
-            <stop offset="0%" stopColor={stroke} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M 0 45 C 10 35, 20 40, 30 30 C 40 20, 50 35, 60 25 C 70 15, 80 20, 90 5 L 100 0 L 100 50 L 0 50 Z"
-          fill={`url(#${fillId})`}
-        />
-        <path
-          d="M 0 45 C 10 35, 20 40, 30 30 C 40 20, 50 35, 60 25 C 70 15, 80 20, 90 5 L 100 0"
-          fill="none"
-          stroke={stroke}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-}
-
-/* ── DCA Opportunities ──────────────────────────────────── */
+/* ── Strategy opportunities (portfolio rank) ───────────── */
 function DcaOpportunities({
   holdings,
   livePrices,
@@ -729,122 +740,170 @@ function DcaOpportunities({
   livePrices: Record<string, number | null>;
   navigate: (path: string) => void;
 }) {
-  const TEST_INVESTMENT = 500;
+  const { includeFees } = useSimFees();
   const [showAll, setShowAll] = useState(false);
 
   const scored = useMemo(() => {
-    const raw = holdings
-      .map((h) => {
-        const price = livePrices[h.id];
-        if (price == null || price <= 0) return null;
-        if (price >= h.avg_cost) return { holding: h, price, improvement: 0, score: 0 };
-        const sharesBought = TEST_INVESTMENT / price;
-        const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
-        const improvement = h.avg_cost - newAvg;
-        return { holding: h, price, improvement: Math.max(0, improvement), score: 0 };
-      })
-      .filter(Boolean) as { holding: Holding; price: number; improvement: number; score: number }[];
-
-    const maxImprovement = Math.max(...raw.map((r) => r.improvement), 0.001);
-    for (const r of raw) {
-      r.score = Math.round((r.improvement / maxImprovement) * 100);
+    const rows: { holding: Holding; price: number; step: DcaRow }[] = [];
+    for (const h of holdings) {
+      const price = livePrices[h.id];
+      if (price == null || price <= 0 || price >= h.avg_cost) continue;
+      const step = selectMostEfficientLadderStep(
+        h.shares,
+        h.avg_cost,
+        price,
+        holdingFeeOpts(h, includeFees)
+      );
+      if (!step || step.avgImprovement <= 0) continue;
+      rows.push({ holding: h, price, step });
     }
-    return raw.sort((a, b) => b.score - a.score);
-  }, [holdings, livePrices]);
+    const maxEff = Math.max(...rows.map((r) => r.step.improvementPerDollar), 1e-12);
+    return rows
+      .map((r) => ({
+        ...r,
+        rankScore: Math.round((r.step.improvementPerDollar / maxEff) * 100),
+      }))
+      .sort((a, b) => b.rankScore - a.rankScore);
+  }, [holdings, livePrices, includeFees]);
 
   if (holdings.length === 0) return null;
 
-  const hasAnyPrice = scored.length > 0;
+  const hasRanked = scored.length > 0;
   const top = scored[0];
   const rest = scored.slice(1);
   const visibleRest = showAll ? rest : rest.slice(0, 3);
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
-        <Gauge className="h-4.5 w-4.5 text-primary" />
-        <h2 className="section-label">
-          DCA Opportunities
-        </h2>
-        <span className="ml-auto text-[10px] text-muted-foreground/40">$500 test investment</span>
+      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Gauge className="h-4.5 w-4.5 text-primary" />
+          <h2 className="section-label">Strategy opportunities</h2>
+        </div>
+        <p className="text-[10px] leading-snug text-muted-foreground/70 sm:max-w-[220px] sm:text-right">
+          Portfolio rank 0–100 = improvement-per-dollar at each holding’s ladder-selected step, normalized to the best in
+          this list (not the Insights standardized test score).
+        </p>
       </div>
 
-      {!hasAnyPrice ? (
+      {!hasRanked ? (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Add current prices to evaluate DCA opportunities.
+            Add prices below average to rank simulated ladder steps across positions.
           </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {/* ── Best Opportunity — featured card ── */}
-          {top && top.score > 0 && (() => {
+          {top && top.rankScore > 0 && (() => {
             const h = top.holding;
-            const cp = currencyPrefix((h.exchange ?? "US") as any);
+            const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
             return (
               <button
                 key={h.id}
+                type="button"
                 onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
+                className="card-glow glow-primary w-full rounded-xl border p-4 text-left transition-colors hover:border-primary/30"
               >
-                <div className="flex items-center gap-1.5 mb-2">
+                <div className="mb-2 flex items-center gap-1.5">
                   <Gauge className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Best Opportunity</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    Highest rank in portfolio
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      ${TEST_INVESTMENT} → Avg drops {cp}{fmt(top.improvement)}
+                    <span
+                      style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontWeight: 800,
+                        fontSize: "1.35rem",
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {h.ticker}
+                    </span>
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+                      Simulated {cp}
+                      {fmt(top.step.amount)} → avg {cp}
+                      {fmt(top.step.newAvg)} (−{cp}
+                      {fmt(top.step.avgImprovement)}/share)
                     </p>
-                    <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
-                      Avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(top.price)}
+                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground/60">
+                      Avg {cp}
+                      {fmt(h.avg_cost)} · Price {cp}
+                      {fmt(top.price)}
                     </p>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "2.5rem", color: "hsl(160 60% 52%)", letterSpacing: "-0.02em", lineHeight: 1 }}>{top.score}</span>
-                    <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
+                    <span
+                      style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontWeight: 800,
+                        fontSize: "2.5rem",
+                        color: "hsl(160 60% 52%)",
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {top.rankScore}
+                    </span>
+                    <span className="text-[8px] uppercase tracking-wider text-muted-foreground/50">rank</span>
                   </div>
                 </div>
               </button>
             );
           })()}
 
-          {/* ── Remaining opportunities — compact rows ── */}
           {rest.length > 0 && (
             <div className="space-y-0.5">
-              {visibleRest.map(({ holding: h, price, score, improvement }) => {
-                const cp = currencyPrefix((h.exchange ?? "US") as any);
+              {visibleRest.map(({ holding: h, price, rankScore, step }) => {
+                const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
+                if (!step) return null;
                 return (
                   <button
                     key={h.id}
+                    type="button"
                     onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                    className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
+                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted/30"
                   >
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1rem", color: "hsl(160 60% 52% / 0.65)", width: 28, textAlign: "right" as const, flexShrink: 0 }}>{score}</span>
-                    <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
-                    <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
-                      {improvement > 0
-                        ? `$${TEST_INVESTMENT} → avg drops ${cp}${fmt(improvement)}`
-                        : "No benefit at current price"}
+                    <span
+                      style={{
+                        fontFamily: "'Syne', sans-serif",
+                        fontWeight: 800,
+                        fontSize: "1rem",
+                        color: "hsl(160 60% 52% / 0.65)",
+                        width: 28,
+                        flexShrink: 0,
+                        textAlign: "right",
+                      }}
+                    >
+                      {rankScore}
                     </span>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground/30 shrink-0" />
+                    <span className="w-16 shrink-0 font-mono text-sm font-semibold">{h.ticker}</span>
+                    <span className="flex-1 truncate font-mono text-[11px] text-muted-foreground">
+                      {cp}
+                      {fmt(step.amount)} sim → −{cp}
+                      {fmt(step.avgImprovement)}/share
+                    </span>
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/30" />
                   </button>
                 );
               })}
               {rest.length > 3 && (
                 <button
+                  type="button"
                   onClick={() => setShowAll((v) => !v)}
-                  className="w-full text-center text-[11px] text-muted-foreground/50 hover:text-muted-foreground py-1.5 transition-colors"
+                  className="w-full py-1.5 text-center text-[11px] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
                 >
-                  {showAll ? "Show less" : `Show all ${rest.length} opportunities`}
+                  {showAll ? "Show less" : `Show all ${rest.length} ranked`}
                 </button>
               )}
             </div>
           )}
 
-          <p className="text-[9px] text-muted-foreground/40 text-center pt-1">
-            Analytical indicator only — not financial advice
+          <p className="pt-1 text-center text-[9px] text-muted-foreground/40">
+            Illustrative simulations only — not financial advice.
           </p>
         </div>
       )}
@@ -852,8 +911,8 @@ function DcaOpportunities({
   );
 }
 
-/* ── Next Best Move ─────────────────────────────────────── */
-function NextBestMove({
+/* ── Most efficient step (portfolio) — same ladder rule ─── */
+function MostEfficientStep({
   holdings,
   livePrices,
   navigate,
@@ -862,94 +921,83 @@ function NextBestMove({
   livePrices: Record<string, number | null>;
   navigate: (path: string) => void;
 }) {
-  const TEST_INVESTMENT = 500;
+  const { includeFees } = useSimFees();
 
   const best = useMemo(() => {
-    let top: { holding: Holding; price: number; newAvg: number; improvement: number } | null = null;
-    let maxImprovement = 0;
+    let top: { holding: Holding; price: number; step: DcaRow } | null = null;
+    let bestEff = -Infinity;
 
     for (const h of holdings) {
       const price = livePrices[h.id];
       if (price == null || price <= 0 || price >= h.avg_cost) continue;
-      const sharesBought = TEST_INVESTMENT / price;
-      const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
-      const improvement = h.avg_cost - newAvg;
-      if (improvement > maxImprovement) {
-        maxImprovement = improvement;
-        top = { holding: h, price, newAvg, improvement };
+      const step = selectMostEfficientLadderStep(
+        h.shares,
+        h.avg_cost,
+        price,
+        holdingFeeOpts(h, includeFees)
+      );
+      if (!step || step.avgImprovement <= 0) continue;
+      if (step.improvementPerDollar > bestEff) {
+        bestEff = step.improvementPerDollar;
+        top = { holding: h, price, step };
       }
     }
     return top;
-  }, [holdings, livePrices]);
+  }, [holdings, livePrices, includeFees]);
 
   if (!best) return null;
 
   const h = best.holding;
-  const cp = currencyPrefix((h.exchange ?? "US") as any);
+  const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
 
   return (
     <section>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex items-center gap-2">
         <Zap className="h-4 w-4 text-primary" />
-        <h2 className="section-label">
-          Next Best Move
-        </h2>
+        <h2 className="section-label">Most efficient step (portfolio)</h2>
       </div>
+      <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
+        Same ladder selection as the Goal Ladder: best improvement-per-dollar among rungs, skipping tiny impact and very
+        large sizes vs. position value. Open the holding to see all rungs.
+      </p>
       <button
+        type="button"
         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-        className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
+        className="card-glow glow-primary w-full rounded-xl border p-4 text-left transition-colors hover:border-primary/30"
       >
         <div className="flex items-center justify-between">
           <div>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.5rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
-            <p className="text-sm font-mono text-foreground mt-1">
-              ${TEST_INVESTMENT} → Avg becomes {cp}{fmt(best.newAvg)}
+            <span
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: 800,
+                fontSize: "1.5rem",
+                letterSpacing: "-0.02em",
+                lineHeight: 1,
+              }}
+            >
+              {h.ticker}
+            </span>
+            <p className="mt-1 font-mono text-sm text-foreground">
+              Simulated deploy {cp}
+              {fmt(best.step.amount)} → avg {cp}
+              {fmt(best.step.newAvg)}
             </p>
-            <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-0.5">
+            <p className="mt-0.5 flex items-center gap-1 font-mono text-sm font-medium text-primary">
               <ArrowDownRight className="h-3.5 w-3.5" />
-              Improves avg by {cp}{fmt(best.improvement)}
+              Avg moves by {cp}
+              {fmt(best.step.avgImprovement)}/share
             </p>
-            <p className="text-[10px] text-muted-foreground/50 font-mono mt-1.5">
-              Current avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(best.price)}
+            <p className="mt-1.5 font-mono text-[10px] text-muted-foreground/50">
+              Current avg {cp}
+              {fmt(h.avg_cost)} · Price {cp}
+              {fmt(best.price)}
             </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
         </div>
       </button>
     </section>
   );
 }
 
-/* ── Strategy Impact ────────────────────────────────────── */
-function StrategyImpact({ holdings }: { holdings: Holding[] }) {
-  const improved = holdings.filter((h) => h.initial_avg_cost > h.avg_cost);
-  if (improved.length === 0) return null;
-
-  const totalReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
-  const avgReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost), 0) / improved.length;
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <TrendingDown className="h-4 w-4 text-primary" />
-        <h2 className="section-label">
-          Strategy Impact
-        </h2>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Positions Improved</p>
-          <p className="mt-1" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{improved.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Reduction</p>
-          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(avgReduction)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Cost Reduction</p>
-          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(totalReduction)}</p>
-        </div>
-      </div>
-    </section>
-  );
-}

@@ -19,7 +19,7 @@ export function resetOnboarding() {
 const STEPS = [
   {
     title: "Welcome to PositionPilot",
-    body: "PositionPilot is a strategy engine for managing your stock positions. It helps you answer one key question: if I buy more, how much will it actually help?",
+    body: "PositionPilot is a position planning tool: model how extra buys change your average cost, save scenarios, and compare outcomes — without telling you what to trade.",
     emoji: "✈️",
   },
   {
@@ -28,13 +28,13 @@ const STEPS = [
     emoji: "📋",
   },
   {
-    title: "DCA Opportunities",
-    body: "This section scores every position by how efficiently a $500 investment would lower your average cost. Higher score = better opportunity right now.",
+    title: "Strategy opportunities",
+    body: "Each row ranks positions using the same ladder-based simulation as the Goal Ladder. The number is a portfolio-relative rank (0–100), not a buy signal.",
     emoji: "🎯",
   },
   {
-    title: "Next Best Move",
-    body: "Can't decide where to invest? This card tells you which position would benefit most from your next dollar, calculated automatically across your portfolio.",
+    title: "Most efficient step",
+    body: "Highlights which holding’s ladder-selected step has the strongest modeled improvement-per-dollar right now — for exploration, not as advice.",
     emoji: "⚡",
   },
   {
@@ -103,10 +103,11 @@ export default function Onboarding({ onDone }: OnboardingProps) {
                 ))}
               </div>
               <button
+                type="button"
                 onClick={handleDone}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                Skip
+                Don&apos;t show again
               </button>
             </div>
 
