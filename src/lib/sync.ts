@@ -76,17 +76,17 @@ export async function pullFromCloud(userId: string): Promise<AppData | null> {
           .select("*, holdings!inner(user_id)")
           .eq("holdings.user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("transactions")
           .select("*, holdings!inner(user_id)")
           .eq("holdings.user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("what_if_comparisons")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: false }),
-        supabase
+        db
           .from("optimization_scenarios")
           .select("*")
           .eq("user_id", userId)
