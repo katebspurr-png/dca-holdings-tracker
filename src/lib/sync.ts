@@ -273,7 +273,7 @@ export async function patchTransaction(txId: string, patch: Partial<Transaction>
 // ── Push: What-If Comparisons ────────────────────────────────
 
 export async function pushWhatIfComparison(comp: WhatIfComparison, userId: string) {
-  const { error } = await supabase.from("what_if_comparisons").upsert({
+  const { error } = await db.from("what_if_comparisons").upsert({
     id: comp.id,
     user_id: userId,
     total_budget: comp.totalBudget,
