@@ -284,7 +284,7 @@ export async function pushWhatIfComparison(comp: WhatIfComparison, userId: strin
 }
 
 export async function deleteWhatIfComparison(id: string) {
-  const { error } = await supabase.from("what_if_comparisons").delete().eq("id", id);
+  const { error } = await db.from("what_if_comparisons").delete().eq("id", id);
   if (error) log("deleteWhatIfComparison failed", error);
 }
 
