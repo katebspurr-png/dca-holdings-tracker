@@ -123,10 +123,14 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;
 }
 
+const fallback: DemoModeContextValue = {
+  isDemoMode: false,
+  enterDemo: () => {},
+  exitDemo: () => {},
+  resetDemo: () => {},
+};
+
 export function useDemoMode() {
   const ctx = useContext(DemoModeContext);
-  if (!ctx) {
-    throw new Error("useDemoMode must be used within DemoModeProvider");
-  }
-  return ctx;
+  return ctx ?? fallback;
 }
