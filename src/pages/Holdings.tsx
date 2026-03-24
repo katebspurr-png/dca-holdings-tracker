@@ -703,15 +703,7 @@ export default function Holdings() {
         </div>
       ) : (
         <>
-          <header className="mb-8 px-4 pt-12 text-center sm:px-6 md:px-8">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight">
-              Modernized DCA
-              <br />
-              Portfolio Dashboard
-            </h1>
-          </header>
-
-          <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 sm:px-6 md:px-8">
+          <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
             {selectMode && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
                 <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
