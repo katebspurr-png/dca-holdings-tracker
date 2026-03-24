@@ -46,8 +46,6 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [magicLoading, setMagicLoading] = useState(false);
 
-  if (session) return <Navigate to="/" replace />;
-
   useEffect(() => {
     if (searchParams.get("demo") === "true") {
       navigate(getDemoEntryPath(), { replace: true });
@@ -59,6 +57,8 @@ export default function Auth() {
     if (authModeParam === "signup") setMode("signup");
     else if (authModeParam === "login") setMode("login");
   }, [authModeParam]);
+
+  if (session) return <Navigate to="/" replace />;
 
   const redirectTo = authCallbackUrl();
   const resetRedirectTo = authResetPasswordUrl();
