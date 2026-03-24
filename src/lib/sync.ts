@@ -291,7 +291,7 @@ export async function deleteWhatIfComparison(id: string) {
 // ── Push: Optimization Scenarios ─────────────────────────────
 
 export async function pushOptimizationScenario(opt: OptimizationScenario, userId: string) {
-  const { error } = await supabase.from("optimization_scenarios").upsert({
+  const { error } = await db.from("optimization_scenarios").upsert({
     id: opt.id,
     user_id: userId,
     name: opt.name,
