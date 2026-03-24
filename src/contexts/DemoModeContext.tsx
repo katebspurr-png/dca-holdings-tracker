@@ -33,7 +33,7 @@ type DemoModeContextValue = {
   resetDemo: () => void;
 };
 
-const DemoModeContext = createContext<DemoModeContextValue | null>(null as any);
+const DemoModeContext = createContext<DemoModeContextValue | null>(null);
 
 export function DemoModeProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
