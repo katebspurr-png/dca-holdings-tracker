@@ -39,7 +39,7 @@ Last updated: March 2026
 ### Infrastructure
 
 - Supabase auth + cloud sync  
-- Stock price fetching (client tries configured Supabase edge when env present, then Yahoo chart API)  
+- Stock price fetching (Yahoo Finance chart API from the browser; 5-minute client cache)  
 - Waitlist / feature voting  
 - Onboarding walkthrough  
 - Light/dark card styling  

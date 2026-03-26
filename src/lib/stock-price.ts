@@ -1,6 +1,6 @@
 /**
  * Stock price fetching with 5-minute cache.
- * Tries Supabase `stock-price` edge function first (no Yahoo CORS in the browser), then Yahoo chart API.
+ * Quotes come from Yahoo Finance chart API (browser fetch). No Supabase Edge dependency.
  */
 
 import { canLookup, recordLookup } from "./pro";
@@ -25,7 +25,7 @@ export interface StockQuote {
 const CACHE_KEY = "dca-price-cache";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-/** Aligned with edge `stock-price` (TSX uses `.TO`, e.g. `SHOP.TO`). */
+/** TSX tickers use `.TO` (e.g. `SHOP.TO`); Yahoo chart API accepts these symbols. */
 const TICKER_RE = /^[A-Z0-9]{1,6}(\.[A-Z]{1,4})?$/;
 
 function readCache(): Record<string, StockQuote> {
@@ -57,69 +57,6 @@ function setCache(quote: StockQuote) {
 
 function n(x: unknown): number | null {
   return typeof x === "number" && Number.isFinite(x) ? x : null;
-}
-
-function supabaseStockPriceCreds(): { baseUrl: string; key: string } | null {
-  const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
-  const key = (
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)
-  )?.trim();
-  if (!url || !key) return null;
-  return { baseUrl: url.replace(/\/$/, ""), key };
-}
-
-/** Edge function returns a flat quote JSON (Yahoo or Finnhub path). */
-async function fetchQuoteViaSupabase(upper: string): Promise<StockQuote | null> {
-  const creds = supabaseStockPriceCreds();
-  if (!creds) return null;
-
-  const endpoint = `${creds.baseUrl}/functions/v1/stock-price?ticker=${encodeURIComponent(upper)}`;
-
-  try {
-    const resp = await fetch(endpoint, {
-      headers: {
-        apikey: creds.key,
-        Authorization: `Bearer ${creds.key}`,
-      },
-    });
-
-    if (!resp.ok) return null;
-
-    let data: Record<string, unknown>;
-    try {
-      data = (await resp.json()) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-    if (typeof data.error === "string") return null;
-
-    const price = n(data.price);
-    if (price == null || price <= 0) return null;
-
-    const previousClose = n(data.previousClose) ?? price;
-    const change = n(data.change) ?? price - previousClose;
-    const changePercent =
-      n(data.changePercent) ?? (previousClose !== 0 ? (change / previousClose) * 100 : 0);
-
-    return {
-      ticker: upper,
-      price,
-      previousClose,
-      change,
-      changePercent,
-      fetchedAt: Date.now(),
-      week52High: n(data.week52High),
-      week52Low: n(data.week52Low),
-      todayOpen: n(data.todayOpen),
-      todayHigh: n(data.todayHigh),
-      todayLow: n(data.todayLow),
-      todayVolume: n(data.todayVolume),
-      avgVolume: n(data.avgVolume),
-    };
-  } catch {
-    return null;
-  }
 }
 
 /** Last non-null close from OHLC arrays (fallback when meta has no live price). */
@@ -163,13 +100,6 @@ export async function fetchStockPrice(
   }
 
   try {
-    const fromSupabase = await fetchQuoteViaSupabase(upper);
-    if (fromSupabase) {
-      setCache(fromSupabase);
-      recordLookup();
-      return { ok: true, quote: fromSupabase, fromCache: false };
-    }
-
     const yahooCandidates = upper.endsWith(".TO")
       ? [upper, upper.slice(0, -3) + ".V"]
       : [upper];

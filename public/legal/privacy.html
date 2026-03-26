@@ -42,8 +42,7 @@
   <h2>3. Market price data</h2>
   <p>To show quotes and calculations, the app may request market data in these ways:</p>
   <ul>
-    <li><strong>Yahoo Finance (public chart API).</strong> The app may call Yahoo’s public finance endpoints from your device, sending <strong>ticker symbols</strong> you are viewing. Yahoo operates its own privacy practices; we do not control their services.</li>
-    <li><strong>Optional Supabase Edge Function.</strong> If configured, the app may first request quotes through a server function we host on Supabase, which may fetch data from third-party market sources. Only tickers needed for your request are sent.</li>
+    <li><strong>Yahoo Finance (public chart API).</strong> The app requests quotes from Yahoo’s public finance endpoints from your device, sending <strong>ticker symbols</strong> you are viewing. Yahoo operates its own privacy practices; we do not control their services.</li>
   </ul>
   <p>We do not sell your portfolio contents or use them for targeted advertising.</p>
 

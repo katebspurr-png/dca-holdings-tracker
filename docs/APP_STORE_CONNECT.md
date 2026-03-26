@@ -52,7 +52,7 @@ Declare types you **actually** collect. Typical answers for this app:
 | Financial info (holdings, scenarios user enters) | Yes | App functionality | Stored locally + optional Supabase DB |
 | Product interaction | Optional | Analytics | Only if you add analytics later |
 
-**Third-party domains:** Supabase (auth, API, optional edge functions); Yahoo Finance (or your edge proxy) for quotes — disclose as analytics/functional as appropriate per Apple definitions.
+**Third-party domains:** Supabase (auth, database sync); Yahoo Finance (client-side chart API for quotes) — map to Apple’s categories per Apple’s current definitions.
 
 Review Apple’s current definitions; this table is not legal advice.
 

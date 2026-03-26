@@ -882,7 +882,7 @@ export default function Holdings() {
               <Switch id="portfolio-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
             </div>
 
-            <SuggestedStrategyStep mode="portfolio" holdings={holdings} />
+            <SuggestedStrategyStep mode="portfolio" holdings={holdings} livePrices={livePrices} />
 
             <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 

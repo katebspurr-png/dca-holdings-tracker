@@ -6,10 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   type Holding,
   currencyPrefix,
-  apiTicker,
   addScenario,
 } from "@/lib/storage";
-import { getCachedQuote } from "@/lib/stock-price";
 import { useToast } from "@/hooks/use-toast";
 import {
   selectSuggestedStep,
@@ -36,6 +34,8 @@ interface HoldingProps {
 interface PortfolioProps {
   mode: "portfolio";
   holdings: Holding[];
+  /** Per-holding live prices (same map as portfolio list); updates when prices refresh. */
+  livePrices: Record<string, number | null>;
 }
 
 type Props = HoldingProps | PortfolioProps;
@@ -60,6 +60,7 @@ export default function SuggestedStrategyStep(props: Props) {
   return (
     <PortfolioSuggestion
       holdings={props.holdings}
+      livePrices={props.livePrices}
       navigate={navigate}
       toast={toast}
     />
@@ -141,20 +142,18 @@ function HoldingSuggestion({
 
 function PortfolioSuggestion({
   holdings,
+  livePrices,
   navigate,
   toast,
 }: {
   holdings: Holding[];
+  livePrices: Record<string, number | null>;
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
   const step = useMemo(() => {
-    return selectPortfolioSuggestedStep(holdings, (h) => {
-      const key = apiTicker(h.ticker, h.exchange).toUpperCase();
-      const q = getCachedQuote(key);
-      return q?.price ?? null;
-    });
-  }, [holdings]);
+    return selectPortfolioSuggestedStep(holdings, (h) => livePrices[h.id] ?? null);
+  }, [holdings, livePrices]);
 
   if (!step) return null;
 
