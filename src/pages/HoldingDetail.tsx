@@ -480,6 +480,22 @@ export default function HoldingDetail() {
   const presets1 = getPresets(calcMethod, 1);
   const presets2 = getPresets(calcMethod, 2);
 
+  // Goal Ladder helpers
+  const shares = Number(holding.shares);
+  const avgCost = Number(holding.avg_cost);
+  const currentPrice = Number(holding.current_price ?? marketPrice ?? 0);
+  const isUnderwater = currentPrice > 0 && currentPrice < avgCost;
+
+  function calcNewAvg(investAmount: number): { newAvg: number; improvement: number } {
+    if (currentPrice <= 0) return { newAvg: avgCost, improvement: 0 };
+    const sharesBought = investAmount / currentPrice;
+    const newAvg = (shares * avgCost + investAmount) / (shares + sharesBought);
+    const improvement = avgCost - newAvg;
+    return { newAvg, improvement };
+  }
+
+  const ladderAmounts = [250, 500, 1000, 2500, 5000];
+
   return (
     <>
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -584,6 +600,65 @@ export default function HoldingDetail() {
         {/* ═══════════════ STRATEGY TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
+            {/* Next Best Move */}
+            {isUnderwater && (
+              <div className="rounded-lg border border-primary/30 bg-card p-6" style={{ boxShadow: "0 0 18px hsl(160 60% 52% / 0.08)" }}>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-primary mb-4 flex items-center gap-2">
+                  <span>⚡</span> Next Best Move
+                </h2>
+                {(() => {
+                  const { newAvg, improvement } = calcNewAvg(500);
+                  return (
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <p className="text-xs text-muted-foreground mb-3">Invest {cp}500 →</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current Avg</p>
+                          <p className="text-lg font-mono font-semibold text-muted-foreground">{cp}{avgCost.toFixed(2)}</p>
+                        </div>
+                        <span className="text-primary text-xl">→</span>
+                        <div className="text-right">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                          <p className="text-lg font-mono font-semibold text-primary">{cp}{newAvg.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">Improves avg by <span className="text-primary font-mono">{cp}{improvement.toFixed(2)}</span></p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Goal Ladder */}
+            {isUnderwater && (
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                  Goal Ladder
+                </h2>
+                <div className="space-y-2">
+                  {ladderAmounts.map((amt) => {
+                    const { newAvg, improvement } = calcNewAvg(amt);
+                    return (
+                      <div key={amt} className="flex items-center justify-between rounded-lg bg-muted/20 border border-border px-4 py-3 hover:bg-muted/40 transition-colors">
+                        <span className="text-sm font-mono text-muted-foreground">Invest {cp}{amt.toLocaleString()}</span>
+                        <div className="flex items-center gap-4 text-right">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                            <p className="text-sm font-mono font-semibold text-foreground">{cp}{newAvg.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Saves</p>
+                            <p className="text-sm font-mono font-semibold text-primary">↓{cp}{improvement.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended targets */}
             <GoalLadder holding={holding} />
 
             {/* Saved scenarios */}

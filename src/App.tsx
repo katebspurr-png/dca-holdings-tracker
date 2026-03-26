@@ -1,24 +1,9 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Holdings from "./pages/Holdings";
-import HoldingDetail from "./pages/HoldingDetail";
-import Scenarios from "./pages/Scenarios";
-import ScenarioDetail from "./pages/ScenarioDetail";
-import WhatIfScenarios from "./pages/WhatIfScenarios";
-import Settings from "./pages/Settings";
-import UpdatePrices from "./pages/UpdatePrices";
-import CapitalOptimizer from "./pages/CapitalOptimizer";
-import Progress from "./pages/Progress";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import AuthResetPassword from "./pages/AuthResetPassword";
-import DemoEntry from "./pages/DemoEntry";
-import DemoWelcome from "./pages/DemoWelcome";
-import NotFound from "./pages/NotFound";
 import BottomTabBar from "./components/BottomTabBar";
 import DemoOrAuthRoute from "./components/DemoOrAuthRoute";
 import AppEducationalDisclaimer from "./components/AppEducationalDisclaimer";
@@ -30,6 +15,22 @@ import DemoModeBanner from "./components/DemoModeBanner";
 import DemoModeWatermark from "./components/DemoModeWatermark";
 import GuidedDemoCoach from "./components/GuidedDemoCoach";
 import { Loader2 } from "lucide-react";
+
+const Holdings = lazy(() => import("./pages/Holdings"));
+const HoldingDetail = lazy(() => import("./pages/HoldingDetail"));
+const Scenarios = lazy(() => import("./pages/Scenarios"));
+const ScenarioDetail = lazy(() => import("./pages/ScenarioDetail"));
+const WhatIfScenarios = lazy(() => import("./pages/WhatIfScenarios"));
+const Settings = lazy(() => import("./pages/Settings"));
+const UpdatePrices = lazy(() => import("./pages/UpdatePrices"));
+const CapitalOptimizer = lazy(() => import("./pages/CapitalOptimizer"));
+const Progress = lazy(() => import("./pages/Progress"));
+const Auth = lazy(() => import("./pages/Auth"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const AuthResetPassword = lazy(() => import("./pages/AuthResetPassword"));
+const DemoEntry = lazy(() => import("./pages/DemoEntry"));
+const DemoWelcome = lazy(() => import("./pages/DemoWelcome"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -44,9 +45,16 @@ function useInitTheme() {
   }, []);
 }
 
+const routeFallback = (
+  <div className="flex min-h-[40vh] items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-label="Loading" />
+  </div>
+);
+
 const AppRoutes = () => {
   useInitTheme();
   return (
+    <Suspense fallback={routeFallback}>
     <Routes>
       {/* Public */}
       <Route path="/auth" element={<Auth />} />
@@ -67,6 +75,7 @@ const AppRoutes = () => {
       <Route path="/progress" element={<DemoOrAuthRoute><Progress /></DemoOrAuthRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 

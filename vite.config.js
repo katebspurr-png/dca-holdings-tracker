@@ -6,9 +6,8 @@ import path from "path";
 export default defineConfig({
   clearScreen: false,
   server: {
-    // Must listen on all interfaces (not only 127.0.0.1): otherwise
-    // http://localhost:8080 often hits IPv6 (::1) while the dev server is IPv4-only → blank page / refused.
-    host: true,
+    // 127.0.0.1 avoids long silent stalls some macOS setups hit with 0.0.0.0 / "::"
+    host: "127.0.0.1",
     port: 8080,
     strictPort: true,
     watch: {

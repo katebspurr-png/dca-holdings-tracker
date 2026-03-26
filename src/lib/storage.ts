@@ -19,6 +19,7 @@ export type Holding = {
   fee_type: FeeType;
   fee_value: number;
   created_at: string;
+  current_price?: number | null;
 };
 
 export type Scenario = {
