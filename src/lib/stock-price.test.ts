@@ -33,13 +33,9 @@ describe("fetchStockPrice", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    vi.stubEnv("VITE_SUPABASE_URL", "");
-    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
-    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "");
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -56,7 +52,7 @@ describe("fetchStockPrice", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("ignores cache and calls fetch when bypassCache is true", async () => {
+  it("ignores cache and calls Yahoo chart API when bypassCache is true", async () => {
     seedCache("AAPL", 100);
     const body = {
       chart: {
@@ -81,51 +77,12 @@ describe("fetchStockPrice", () => {
 
     const r = await fetchStockPrice("AAPL", { bypassCache: true });
     expect(fetchSpy).toHaveBeenCalled();
+    const urls = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("query1.finance.yahoo.com"))).toBe(true);
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.fromCache).toBe(false);
       expect(r.quote.price).toBe(200);
-      expect(r.quote.ticker).toBe("AAPL");
-    }
-  });
-
-  it("uses Supabase edge when configured and skips Yahoo", async () => {
-    vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
-    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "test-anon-key");
-
-    const edgeBody = {
-      ticker: "AAPL",
-      price: 222,
-      previousClose: 220,
-      change: 2,
-      changePercent: 0.9,
-      week52High: null,
-      week52Low: null,
-      todayOpen: null,
-      todayHigh: null,
-      todayLow: null,
-      todayVolume: null,
-      avgVolume: null,
-    };
-
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
-      const url = String(input);
-      if (url.includes("supabase.co/functions/v1/stock-price")) {
-        return Promise.resolve(
-          new Response(JSON.stringify(edgeBody), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          })
-        );
-      }
-      return Promise.reject(new Error("Yahoo should not be called"));
-    });
-
-    const r = await fetchStockPrice("AAPL", { bypassCache: true });
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.quote.price).toBe(222);
       expect(r.quote.ticker).toBe("AAPL");
     }
   });

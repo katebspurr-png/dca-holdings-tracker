@@ -57,16 +57,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        /* Google Stitch dashboard — tweak hexes in one place later */
+        /* Theme-aware surfaces — HSL components in index.css :root / .dark */
         stitch: {
-          bg: "#111113",
-          card: "#1c1c1e",
-          accent: "#C4FB35",
-          danger: "#ff453a",
-          pill: "#2c2c2e",
-          border: "#27272a",
-          muted: "#9ca3af",
-          "muted-soft": "#d1d1d6",
+          bg: "hsl(var(--stitch-bg) / <alpha-value>)",
+          card: "hsl(var(--stitch-card) / <alpha-value>)",
+          accent: "hsl(var(--stitch-accent) / <alpha-value>)",
+          danger: "hsl(var(--stitch-danger) / <alpha-value>)",
+          pill: "hsl(var(--stitch-pill) / <alpha-value>)",
+          border: "hsl(var(--stitch-border) / <alpha-value>)",
+          muted: "hsl(var(--stitch-muted) / <alpha-value>)",
+          "muted-soft": "hsl(var(--stitch-muted-soft) / <alpha-value>)",
         },
       },
       borderRadius: {

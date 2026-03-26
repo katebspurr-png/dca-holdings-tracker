@@ -125,12 +125,12 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       addScenario({
         holding_id: holding.id, ticker: holding.ticker, method: "price_target",
         input1_label: "Buy price", input1_value: marketPrice,
-        input2_label: "Target average cost", input2_value: target.target,
+        input2_label: "Scenario average cost", input2_value: target.target,
         include_fees: true, fee_amount: feeApplied, buy_price: marketPrice, shares_to_buy: target.shares,
         budget_invested: B, fee_applied: feeApplied, total_spend: totalSpend,
         new_total_shares: S + target.shares, new_avg_cost: target.newAvg,
         recommended_target: null, budget_percent_used: null,
-        notes: `Insight: Average rescue to ${cp}${fmt2(target.target)}`,
+        notes: `Insight: Modeled scenario avg ${cp}${fmt2(target.target)}`,
       });
       toast({ title: "Scenario saved" });
       onSaved();
@@ -140,10 +140,10 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   const handleCustomRescue = () => {
     setCustomError("");
     const t = parseFloat(customTarget);
-    if (isNaN(t) || t <= 0) { setCustomError("Enter a valid target price."); return; }
+    if (isNaN(t) || t <= 0) { setCustomError("Enter a valid scenario average."); return; }
     if (marketPrice == null) return;
-    if (t >= A) { setCustomError("Target must be below your current average."); return; }
-    if (t <= marketPrice) { setCustomError("Target must be above the current price."); return; }
+    if (t >= A) { setCustomError("Value must be below your current average."); return; }
+    if (t <= marketPrice) { setCustomError("Value must be above the current price."); return; }
     if (!customRescueResult) { setCustomError("Could not compute — check your inputs."); return; }
     saveRescueScenario({ target: t, ...customRescueResult });
     setCustomTarget("");
@@ -151,9 +151,9 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
 
   if (marketPrice == null) {
     return (
-      <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-1.5">
-        <Lightbulb className="h-5 w-5 mx-auto text-stitch-muted/50" />
-        <p className="text-xs text-stitch-muted">Refresh market prices to unlock the Math tab.</p>
+      <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-8 text-center space-y-1.5">
+        <Lightbulb className="mx-auto h-5 w-5 text-stitch-muted/50" aria-hidden />
+        <p className="text-xs text-stitch-muted leading-relaxed">Add or refresh market prices to use the Math tab.</p>
       </div>
     );
   }
@@ -163,36 +163,38 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
 
   return (
     <>
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       <p className="text-[10px] text-stitch-muted/60 uppercase tracking-widest">
-        For informational purposes only — not financial advice
+        Informational only — not advice
       </p>
 
-      {/* Modeled capital to reach example target averages */}
-      <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-1">
-          <TrendingDown className="h-4 w-4 text-stitch-accent" />
-          <h3 className="text-sm font-semibold text-white">Target average — modeled capital</h3>
+      {/* Single primary surface: scenario averages → buy impact → price comparison */}
+      <div className="card-primary">
+        <div className="card-primary-glow opacity-70" aria-hidden />
+        <div className="relative z-10 divide-y divide-stitch-border/25">
+        <section className="p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingDown className="h-4 w-4 text-stitch-accent/90" />
+          <h3 className="text-sm font-semibold text-foreground">Scenario averages</h3>
         </div>
-        <p className="text-[11px] text-stitch-muted mb-4">
-          Illustrative budgets if you bought at {cp}
-          {fmt2(marketPrice)}/share to reach the sample target averages below — you choose whether any target is relevant.
+        <p className="text-[11px] text-stitch-muted mb-4 leading-relaxed">
+          Illustrative budgets at {cp}{fmt2(marketPrice)}/share for the sample averages below.
         </p>
         {rescueTargets.length === 0 ? (
           <p className="text-xs text-stitch-muted/70">
             {marketPrice >= A
-              ? "Current price is at or above your average — these target-average estimates do not apply."
-              : "Unable to compute targets from current inputs."}
+              ? "Price at or above your average — estimates below do not apply."
+              : "Unable to compute from current inputs."}
           </p>
         ) : (
           <div className="space-y-2.5">
             {rescueTargets.map((t, i) => (
-              <div key={t.target} className="rounded-lg border border-stitch-border/60 bg-stitch-pill/50 p-3.5 hover:border-stitch-accent/20 transition-colors">
+              <div key={t.target} className="card-secondary bg-stitch-pill/35 p-3.5 transition-interactive hover:border-stitch-accent/25">
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-stitch-muted uppercase tracking-wider">{["Sample A","Sample B","Sample C"][i]}</span>
-                    <span className="text-base font-bold font-mono">Target avg {cp}{fmt2(t.target)}</span>
+                    <span className="text-base font-bold font-mono">Scenario avg {cp}{fmt2(t.target)}</span>
                   </div>
                   <span className="text-sm font-mono font-semibold text-stitch-accent">
                     Modeled ~{cp}{fmt2(t.budget)}
@@ -200,14 +202,14 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                 </div>
                 <div className="flex gap-4 text-[11px] font-mono text-stitch-muted mb-2.5">
                   <span>{t.shares.toFixed(2)} shares</span>
-                  <span>New avg: {cp}{fmt2(t.newAvg)}</span>
+                  <span>Modeled new avg: {cp}{fmt2(t.newAvg)}</span>
                 </div>
                 <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                     onClick={() => onUseInCalculator("price_target", String(marketPrice), String(t.target))}>
                     <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                     onClick={() => saveRescueScenario(t)}>
                     <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
                   </Button>
@@ -216,41 +218,41 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
             ))}
 
             {/* Custom target */}
-            <div className="rounded-lg border border-dashed border-stitch-border/60 bg-stitch-pill/30 p-3.5">
-              <p className="text-[10px] text-stitch-muted uppercase tracking-wider mb-2">Your target average</p>
+            <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/25 p-3.5">
+              <p className="text-[10px] text-stitch-muted uppercase tracking-wider mb-2">Custom scenario average</p>
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Label className="text-[10px] text-stitch-muted">Target average ({cp})</Label>
+                  <Label className="text-[10px] text-stitch-muted">Scenario average ({cp})</Label>
                   <Input type="number" step="0.01" value={customTarget}
                     onChange={(e) => { setCustomTarget(e.target.value); setCustomError(""); }}
                     className="h-8 font-mono text-sm bg-stitch-pill" />
                 </div>
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-primary-foreground transition-interactive hover:bg-stitch-accent/90 dark:text-black"
                   onClick={handleCustomRescue}
                 >
                   Calculate
                 </Button>
               </div>
               {customTarget && !customError && customRescueResult && (
-                <div className="mt-3 rounded-lg border border-stitch-border/60 bg-stitch-pill/50 p-3">
+                <div className="mt-3 card-secondary bg-stitch-pill/35 p-3">
                   <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-base font-bold font-mono">Target avg {cp}{fmt2(parseFloat(customTarget))}</span>
+                    <span className="text-base font-bold font-mono">Scenario avg {cp}{fmt2(parseFloat(customTarget))}</span>
                     <span className="text-sm font-mono font-semibold text-stitch-accent">
                       Modeled ~{cp}{fmt2(customRescueResult.budget)}
                     </span>
                   </div>
                   <div className="flex gap-4 text-[11px] font-mono text-stitch-muted mb-2.5">
                     <span>{customRescueResult.shares.toFixed(2)} shares</span>
-                    <span>New avg: {cp}{fmt2(customRescueResult.newAvg)}</span>
+                    <span>Modeled new avg: {cp}{fmt2(customRescueResult.newAvg)}</span>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                       onClick={() => onUseInCalculator("price_target", String(marketPrice), customTarget)}>
                       <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                       onClick={handleCustomRescue}>
                       <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
                     </Button>
@@ -261,95 +263,88 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
             </div>
           </div>
         )}
-      </div>
+        </section>
 
-      {/* Buy impact index: fixed test buy → modeled average cost change */}
-      <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Gauge className="h-4 w-4 text-stitch-accent" />
-          <h3 className="text-sm font-semibold text-white">Buy impact (fixed test buy)</h3>
+        <section className="p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Gauge className="h-4 w-4 text-stitch-accent/90" />
+          <h3 className="text-sm font-semibold text-foreground">Buy impact (test size)</h3>
         </div>
-        <p className="text-[10px] text-stitch-muted/80 mb-2 leading-relaxed">
-          0–100 index from one fixed {cp}
-          {fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price (modeled average cost change vs your current
-          average, capped at 100). Not a score across holdings — only this position. Uses the same “include fees in
-          simulations” setting as the budget-step simulator.
+        <p className="text-[10px] text-stitch-muted/85 mb-4 leading-relaxed">
+          Index from a {cp}{fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price (this position only; respects fee setting).
         </p>
-        <div className="flex items-baseline gap-3 mb-2">
-          <span className={`text-4xl font-mono font-bold ${band.colorClass}`}>
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className={`text-3xl font-mono font-bold tabular-nums ${band.colorClass}`}>
             {efficiencyScore}
           </span>
-          <span className="text-lg text-stitch-muted font-mono">/ 100</span>
+          <span className="text-xs text-stitch-muted/70 font-mono pt-1">/ 100</span>
         </div>
         {efficiencyScore > 0 && efficiencyImprovement > 0 && (
-          <p className="text-sm font-mono font-semibold text-stitch-accent mb-1">
-            {cp}
-            {fmt2(STANDARD_TEST_INVESTMENT)} simulated → avg moves by {cp}
-            {fmt2(efficiencyImprovement)}/share
+          <p className="text-sm font-mono font-medium text-stitch-accent/95 mb-2">
+            {cp}{fmt2(STANDARD_TEST_INVESTMENT)} simulated → avg moves by {cp}{fmt2(efficiencyImprovement)}/share
           </p>
         )}
-        <p className="text-xs text-stitch-muted">
+        <p className="text-xs text-stitch-muted leading-relaxed mb-4">
           {efficiencyScore >= 80
-            ? "At this size of simulated buy, your modeled average cost moves a lot relative to your current average."
+            ? "Large modeled average-cost move at this test size."
             : efficiencyScore >= 60
-              ? "Meaningful modeled movement in average cost for this test size."
+              ? "Meaningful move at this test size."
               : efficiencyScore >= 40
-                ? "Some modeled movement; larger simulated sizes would show bigger changes."
+                ? "Moderate move; larger sizes change more."
                 : efficiencyScore >= 20
-                  ? "Small modeled movement at this test size."
-                  : "Price is at or above average, or the modeled move is negligible."}
+                  ? "Small move at this test size."
+                  : "Price at/above average or negligible move."}
         </p>
-        <div className="mt-3 pt-3 border-t border-stitch-border">
-          <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-stitch-pill">
+        <div className="pt-3 border-t border-stitch-border/30">
+          <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-stitch-pill/80">
             <div
-              className="h-full rounded-full bg-stitch-accent transition-all"
+              className="h-full rounded-full bg-stitch-accent/90 transition-[width] duration-200 ease-out"
               style={{ width: `${efficiencyScore}%` }}
             />
           </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-stitch-muted">Low</span>
+          <div className="flex justify-between mt-2">
+            <span className="text-[9px] text-stitch-muted/80">Low</span>
             <span className={`text-[9px] font-medium ${band.colorClass}`}>
               {band.label}
             </span>
-            <span className="text-[9px] text-stitch-muted">High</span>
+            <span className="text-[9px] text-stitch-muted/80">High</span>
           </div>
         </div>
-      </div>
+        </section>
 
-      {/* Average vs current price (not a full counterfactual entry) */}
       {startTodayDiff != null && (
-        <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="h-4 w-4 text-stitch-accent" />
-            <h3 className="text-sm font-semibold text-white">Average vs current price</h3>
+        <section className="p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-4 w-4 text-stitch-accent/90" />
+            <h3 className="text-sm font-semibold text-foreground">Average vs price</h3>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Your Avg Cost</p>
+              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Avg cost</p>
               <p className="text-lg font-mono font-bold">{cp}{fmt2(A)}</p>
             </div>
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Current Price</p>
+              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Current</p>
               <p className="text-lg font-mono font-bold">{cp}{fmt2(marketPrice)}</p>
             </div>
           </div>
-          <div className="rounded-lg bg-stitch-pill/30 border border-stitch-border/50 p-3">
+          <div className="card-secondary bg-stitch-pill/25 px-3 py-3">
             {startTodayDiff > 0 ? (
-              <p className="text-xs text-stitch-muted">
-                Current price is about{" "}
-                <span className="font-semibold text-stitch-accent">{Math.abs(startTodayDiff).toFixed(1)}%</span> below your
-                average cost (as a share of your average). Illustrative only.
+              <p className="text-xs text-stitch-muted leading-relaxed">
+                Price about{" "}
+                <span className="font-semibold text-stitch-accent/95">{Math.abs(startTodayDiff).toFixed(1)}%</span> below avg (illustrative).
               </p>
             ) : (
-              <p className="text-xs text-stitch-muted">
-                Current price is about{" "}
-                <span className="font-semibold text-stitch-accent">{Math.abs(startTodayDiff).toFixed(1)}%</span> above your
-                average cost (as a share of your average). Illustrative only.
+              <p className="text-xs text-stitch-muted leading-relaxed">
+                Price about{" "}
+                <span className="font-semibold text-stitch-accent/95">{Math.abs(startTodayDiff).toFixed(1)}%</span> above avg (illustrative).
               </p>
             )}
           </div>
-        </div>
+        </section>
       )}
+        </div>
+      </div>
     </div>
     {preAuthUpsellDialog}
     </>

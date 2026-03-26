@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import CsvImportDialog from "@/components/CsvImportDialog";
+import SuggestedStrategyStep from "@/components/SuggestedStrategyStep";
 import {
   getHoldings,
   addHolding,
@@ -86,12 +87,12 @@ type SortMode =
 const SORT_LABELS: Record<SortMode, string> = {
   az: "A → Z",
   za: "Z → A",
-  position: "Largest Position",
-  position_small: "Smallest Position",
-  loss: "Biggest Loss ($)",
-  gain: "Biggest Gain ($)",
-  loss_pct: "Biggest Loss %",
-  gain_pct: "Biggest Gain %",
+  position: "Position size (high to low)",
+  position_small: "Position size (low to high)",
+  loss: "P/L ($ low to high)",
+  gain: "P/L ($ high to low)",
+  loss_pct: "P/L % (low to high)",
+  gain_pct: "P/L % (high to low)",
 };
 
 function parseStoredSort(): SortMode {
@@ -110,9 +111,9 @@ function parseStoredLayout(): HoldingsLayout {
 
 const AVATAR_PALETTE = [
   "bg-white text-black",
-  "bg-[#76b900] text-white",
-  "bg-[#627eea] text-white",
-  "bg-[#e31937] text-white",
+  "bg-[#76b900] text-[#fff]",
+  "bg-[#627eea] text-[#fff]",
+  "bg-[#e31937] text-[#fff]",
 ] as const;
 
 function avatarClassForTicker(ticker: string): string {
@@ -175,7 +176,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-interactive hover:border-stitch-border/60 active:opacity-[0.98]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -243,14 +244,14 @@ function HoldingPortfolioCard({
                 }}
                 className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
               >
-                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
+                Scenario avg: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
               </button>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-interactive hover:bg-stitch-pill/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -259,14 +260,14 @@ function HoldingPortfolioCard({
             >
               <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
             </button>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" aria-hidden />
           </div>
         </div>
         {!selectMode && (
           <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
             <button
               type="button"
-              className="text-[11px] text-stitch-muted hover:text-white"
+              className="text-[11px] text-stitch-muted hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
@@ -299,7 +300,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "holdings-position-card relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-interactive hover:border-stitch-border/60 active:opacity-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -323,7 +324,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-interactive hover:bg-stitch-pill/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
@@ -351,7 +352,7 @@ function HoldingPortfolioCard({
       )}
 
       <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
-        <span>Your Average:</span>
+        <span>Position average:</span>
         <span className="text-stitch-muted-soft">
           {cp}
           {fmt(h.avg_cost)}
@@ -364,10 +365,10 @@ function HoldingPortfolioCard({
           e.stopPropagation();
           onStrategy();
         }}
-        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+        className="holdings-modeled-cta mb-3 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-interactive active:opacity-95 dark:bg-stitch-accent dark:text-black dark:hover:bg-stitch-accent/90"
       >
         <span className="leading-tight">
-          Target Average:
+          Modeled average:
           <br />
           <span className="text-[15px]">
             {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
@@ -377,7 +378,7 @@ function HoldingPortfolioCard({
       </button>
 
       <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
-        Buy to Reach Target:
+        Modeled buy scenario:
         <br />
         {scenario && scenario.buy_price != null ? (
           <>
@@ -401,7 +402,7 @@ function HoldingPortfolioCard({
         <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
           <button
             type="button"
-            className="text-[11px] text-stitch-muted hover:text-white"
+            className="text-[11px] text-stitch-muted hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
@@ -648,7 +649,7 @@ export default function Holdings() {
   const fmtCad = (n: number) => `C$${fmt(n)}`;
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       {showOnboarding && (
         <Onboarding
           onDone={() => setShowOnboarding(false)}
@@ -661,18 +662,18 @@ export default function Holdings() {
         />
       )}
       {holdings.length === 0 ? (
-        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-24 pt-20 text-center">
+        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-28 pt-12 text-center sm:px-6 md:px-8">
           <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
             <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Start your portfolio or explore a demo</h3>
+          <h3 className="text-lg font-semibold text-foreground">Start your portfolio or explore a demo</h3>
           <p className="mt-2 max-w-sm text-sm text-stitch-muted">
             Add your positions to model averages and scenarios, or use sample data to see how the tools work — all
             modeling, not advice.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent font-semibold text-primary-foreground hover:bg-stitch-accent/90 dark:text-black"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
@@ -685,7 +686,7 @@ export default function Holdings() {
             <Button
               variant="outline"
               size="lg"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
               onClick={() => navigate(getDemoEntryPath())}
             >
               Try demo
@@ -693,7 +694,7 @@ export default function Holdings() {
             <Button
               variant="outline"
               size="lg"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
               onClick={() => setCsvOpen(true)}
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -706,7 +707,7 @@ export default function Holdings() {
           <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
             {selectMode && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
-                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
+                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-foreground">
                   {selected.size === holdings.length ? "Deselect all" : "Select all"}
                 </button>
                 <div className="flex items-center gap-2">
@@ -718,7 +719,7 @@ export default function Holdings() {
                   >
                     Delete ({selected.size})
                   </button>
-                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -726,18 +727,18 @@ export default function Holdings() {
             )}
 
             {/* Total Portfolio */}
-            <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+            <section className="card-primary rounded-[32px] p-6">
+              <div className="card-primary-glow" aria-hidden />
               <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+                  <h2 className="text-[17px] font-semibold text-foreground">Total Portfolio</h2>
                   {isDemoMode && <DemoDataTag />}
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-stitch-pill transition-interactive hover:bg-stitch-pill/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
                       aria-label="Portfolio menu"
                     >
                       <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
@@ -745,10 +746,10 @@ export default function Holdings() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-foreground shadow-lg"
                   >
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => refreshAllPrices()}
                       disabled={refreshingAll}
                     >
@@ -756,32 +757,32 @@ export default function Holdings() {
                       Refresh prices
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/update-prices")}
                     >
                       Update Prices page
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/what-if")}
                     >
                       What-If scenarios
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/progress")}
                     >
                       Progress (vs initial snapshot)
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => setCsvOpen(true)}
                     >
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
                       Import CSV
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => setSelectMode(true)}
                     >
                       <CheckSquare className="mr-2 h-4 w-4" />
@@ -790,7 +791,7 @@ export default function Holdings() {
                     {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                       <DropdownMenuItem
                         key={mode}
-                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                         onClick={() => handleSortChange(mode)}
                       >
                         <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -814,7 +815,7 @@ export default function Holdings() {
                     </div>
                     <div className="text-right">
                       <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
-                      <p className="text-[16px] font-medium text-white">{fmtUsd(totalUsdInvested)}</p>
+                      <p className="text-[16px] font-medium text-foreground">{fmtUsd(totalUsdInvested)}</p>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
@@ -844,7 +845,7 @@ export default function Holdings() {
                     </div>
                     <div className="text-right">
                       <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
-                      <p className="text-[16px] font-medium text-white">{fmtCad(totalCadInvested)}</p>
+                      <p className="text-[16px] font-medium text-foreground">{fmtCad(totalCadInvested)}</p>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
@@ -874,17 +875,19 @@ export default function Holdings() {
               )}
             </section>
 
-            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+            <div className="stitch-toggle-row flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
               <Label htmlFor="portfolio-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
                 Include fees in portfolio simulations
               </Label>
               <Switch id="portfolio-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
             </div>
 
+            <SuggestedStrategyStep mode="portfolio" holdings={holdings} livePrices={livePrices} />
+
             <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-pill px-3 py-2.5">
-              <h2 className="text-sm font-semibold text-white">Holdings</h2>
+              <h2 className="text-sm font-semibold text-foreground">Holdings</h2>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <div className="flex rounded-xl border border-stitch-border/80 bg-stitch-card/50 p-0.5">
                   <button
@@ -892,28 +895,28 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-interactive active:opacity-90",
                       holdingsLayout === "grid"
-                        ? "bg-stitch-pill text-white"
-                        : "text-stitch-muted hover:text-white",
+                        ? "bg-stitch-pill text-foreground"
+                        : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("grid")}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" aria-hidden />
                   </button>
                   <button
                     type="button"
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-interactive active:opacity-90",
                       holdingsLayout === "list"
-                        ? "bg-stitch-pill text-white"
-                        : "text-stitch-muted hover:text-white",
+                        ? "bg-stitch-pill text-foreground"
+                        : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("list")}
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-4 w-4" aria-hidden />
                   </button>
                 </div>
                 <DropdownMenu>
@@ -922,7 +925,7 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                      className="h-9 min-h-[44px] border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft transition-interactive hover:bg-stitch-pill hover:text-foreground"
                     >
                       <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
                       Sort
@@ -930,12 +933,12 @@ export default function Holdings() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-foreground shadow-lg"
                   >
                     {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                       <DropdownMenuItem
                         key={mode}
-                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                         onClick={() => handleSortChange(mode)}
                       >
                         <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -993,7 +996,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-interactive hover:bg-stitch-card active:opacity-95 dark:hover:bg-stitch-pill/90"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
@@ -1014,7 +1017,7 @@ export default function Holdings() {
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleting?.ticker} and all its data?</AlertDialogTitle>
             <AlertDialogDescription className="text-stitch-muted">
@@ -1023,12 +1026,12 @@ export default function Holdings() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleting && handleDelete(deleting.id)}
-              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
+              className="bg-stitch-danger text-destructive-foreground hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -1037,7 +1040,7 @@ export default function Holdings() {
       </AlertDialog>
 
       <AlertDialog open={bulkDeleting} onOpenChange={(open) => !open && setBulkDeleting(false)}>
-        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?
@@ -1051,12 +1054,12 @@ export default function Holdings() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
+              className="bg-stitch-danger text-destructive-foreground hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -1119,8 +1122,8 @@ function DcaOpportunities({
   const visibleRows = showAll || rows.length <= COLLAPSE_COUNT ? rows : rows.slice(0, COLLAPSE_COUNT);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+    <section className="card-primary rounded-[32px] p-6">
+      <div className="card-primary-glow" aria-hidden />
       <div className="relative z-10">
         <button
           type="button"
@@ -1129,7 +1132,7 @@ function DcaOpportunities({
         >
           <div className="flex items-center gap-2">
             <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
-            <h2 className="text-[17px] font-semibold text-white">Scenario results (per holding)</h2>
+            <h2 className="text-[17px] font-semibold text-foreground">Scenario results (per holding)</h2>
           </div>
           {sectionExpanded ? (
             <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
@@ -1173,7 +1176,7 @@ function DcaOpportunities({
                         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
                         className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
                       >
-                        <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
+                        <span className="w-16 shrink-0 text-sm font-semibold text-foreground">{h.ticker}</span>
                         <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
                           {cp}
                           {fmt(step.amount)} sim → avg {cp}

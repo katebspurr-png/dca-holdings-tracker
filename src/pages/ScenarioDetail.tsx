@@ -8,15 +8,15 @@ import { getScenario } from "@/lib/storage";
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
   price_budget: "Price + Budget",
-  price_target: "Price + Target Avg",
-  budget_target: "Budget + Target Avg",
+  price_target: "Price + Scenario avg",
+  budget_target: "Budget + Scenario avg",
 };
 
 const outlineBtn =
-  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground";
 
-const cardClass =
-  "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
+const cardClass = "card-primary rounded-[32px] p-6";
+const cardGlow = "card-primary-glow";
 
 export default function ScenarioDetail() {
   const { id } = useParams<{ id: string }>();
@@ -27,14 +27,14 @@ export default function ScenarioDetail() {
 
   if (!scenario) {
     return (
-      <div className="relative flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 text-white">
+      <div className="relative flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 text-foreground">
         <p className="text-stitch-muted">Scenario not found.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
           <Button variant="outline" size="sm" className={`w-fit ${outlineBtn}`} onClick={() => navigate("/scenarios")}>
@@ -47,9 +47,9 @@ export default function ScenarioDetail() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-4 px-4 pb-8 sm:px-6 md:px-8">
+      <main className="mx-auto max-w-4xl space-y-5 px-4 pb-8 sm:px-6 md:px-8">
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
             <Stat label="Date" value={new Date(scenario.created_at).toLocaleString()} />
             <Stat label="Ticker" value={scenario.ticker} />
@@ -59,7 +59,7 @@ export default function ScenarioDetail() {
               <button
                 type="button"
                 onClick={() => navigate(`/holdings/${scenario.holding_id}?tab=calculator`)}
-                className="text-lg font-mono font-semibold text-stitch-accent underline underline-offset-2 hover:opacity-80"
+                className="text-lg font-mono font-semibold text-stitch-accent underline underline-offset-2 transition-interactive hover:opacity-85"
               >
                 Open holding →
               </button>
@@ -68,7 +68,7 @@ export default function ScenarioDetail() {
         </section>
 
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10">
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Inputs</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -81,24 +81,27 @@ export default function ScenarioDetail() {
         </section>
 
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10">
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Results</h2>
+            <h2 className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Results</h2>
+            <p className="mb-4 text-[10px] leading-relaxed text-stitch-muted/85">
+              From this saved scenario — illustrative, not live portfolio data.
+            </p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <Stat label="Shares to Buy" value={Number(scenario.shares_to_buy).toFixed(4)} />
-              <Stat label="Budget Invested" value={`$${Number(scenario.budget_invested).toFixed(2)}`} />
-              <Stat label="Fee Applied" value={`$${Number(scenario.fee_applied).toFixed(2)}`} />
-              <Stat label="Total Spend" value={`$${Number(scenario.total_spend).toFixed(2)}`} />
-              <Stat label="New Total Shares" value={Number(scenario.new_total_shares).toFixed(4)} />
-              <Stat label="New Avg Cost" value={`$${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
+              <Stat label="Modeled shares (buy)" value={Number(scenario.shares_to_buy).toFixed(4)} />
+              <Stat label="Amount invested" value={`$${Number(scenario.budget_invested).toFixed(2)}`} />
+              <Stat label="Fee applied" value={`$${Number(scenario.fee_applied).toFixed(2)}`} />
+              <Stat label="Total spend" value={`$${Number(scenario.total_spend).toFixed(2)}`} />
+              <Stat label="Modeled total shares" value={Number(scenario.new_total_shares).toFixed(4)} />
+              <Stat label="Modeled average cost" value={`$${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
               {scenario.buy_price !== null && (
-                <Stat label="Buy Price" value={`$${Number(scenario.buy_price).toFixed(2)}`} />
+                <Stat label="Buy price (inputs)" value={`$${Number(scenario.buy_price).toFixed(2)}`} />
               )}
               {scenario.recommended_target != null && (
-                <Stat label="Target avg (saved)" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />
+                <Stat label="Scenario average (saved)" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />
               )}
               {scenario.budget_percent_used != null && (
-                <Stat label="Budget % Used" value={`${scenario.budget_percent_used}%`} />
+                <Stat label="Budget % used" value={`${scenario.budget_percent_used}%`} />
               )}
             </div>
           </div>
@@ -106,6 +109,7 @@ export default function ScenarioDetail() {
 
         {scenario.notes && (
           <section className={cardClass}>
+            <div className={cardGlow} aria-hidden />
             <div className="relative z-10">
               <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Notes</h2>
               <p className="text-sm text-stitch-muted-soft">{scenario.notes}</p>
@@ -127,7 +131,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div>
       <p className="text-xs uppercase tracking-wider text-stitch-muted">{label}</p>
-      <p className={`font-mono text-lg font-semibold ${highlight ? "text-stitch-accent" : "text-white"}`}>{value}</p>
+      <p className={`font-mono text-lg font-semibold ${highlight ? "text-stitch-accent" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }

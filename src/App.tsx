@@ -15,6 +15,13 @@ import DemoModeBanner from "./components/DemoModeBanner";
 import DemoModeWatermark from "./components/DemoModeWatermark";
 import GuidedDemoCoach from "./components/GuidedDemoCoach";
 import { Loader2 } from "lucide-react";
+import {
+  applyThemeToDocument,
+  getStoredTheme,
+  resolveEffectiveTheme,
+  subscribeSystemTheme,
+  THEME_PREFERENCE_CHANGE_EVENT,
+} from "@/lib/theme";
 
 const Holdings = lazy(() => import("./pages/Holdings"));
 const HoldingDetail = lazy(() => import("./pages/HoldingDetail"));
@@ -36,12 +43,31 @@ const queryClient = new QueryClient();
 
 function useInitTheme() {
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "light") {
-      document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.add("dark");
-    }
+    let unsubMedia: (() => void) | undefined;
+
+    const bindSystemListener = () => {
+      unsubMedia?.();
+      unsubMedia = undefined;
+      if (getStoredTheme() !== "system") return;
+      unsubMedia = subscribeSystemTheme(() => {
+        if (getStoredTheme() !== "system") return;
+        applyThemeToDocument(resolveEffectiveTheme("system"));
+      });
+    };
+
+    const syncFromStorage = () => {
+      const pref = getStoredTheme();
+      applyThemeToDocument(resolveEffectiveTheme(pref));
+      bindSystemListener();
+    };
+
+    syncFromStorage();
+    window.addEventListener(THEME_PREFERENCE_CHANGE_EVENT, syncFromStorage);
+
+    return () => {
+      window.removeEventListener(THEME_PREFERENCE_CHANGE_EVENT, syncFromStorage);
+      unsubMedia?.();
+    };
   }, []);
 }
 

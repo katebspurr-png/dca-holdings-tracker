@@ -1,9 +1,11 @@
 /**
  * Stock price fetching with 5-minute cache.
- * Tries Supabase `stock-price` edge function first (no Yahoo CORS in the browser), then Yahoo chart API.
+ * Prefers the Supabase `stock-price` edge function (server-side Yahoo + Finnhub fallback)
+ * when configured; falls back to direct Yahoo chart API in the browser.
  */
 
 import { canLookup, recordLookup } from "./pro";
+
 
 export interface StockQuote {
   ticker: string;
@@ -25,7 +27,7 @@ export interface StockQuote {
 const CACHE_KEY = "dca-price-cache";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-/** Aligned with edge `stock-price` (TSX uses `.TO`, e.g. `SHOP.TO`). */
+/** TSX tickers use `.TO` (e.g. `SHOP.TO`); Yahoo chart API accepts these symbols. */
 const TICKER_RE = /^[A-Z0-9]{1,6}(\.[A-Z]{1,4})?$/;
 
 function readCache(): Record<string, StockQuote> {
@@ -59,69 +61,6 @@ function n(x: unknown): number | null {
   return typeof x === "number" && Number.isFinite(x) ? x : null;
 }
 
-function supabaseStockPriceCreds(): { baseUrl: string; key: string } | null {
-  const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
-  const key = (
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined)
-  )?.trim();
-  if (!url || !key) return null;
-  return { baseUrl: url.replace(/\/$/, ""), key };
-}
-
-/** Edge function returns a flat quote JSON (Yahoo or Finnhub path). */
-async function fetchQuoteViaSupabase(upper: string): Promise<StockQuote | null> {
-  const creds = supabaseStockPriceCreds();
-  if (!creds) return null;
-
-  const endpoint = `${creds.baseUrl}/functions/v1/stock-price?ticker=${encodeURIComponent(upper)}`;
-
-  try {
-    const resp = await fetch(endpoint, {
-      headers: {
-        apikey: creds.key,
-        Authorization: `Bearer ${creds.key}`,
-      },
-    });
-
-    if (!resp.ok) return null;
-
-    let data: Record<string, unknown>;
-    try {
-      data = (await resp.json()) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-    if (typeof data.error === "string") return null;
-
-    const price = n(data.price);
-    if (price == null || price <= 0) return null;
-
-    const previousClose = n(data.previousClose) ?? price;
-    const change = n(data.change) ?? price - previousClose;
-    const changePercent =
-      n(data.changePercent) ?? (previousClose !== 0 ? (change / previousClose) * 100 : 0);
-
-    return {
-      ticker: upper,
-      price,
-      previousClose,
-      change,
-      changePercent,
-      fetchedAt: Date.now(),
-      week52High: n(data.week52High),
-      week52Low: n(data.week52Low),
-      todayOpen: n(data.todayOpen),
-      todayHigh: n(data.todayHigh),
-      todayLow: n(data.todayLow),
-      todayVolume: n(data.todayVolume),
-      avgVolume: n(data.avgVolume),
-    };
-  } catch {
-    return null;
-  }
-}
-
 /** Last non-null close from OHLC arrays (fallback when meta has no live price). */
 function lastClose(chart: Record<string, unknown>): number | null {
   const indicators = chart.indicators as { quote?: Array<{ close?: (number | null)[] }> } | undefined;
@@ -132,6 +71,77 @@ function lastClose(chart: Record<string, unknown>): number | null {
     if (v != null) return v;
   }
   return null;
+}
+
+/** Map Supabase edge `stock-price` JSON to StockQuote (same fields as Yahoo path). */
+function quoteFromEdgePayload(upper: string, data: Record<string, unknown>): StockQuote | null {
+  const price = n(data.price);
+  if (price == null || price <= 0) return null;
+
+  const previousClose = n(data.previousClose) ?? price;
+  const change = n(data.change) ?? price - previousClose;
+  const changePercent =
+    n(data.changePercent) ?? (previousClose !== 0 ? (change / previousClose) * 100 : 0);
+
+  return {
+    ticker: (typeof data.ticker === "string" ? data.ticker : upper).toUpperCase(),
+    price,
+    previousClose,
+    change,
+    changePercent,
+    fetchedAt: Date.now(),
+    week52High: n(data.week52High),
+    week52Low: n(data.week52Low),
+    todayOpen: n(data.todayOpen),
+    todayHigh: n(data.todayHigh),
+    todayLow: n(data.todayLow),
+    todayVolume: n(data.todayVolume),
+    avgVolume: n(data.avgVolume),
+  };
+}
+
+/**
+ * Edge Functions with verify_jwt only accept the legacy anon JWT (`eyJ...`).
+ * New `sb_publishable_*` keys are not JWTs and produce 401 on `/functions/v1/*`.
+ * Prefer `VITE_SUPABASE_ANON_KEY` from Dashboard → Settings → API (anon public).
+ */
+function supabaseJwtForEdge(): string | null {
+  const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  const pub = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  if (anon?.startsWith("eyJ")) return anon;
+  if (pub?.startsWith("eyJ")) return pub;
+  return null;
+}
+
+async function fetchStockPriceViaEdge(upper: string): Promise<StockQuote | null> {
+  const base = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/$/, "");
+  if (!base) return null;
+
+  const jwt = supabaseJwtForEdge();
+  const anyPublicKey =
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);
+  if (!jwt && !anyPublicKey) return null;
+
+  const headers: Record<string, string> = {};
+  if (jwt) {
+    headers.Authorization = `Bearer ${jwt}`;
+    headers.apikey = jwt;
+  } else if (anyPublicKey) {
+    // With [functions.stock-price] verify_jwt = false, only apikey is needed (publishable keys are not JWTs).
+    headers.apikey = anyPublicKey;
+  }
+
+  const url = `${base}/functions/v1/stock-price?ticker=${encodeURIComponent(upper)}`;
+  try {
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as Record<string, unknown>;
+    if (data.error) return null;
+    return quoteFromEdgePayload(upper, data);
+  } catch {
+    return null;
+  }
 }
 
 export type FetchResult =
@@ -163,11 +173,11 @@ export async function fetchStockPrice(
   }
 
   try {
-    const fromSupabase = await fetchQuoteViaSupabase(upper);
-    if (fromSupabase) {
-      setCache(fromSupabase);
+    const edgeQuote = await fetchStockPriceViaEdge(upper);
+    if (edgeQuote) {
+      setCache(edgeQuote);
       recordLookup();
-      return { ok: true, quote: fromSupabase, fromCache: false };
+      return { ok: true, quote: edgeQuote, fromCache: false };
     }
 
     const yahooCandidates = upper.endsWith(".TO")

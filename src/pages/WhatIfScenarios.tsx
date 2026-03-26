@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -139,7 +139,7 @@ export default function WhatIfScenarios() {
   const fetchPrice = useCallback(async (ticker: string, exchange: Exchange) => {
     const apiSym = apiTicker(ticker, exchange);
     setFetchingTickers((prev) => new Set(prev).add(ticker));
-    const result = await fetchStockPrice(apiSym);
+    const result = await fetchStockPrice(apiSym, { bypassCache: true });
     setFetchingTickers((prev) => {
       const next = new Set(prev);
       next.delete(ticker);
@@ -168,7 +168,7 @@ export default function WhatIfScenarios() {
     const pairs = holdings.map((h) => ({ ticker: h.ticker, exchange: (h.exchange ?? "US") as Exchange }));
     const apiSymbols = pairs.map((p) => apiTicker(p.ticker, p.exchange));
     const results = await Promise.allSettled(
-      apiSymbols.map((t) => fetchStockPrice(t))
+      apiSymbols.map((t) => fetchStockPrice(t, { bypassCache: true }))
     );
     const newPrices: Record<string, number> = { ...livePrices };
     let fetched = 0;
@@ -478,13 +478,13 @@ export default function WhatIfScenarios() {
 
   return (
     <>
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -495,82 +495,101 @@ export default function WhatIfScenarios() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-4 pb-8 sm:px-6 md:px-8">
+        {holdings.length === 0 && (
+          <section className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-6 text-center">
+            <p className="text-sm leading-relaxed text-stitch-muted">
+              Add positions from the portfolio screen to model allocations here.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground"
+              onClick={() => navigate("/")}
+            >
+              Back to portfolio
+            </Button>
+          </section>
+        )}
+
         {/* Budget input */}
-        <div className="space-y-4 rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="total-budget" className="text-sm font-semibold text-white">
-                Total Budget to Allocate
-              </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
-                <Input
-                  id="total-budget"
-                  type="number"
-                  step="any"
-                  placeholder="3000"
-                  value={totalBudget}
-                  onChange={(e) => setTotalBudget(e.target.value)}
-                  className="border-stitch-border bg-stitch-pill pl-9 font-mono text-lg text-white placeholder:text-stitch-muted/50"
-                />
+        <div className="relative space-y-4 overflow-hidden card-primary p-6">
+          <div className="card-primary-glow opacity-80" aria-hidden />
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="total-budget" className="text-sm font-semibold text-foreground">
+                  Total Budget to Allocate
+                </Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
+                  <Input
+                    id="total-budget"
+                    type="number"
+                    step="any"
+                    placeholder="3000"
+                    value={totalBudget}
+                    onChange={(e) => setTotalBudget(e.target.value)}
+                    className="input-stitch rounded-xl pl-9 font-mono text-lg text-foreground placeholder:text-stitch-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-stitch-border/50 dark:bg-stitch-pill dark:focus-visible:ring-2 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-2"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-1 pt-6">
+                <Button
+                  size="sm"
+                  variant={inputMode === "dollar" ? "default" : "outline"}
+                  className={
+                    inputMode === "dollar"
+                      ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                      : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
+                  }
+                  onClick={() => setInputMode("dollar")}
+                >
+                  <DollarSign className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={inputMode === "percent" ? "default" : "outline"}
+                  className={
+                    inputMode === "percent"
+                      ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                      : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
+                  }
+                  onClick={() => setInputMode("percent")}
+                >
+                  <Percent className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1 pt-6">
-              <Button
-                size="sm"
-                variant={inputMode === "dollar" ? "default" : "outline"}
-                className={
-                  inputMode === "dollar"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
-                onClick={() => setInputMode("dollar")}
-              >
-                <DollarSign className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                size="sm"
-                variant={inputMode === "percent" ? "default" : "outline"}
-                className={
-                  inputMode === "percent"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
-                onClick={() => setInputMode("percent")}
-              >
-                <Percent className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
 
-          {budget > 0 && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-stitch-muted">Unallocated:</span>
-              <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-stitch-accent" : ""}`}>
-                ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
-              </span>
-              {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
-              {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
-            </div>
-          )}
+            {budget > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-stitch-muted">Unallocated:</span>
+                <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-stitch-accent" : ""}`}>
+                  ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
+                </span>
+                {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
+                {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
+              </div>
+            )}
 
-          <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
-            <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
-              Include fees in modeled buys (same as portfolio / calculator)
-            </Label>
-            <Switch id="whatif-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            <div className="stitch-toggle-row flex items-center justify-between rounded-2xl border border-stitch-border/35 bg-stitch-pill/30 px-4 py-3">
+              <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
+                Include fees in modeled buys (same as portfolio / calculator)
+              </Label>
+              <Switch id="whatif-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            </div>
           </div>
         </div>
 
         {/* Mixed currency note */}
         {hasMixedCurrency && (
-          <p className="text-xs text-stitch-muted bg-stitch-pill/50 rounded-md px-3 py-2 border border-stitch-border">
-            Note: Allocations include stocks in both USD and CAD. Totals are shown per currency.
+          <p className="rounded-md border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-xs leading-relaxed text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200/90">
+            US and Canadian positions are mixed — totals stay per currency; they are not converted into one balance.
           </p>
         )}
 
         {/* Scenario tabs */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center gap-2">
             <Tabs value={String(activeTab)} onValueChange={(v) => setActiveTab(Number(v))} className="flex-1">
               <TabsList>
@@ -620,7 +639,7 @@ export default function WhatIfScenarios() {
           </div>
 
           {/* Allocation rows */}
-          <div className="rounded-lg border border-stitch-border overflow-hidden">
+          <div className="card-secondary overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-stitch-pill text-stitch-muted">
@@ -638,8 +657,8 @@ export default function WhatIfScenarios() {
                   <th className="px-3 py-2.5 text-right font-medium">
                     {inputMode === "dollar" ? "Allocate ($)" : "Allocate (%)"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-medium">Shares Bought</th>
-                  <th className="px-3 py-2.5 text-right font-medium">New Avg</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Shares bought</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Modeled avg</th>
                   <th className="px-3 py-2.5 text-right font-medium">Reduction</th>
                 </tr>
               </thead>
@@ -657,8 +676,8 @@ export default function WhatIfScenarios() {
                   const dispShares = hLive?.shares ?? alloc.currentShares;
                   const dispAvg = hLive?.avg_cost ?? alloc.currentAvg;
                   return (
-                    <tr key={alloc.holdingId} className={`border-t border-stitch-border ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-stitch-accent/10" : ""}`}>
-                      <td className="px-3 py-2 text-center">
+                    <tr key={alloc.holdingId} className={`border-t border-stitch-border/30 ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-stitch-accent/10" : ""}`}>
+                      <td className="px-3 py-2.5 text-center">
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleRow(ai)}
@@ -678,12 +697,16 @@ export default function WhatIfScenarios() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 px-1.5 text-[10px]"
+                              className="h-7 min-w-[4.5rem] px-1.5 text-[10px] transition-interactive"
                               disabled={isFetching}
                               onClick={() => fetchPrice(alloc.ticker, alloc.exchange)}
                             >
-                              <Zap className={`h-3 w-3 mr-0.5 ${isFetching ? "animate-pulse" : ""}`} />
-                              {isFetching ? "…" : "Get Price"}
+                              {isFetching ? (
+                                <Loader2 className="mr-1 h-3 w-3 shrink-0 animate-spin" aria-hidden />
+                              ) : (
+                                <Zap className="mr-0.5 h-3 w-3 shrink-0" aria-hidden />
+                              )}
+                              {isFetching ? "Loading" : "Get price"}
                             </Button>
                           )}
                         </div>
@@ -748,25 +771,28 @@ export default function WhatIfScenarios() {
 
           {/* Portfolio summary for active scenario */}
           {activeResult && activeResult.totalAllocated > 0 && (
-            <div className="rounded-lg border border-stitch-border bg-stitch-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-stitch-muted mb-3">
-                {scenarios[activeTab].name} — Portfolio Impact
+            <div className="card-primary p-5">
+              <div className="card-primary-glow opacity-60" aria-hidden />
+              <div className="relative z-10">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-stitch-muted mb-4">
+                {scenarios[activeTab].name} — portfolio impact
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div>
-                  <p className="text-xs text-stitch-muted">Total Allocated</p>
+                  <p className="text-xs text-stitch-muted mb-1">Total allocated</p>
                   <p className="text-lg font-mono font-semibold">${fmt(activeResult.totalAllocated)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stitch-muted">New Shares Bought</p>
+                  <p className="text-xs text-stitch-muted mb-1">New shares bought</p>
                   <p className="text-lg font-mono font-semibold">{fmt(activeResult.totalNewShares)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stitch-muted">Weighted Avg Reduction</p>
+                  <p className="text-xs text-stitch-muted mb-1">Weighted avg reduction</p>
                   <p className="text-lg font-mono font-semibold text-stitch-accent">
                     -${fmt(activeResult.avgReduction)}
                   </p>
                 </div>
+              </div>
               </div>
             </div>
           )}
@@ -778,7 +804,7 @@ export default function WhatIfScenarios() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-stitch-muted">
               Scenario Comparison
             </h2>
-            <div className="rounded-lg border border-stitch-border overflow-x-auto">
+            <div className="card-secondary overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-stitch-pill text-stitch-muted">
@@ -792,7 +818,7 @@ export default function WhatIfScenarios() {
                   {holdings.map((h, hi) => {
                     const cp = currencyPrefix(h.exchange ?? "US");
                     return (
-                      <tr key={h.id} className="border-t border-stitch-border">
+                      <tr key={h.id} className="border-t border-stitch-border/30">
                         <td className="px-3 py-2 font-mono font-semibold">
                           {h.ticker}
                           <span className="text-[10px] text-stitch-muted/60 ml-1">{exchangeLabel(h.exchange ?? "US")}</span>
@@ -841,7 +867,7 @@ export default function WhatIfScenarios() {
                 <Button
                   variant="outline"
                   onClick={() => setShowApplyDialog(true)}
-                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10"
+                  className="border-stitch-accent text-stitch-accent transition-interactive hover:bg-stitch-accent/10"
                 >
                   <CheckSquare className="mr-1.5 h-4 w-4" />
                   Apply to Holdings
@@ -849,15 +875,15 @@ export default function WhatIfScenarios() {
               </>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!budget}>
+          <Button variant="outline" onClick={handleSave} disabled={!budget} className="transition-interactive">
             <Save className="mr-1.5 h-4 w-4" />
-            Save Comparison
+            Save comparison
           </Button>
         </div>
 
         {/* Apply Confirmation Dialog */}
         <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-          <AlertDialogContent className="max-w-lg border-stitch-border bg-stitch-card text-white">
+          <AlertDialogContent className="max-w-lg border-stitch-border bg-stitch-card text-foreground">
             <AlertDialogHeader>
               <AlertDialogTitle>Apply Scenario to Holdings</AlertDialogTitle>
               <AlertDialogDescription asChild>
@@ -893,7 +919,7 @@ export default function WhatIfScenarios() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction onClick={handleApplyConfirm}>Confirm & Update</AlertDialogAction>
@@ -907,8 +933,10 @@ export default function WhatIfScenarios() {
             Recent Scenarios
           </h2>
           {savedComparisons.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-stitch-border p-6 text-center">
-              <p className="text-sm text-stitch-muted">No saved scenarios yet. Build a comparison above and click Save.</p>
+            <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-6 text-center">
+              <p className="text-sm leading-relaxed text-stitch-muted">
+                No saved comparisons yet. Build a model above, then save.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -921,7 +949,7 @@ export default function WhatIfScenarios() {
                       <div className="flex items-center gap-2 text-xs text-stitch-muted">
                         <Clock className="h-3.5 w-3.5" />
                         {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        <span className="font-mono font-semibold text-white text-sm ml-2">
+                        <span className="font-mono font-semibold text-foreground text-sm ml-2">
                           Budget: ${fmt(comp.totalBudget)}
                         </span>
                       </div>
@@ -974,8 +1002,8 @@ export default function WhatIfScenarios() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-xs text-stitch-muted text-center pb-6">
-          This tool shows mathematical projections only. It is not financial advice. Always do your own research before making investment decisions.
+        <p className="pb-6 text-center text-xs leading-relaxed text-stitch-muted/90">
+          Illustrative projections only — not advice. For your own review before any real-world decision.
         </p>
       </main>
     </div>
