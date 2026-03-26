@@ -134,7 +134,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground hover:bg-stitch-pill"
                 onClick={exitCompareMode}
               >
                 <X className="h-3 w-3" />
@@ -144,7 +144,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground hover:bg-stitch-pill"
                 onClick={() => setCompareMode(true)}
               >
                 <GitCompareArrows className="h-3 w-3 text-stitch-accent" />
@@ -154,7 +154,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-white"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-foreground"
                 onClick={() => toast.info("Enable premium preview in Settings to compare scenarios side-by-side.")}
               >
                 <Lock className="h-3 w-3" />
@@ -179,7 +179,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
                 filter === f.key
                   ? "bg-stitch-accent/10 border-stitch-accent/30 text-stitch-accent"
-                  : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-white"
+                  : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-foreground"
               }`}
             >
               {f.icon}
@@ -190,7 +190,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
       )}
 
       {filteredScenarios.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-2">
+        <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-8 text-center space-y-2">
           <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" />
           <p className="text-xs text-stitch-muted font-medium">No saved scenarios yet.</p>
           <p className="text-[11px] text-stitch-muted/50">
@@ -214,12 +214,12 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 <div
                   key={s.id}
                   onClick={compareMode ? () => toggleSelect(s.id) : undefined}
-                  className={`group rounded-xl border bg-stitch-card p-3.5 transition-all ${
+                  className={`group card-secondary bg-stitch-card/80 p-3.5 transition-all ${
                     compareMode ? "cursor-pointer" : ""
                   } ${
                     isSelected
                       ? "border-stitch-accent/50 bg-stitch-accent/[0.06] ring-1 ring-stitch-accent/25"
-                      : "border-stitch-border hover:border-stitch-accent/30"
+                      : "hover:border-stitch-accent/30"
                   }`}
                 >
                   {/* Top line */}
@@ -232,7 +232,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                           {isSelected && <Check className="h-2.5 w-2.5 text-black" />}
                         </div>
                       )}
-                      <span className="text-[11px] font-semibold text-white/90 truncate" title={scenarioTitle}>
+                      <span className="text-[11px] font-semibold text-foreground/90 truncate" title={scenarioTitle}>
                         {scenarioTitle}
                       </span>
                     </div>
@@ -246,7 +246,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                     {fmt(s.budget_invested)} at {cp}
                     {fmt(priceUsed)}
                   </p>
-                  <p className="text-[11px] text-white/90 font-mono mb-2.5 leading-relaxed">
+                  <p className="text-[11px] text-foreground/90 font-mono mb-2.5 leading-relaxed">
                     Avg becomes {cp}
                     {fmt(s.new_avg_cost)}
                     {savePerShare > 0.005 ? (
@@ -266,14 +266,14 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                     </div>
                     <div>
                       <span className="text-[9px] text-stitch-muted uppercase tracking-wider">Total Spend</span>
-                      <p className="font-mono text-xs font-medium text-white">
+                      <p className="font-mono text-xs font-medium text-foreground">
                         {cp}
                         {fmt(s.total_spend)}
                       </p>
                     </div>
                     <div>
                       <span className="text-[9px] text-stitch-muted uppercase tracking-wider">Shares</span>
-                      <p className="font-mono text-xs font-medium text-white">{s.shares_to_buy.toFixed(4)}</p>
+                      <p className="font-mono text-xs font-medium text-foreground">{s.shares_to_buy.toFixed(4)}</p>
                     </div>
                     <div className="ml-auto">
                       {improves ? (
@@ -296,7 +296,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-white hover:bg-stitch-pill"
+                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-foreground hover:bg-stitch-pill"
                         onClick={() => onUseScenario(s)}
                       >
                         <ArrowRight className="mr-1 h-2.5 w-2.5 text-stitch-accent" />
@@ -332,15 +332,15 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
       )}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-foreground">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete this scenario?</AlertDialogTitle>
+            <AlertDialogTitle className="text-foreground">Delete this scenario?</AlertDialogTitle>
             <AlertDialogDescription className="text-stitch-muted">
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

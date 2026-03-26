@@ -111,9 +111,9 @@ function parseStoredLayout(): HoldingsLayout {
 
 const AVATAR_PALETTE = [
   "bg-white text-black",
-  "bg-[#76b900] text-white",
-  "bg-[#627eea] text-white",
-  "bg-[#e31937] text-white",
+  "bg-[#76b900] text-[#fff]",
+  "bg-[#627eea] text-[#fff]",
+  "bg-[#e31937] text-[#fff]",
 ] as const;
 
 function avatarClassForTicker(ticker: string): string {
@@ -267,7 +267,7 @@ function HoldingPortfolioCard({
           <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
             <button
               type="button"
-              className="text-[11px] text-stitch-muted hover:text-white"
+              className="text-[11px] text-stitch-muted hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
@@ -402,7 +402,7 @@ function HoldingPortfolioCard({
         <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
           <button
             type="button"
-            className="text-[11px] text-stitch-muted hover:text-white"
+            className="text-[11px] text-stitch-muted hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
@@ -649,7 +649,7 @@ export default function Holdings() {
   const fmtCad = (n: number) => `C$${fmt(n)}`;
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       {showOnboarding && (
         <Onboarding
           onDone={() => setShowOnboarding(false)}
@@ -666,7 +666,7 @@ export default function Holdings() {
           <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
             <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-white">Start your portfolio or explore a demo</h3>
+          <h3 className="text-lg font-semibold text-foreground">Start your portfolio or explore a demo</h3>
           <p className="mt-2 max-w-sm text-sm text-stitch-muted">
             Add your positions to model averages and scenarios, or use sample data to see how the tools work — all
             modeling, not advice.
@@ -686,7 +686,7 @@ export default function Holdings() {
             <Button
               variant="outline"
               size="lg"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
               onClick={() => navigate(getDemoEntryPath())}
             >
               Try demo
@@ -694,7 +694,7 @@ export default function Holdings() {
             <Button
               variant="outline"
               size="lg"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
               onClick={() => setCsvOpen(true)}
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -707,7 +707,7 @@ export default function Holdings() {
           <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
             {selectMode && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
-                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
+                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-foreground">
                   {selected.size === holdings.length ? "Deselect all" : "Select all"}
                 </button>
                 <div className="flex items-center gap-2">
@@ -719,7 +719,7 @@ export default function Holdings() {
                   >
                     Delete ({selected.size})
                   </button>
-                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -727,11 +727,11 @@ export default function Holdings() {
             )}
 
             {/* Total Portfolio */}
-            <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+            <section className="card-primary rounded-[32px] p-6">
+              <div className="card-primary-glow" aria-hidden />
               <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+                  <h2 className="text-[17px] font-semibold text-foreground">Total Portfolio</h2>
                   {isDemoMode && <DemoDataTag />}
                 </div>
                 <DropdownMenu>
@@ -746,10 +746,10 @@ export default function Holdings() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-foreground shadow-lg"
                   >
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => refreshAllPrices()}
                       disabled={refreshingAll}
                     >
@@ -757,32 +757,32 @@ export default function Holdings() {
                       Refresh prices
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/update-prices")}
                     >
                       Update Prices page
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/what-if")}
                     >
                       What-If scenarios
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => navigate("/progress")}
                     >
                       Progress (vs initial snapshot)
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => setCsvOpen(true)}
                     >
                       <FileSpreadsheet className="mr-2 h-4 w-4" />
                       Import CSV
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                       onClick={() => setSelectMode(true)}
                     >
                       <CheckSquare className="mr-2 h-4 w-4" />
@@ -791,7 +791,7 @@ export default function Holdings() {
                     {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                       <DropdownMenuItem
                         key={mode}
-                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                         onClick={() => handleSortChange(mode)}
                       >
                         <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -815,7 +815,7 @@ export default function Holdings() {
                     </div>
                     <div className="text-right">
                       <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
-                      <p className="text-[16px] font-medium text-white">{fmtUsd(totalUsdInvested)}</p>
+                      <p className="text-[16px] font-medium text-foreground">{fmtUsd(totalUsdInvested)}</p>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
@@ -845,7 +845,7 @@ export default function Holdings() {
                     </div>
                     <div className="text-right">
                       <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
-                      <p className="text-[16px] font-medium text-white">{fmtCad(totalCadInvested)}</p>
+                      <p className="text-[16px] font-medium text-foreground">{fmtCad(totalCadInvested)}</p>
                     </div>
                   </div>
                   <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
@@ -887,7 +887,7 @@ export default function Holdings() {
             <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-pill px-3 py-2.5">
-              <h2 className="text-sm font-semibold text-white">Holdings</h2>
+              <h2 className="text-sm font-semibold text-foreground">Holdings</h2>
               <div className="flex flex-wrap items-center justify-end gap-2">
                 <div className="flex rounded-xl border border-stitch-border/80 bg-stitch-card/50 p-0.5">
                   <button
@@ -897,8 +897,8 @@ export default function Holdings() {
                     className={cn(
                       "rounded-lg p-2 transition-colors",
                       holdingsLayout === "grid"
-                        ? "bg-stitch-pill text-white"
-                        : "text-stitch-muted hover:text-white",
+                        ? "bg-stitch-pill text-foreground"
+                        : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("grid")}
                   >
@@ -911,8 +911,8 @@ export default function Holdings() {
                     className={cn(
                       "rounded-lg p-2 transition-colors",
                       holdingsLayout === "list"
-                        ? "bg-stitch-pill text-white"
-                        : "text-stitch-muted hover:text-white",
+                        ? "bg-stitch-pill text-foreground"
+                        : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("list")}
                   >
@@ -925,7 +925,7 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-foreground"
                     >
                       <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
                       Sort
@@ -933,12 +933,12 @@ export default function Holdings() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-foreground shadow-lg"
                   >
                     {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
                       <DropdownMenuItem
                         key={mode}
-                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        className="rounded-xl focus:bg-stitch-pill focus:text-foreground"
                         onClick={() => handleSortChange(mode)}
                       >
                         <ArrowUpDown className="mr-2 h-4 w-4" />
@@ -1017,7 +1017,7 @@ export default function Holdings() {
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleting?.ticker} and all its data?</AlertDialogTitle>
             <AlertDialogDescription className="text-stitch-muted">
@@ -1026,12 +1026,12 @@ export default function Holdings() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleting && handleDelete(deleting.id)}
-              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
+              className="bg-stitch-danger text-destructive-foreground hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -1040,7 +1040,7 @@ export default function Holdings() {
       </AlertDialog>
 
       <AlertDialog open={bulkDeleting} onOpenChange={(open) => !open && setBulkDeleting(false)}>
-        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?
@@ -1054,12 +1054,12 @@ export default function Holdings() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
+              className="bg-stitch-danger text-destructive-foreground hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -1122,8 +1122,8 @@ function DcaOpportunities({
   const visibleRows = showAll || rows.length <= COLLAPSE_COUNT ? rows : rows.slice(0, COLLAPSE_COUNT);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+    <section className="card-primary rounded-[32px] p-6">
+      <div className="card-primary-glow" aria-hidden />
       <div className="relative z-10">
         <button
           type="button"
@@ -1132,7 +1132,7 @@ function DcaOpportunities({
         >
           <div className="flex items-center gap-2">
             <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
-            <h2 className="text-[17px] font-semibold text-white">Scenario results (per holding)</h2>
+            <h2 className="text-[17px] font-semibold text-foreground">Scenario results (per holding)</h2>
           </div>
           {sectionExpanded ? (
             <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
@@ -1176,7 +1176,7 @@ function DcaOpportunities({
                         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
                         className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
                       >
-                        <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
+                        <span className="w-16 shrink-0 text-sm font-semibold text-foreground">{h.ticker}</span>
                         <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
                           {cp}
                           {fmt(step.amount)} sim → avg {cp}

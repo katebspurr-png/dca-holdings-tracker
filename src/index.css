@@ -6,52 +6,121 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 224 40% 10%;
+    /* Stitch surfaces — warm, calm light */
+    --stitch-bg: 42 22% 96%;
+    --stitch-card: 40 35% 99%;
+    --stitch-pill: 220 14% 93%;
+    --stitch-border: 220 11% 86%;
+    --stitch-accent: 78 48% 34%;
+    --stitch-muted: 220 12% 38%;
+    --stitch-muted-soft: 220 11% 34%;
+    --stitch-danger: 0 62% 46%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 224 40% 10%;
+    /* Semantic aliases (same scale as stitch / shadcn) */
+    --bg-app: 42 22% 96%;
+    --bg-surface: 40 35% 99%;
+    --bg-surface-subtle: 220 14% 93%;
+    --text-primary: 224 28% 14%;
+    --text-secondary: 224 18% 32%;
+    --text-muted: 220 12% 38%;
+    --accent-primary: 78 48% 34%;
+    --accent-positive: 78 52% 36%;
+    --accent-negative: 0 62% 46%;
+    --surface-hover: 220 14% 91%;
+    --button-primary-bg: 78 52% 36%;
+    --button-primary-text: 224 43% 8%;
+    --button-secondary-bg: 220 14% 93%;
+    --button-secondary-border: 220 11% 86%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 40% 10%;
+    /* Card tiers */
+    --card-primary-bg: 40 40% 99.5%;
+    --card-primary-border: 220 12% 88%;
+    --card-primary-glow-strength: 0.07;
+    --card-primary-shadow: 0 1px 2px hsl(220 25% 50% / 0.05), 0 10px 32px -12px hsl(220 22% 45% / 0.1);
+    --card-secondary-bg: 220 14% 95%;
+    --card-secondary-border: 220 10% 90%;
 
-    --primary: 160 60% 40%;
-    --primary-foreground: 0 0% 100%;
+    --scrollbar-thumb: 220 12% 78%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 224 40% 10%;
+    --background: 42 22% 96%;
+    --foreground: 224 28% 14%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 10% 45%;
+    --card: 40 35% 99%;
+    --card-foreground: 224 28% 14%;
 
-    --accent: 160 30% 92%;
-    --accent-foreground: 160 50% 30%;
+    --popover: 40 35% 99%;
+    --popover-foreground: 224 28% 14%;
 
-    --destructive: 0 62% 50%;
+    --primary: 78 52% 36%;
+    --primary-foreground: 224 43% 8%;
+
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 224 28% 14%;
+
+    --muted: 220 14% 94%;
+    /* Slightly darker muted text on warm light bg (readability) */
+    --muted-foreground: 220 12% 38%;
+
+    --accent: 78 38% 92%;
+    --accent-foreground: 78 45% 26%;
+
+    --destructive: 0 62% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 87%;
-    --input: 220 13% 87%;
-    --ring: 160 60% 40%;
+    --border: 220 11% 86%;
+    --input: 220 11% 86%;
+    --ring: 78 52% 36%;
 
     --radius: 0.75rem;
 
     --font-heading: "Syne", sans-serif;
     --font-mono: "DM Mono", monospace;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 224 40% 10%;
-    --sidebar-primary: 160 60% 40%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 95%;
-    --sidebar-accent-foreground: 224 40% 10%;
-    --sidebar-border: 220 13% 87%;
-    --sidebar-ring: 160 60% 40%;
+    --sidebar-background: 42 22% 96%;
+    --sidebar-foreground: 224 28% 14%;
+    --sidebar-primary: 78 52% 36%;
+    --sidebar-primary-foreground: 224 43% 8%;
+    --sidebar-accent: 220 14% 94%;
+    --sidebar-accent-foreground: 224 28% 14%;
+    --sidebar-border: 220 11% 86%;
+    --sidebar-ring: 78 52% 36%;
   }
 
-  /* Dark class mirrors :root — aligned with Stitch-style dashboard base */
   .dark {
-    --background: 240 4% 7%;
+    --stitch-bg: 240 6% 7%;
+    --stitch-card: 240 3% 11%;
+    --stitch-pill: 240 2% 18%;
+    --stitch-border: 240 4% 16%;
+    --stitch-accent: 72 96% 60%;
+    --stitch-muted: 218 11% 65%;
+    --stitch-muted-soft: 240 4% 83%;
+    --stitch-danger: 3 100% 61%;
+
+    --bg-app: 240 6% 7%;
+    --bg-surface: 240 3% 11%;
+    --bg-surface-subtle: 240 2% 18%;
+    --text-primary: 214 32% 91%;
+    --text-secondary: 215 20% 75%;
+    --text-muted: 218 11% 65%;
+    --accent-primary: 72 96% 60%;
+    --accent-positive: 82 85% 56%;
+    --accent-negative: 3 100% 61%;
+    --surface-hover: 222 38% 16%;
+    --button-primary-bg: 82 85% 56%;
+    --button-primary-text: 224 43% 6%;
+    --button-secondary-bg: 222 38% 15%;
+    --button-secondary-border: 215 28% 17%;
+
+    --card-primary-bg: 240 3% 11%;
+    --card-primary-border: 240 4% 16%;
+    --card-primary-glow-strength: 0.12;
+    --card-primary-shadow: 0 12px 40px -16px hsl(0 0% 0% / 0.45);
+    --card-secondary-bg: 240 2% 14%;
+    --card-secondary-border: 240 4% 18%;
+
+    --scrollbar-thumb: 215 28% 22%;
+
+    --background: 240 6% 7%;
     --foreground: 214 32% 91%;
 
     --card: 240 3% 11%;
@@ -60,7 +129,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 214 32% 91%;
 
-    --primary: 160 60% 52%;
+    --primary: 82 85% 56%;
     --primary-foreground: 224 43% 6%;
 
     --secondary: 222 38% 15%;
@@ -69,24 +138,24 @@
     --muted: 222 38% 14%;
     --muted-foreground: 215 16% 45%;
 
-    --accent: 160 40% 14%;
-    --accent-foreground: 160 60% 60%;
+    --accent: 82 40% 14%;
+    --accent-foreground: 82 72% 62%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 215 28% 17%;
     --input: 215 28% 17%;
-    --ring: 160 60% 52%;
+    --ring: 82 85% 56%;
 
     --sidebar-background: 224 43% 6%;
     --sidebar-foreground: 214 32% 91%;
-    --sidebar-primary: 160 60% 52%;
+    --sidebar-primary: 82 85% 56%;
     --sidebar-primary-foreground: 224 43% 6%;
     --sidebar-accent: 222 38% 14%;
     --sidebar-accent-foreground: 214 32% 91%;
     --sidebar-border: 215 28% 17%;
-    --sidebar-ring: 160 60% 52%;
+    --sidebar-ring: 82 85% 56%;
   }
 
   html,
@@ -129,7 +198,7 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(215 28% 17%);
+    background: hsl(var(--scrollbar-thumb));
     border-radius: 2px;
   }
 
@@ -183,15 +252,20 @@
 
   /* ── Example scenario card (Plan tab) ── */
   .card-glow {
-    background: linear-gradient(135deg, hsl(160 40% 97%), hsl(160 30% 95%), hsl(210 30% 96%));
-    border-color: hsl(160 60% 40% / 0.2);
-    box-shadow: 0 0 24px hsl(160 60% 40% / 0.06), inset 0 1px 0 hsl(160 60% 40% / 0.08);
+    background: linear-gradient(
+      135deg,
+      hsl(40 45% 98%),
+      hsl(78 25% 96%),
+      hsl(220 20% 97%)
+    );
+    border-color: hsl(var(--stitch-accent) / 0.18);
+    box-shadow: 0 0 24px hsl(var(--stitch-accent) / 0.05), inset 0 1px 0 hsl(var(--stitch-accent) / 0.1);
   }
 
   .dark .card-glow {
     background: linear-gradient(135deg, hsl(215 47% 9%) 0%, hsl(222 47% 11%) 60%, hsl(210 47% 8%) 100%);
-    border-color: hsl(160 60% 52% / 0.2);
-    box-shadow: 0 0 24px hsl(160 60% 52% / 0.08), inset 0 1px 0 hsl(160 60% 52% / 0.06);
+    border-color: hsl(var(--stitch-accent) / 0.2);
+    box-shadow: 0 0 24px hsl(var(--stitch-accent) / 0.08), inset 0 1px 0 hsl(var(--stitch-accent) / 0.06);
   }
 
   /* ── Opportunity score badge ── */
@@ -199,7 +273,7 @@
     font-family: "Syne", sans-serif;
     font-weight: 800;
     letter-spacing: -0.02em;
-    color: hsl(160 60% 52%);
+    color: hsl(var(--primary));
     line-height: 1;
   }
 
@@ -219,13 +293,62 @@
     overflow: hidden;
   }
   .glow-primary::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -60px;
     right: -60px;
     width: 160px;
     height: 160px;
-    background: radial-gradient(circle, hsl(160 60% 52% / 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 70%);
     pointer-events: none;
+  }
+
+  .dark .glow-primary::before {
+    background: radial-gradient(circle, hsl(var(--primary) / 0.14) 0%, transparent 70%);
+  }
+}
+
+/* ── Card tiers: primary + glow = top-level sections only; secondary = nested surfaces, no glow ── */
+@layer components {
+  .card-primary,
+  .glass-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid hsl(var(--card-primary-border) / 0.5);
+    background-color: hsl(var(--card-primary-bg));
+    box-shadow: var(--card-primary-shadow);
+  }
+
+  .card-primary-glow,
+  .glass-panel-glow {
+    pointer-events: none;
+    position: absolute;
+    right: -2.5rem;
+    top: -2.5rem;
+    height: 16rem;
+    width: 16rem;
+    border-radius: 9999px;
+    background: hsl(var(--stitch-accent) / var(--card-primary-glow-strength));
+    filter: blur(48px);
+  }
+
+  :root:not(.dark) .card-primary-glow,
+  :root:not(.dark) .glass-panel-glow {
+    --card-primary-glow-strength: 0.06;
+    opacity: 0.9;
+  }
+
+  .card-secondary {
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--card-secondary-border) / 0.65);
+    background-color: hsl(var(--card-secondary-bg));
+  }
+
+  /* Settings: many stacked primaries — slightly calmer elevation in light mode */
+  html:not(.dark) .settings-page .card-primary,
+  html:not(.dark) .settings-page .glass-panel {
+    box-shadow: 0 1px 2px hsl(220 25% 50% / 0.04), 0 6px 20px -8px hsl(220 22% 45% / 0.07);
+    border-color: hsl(var(--card-primary-border) / 0.45);
   }
 }

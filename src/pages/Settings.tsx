@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check, LogOut, BookOpen, ExternalLink } from "lucide-react";
 import { resetOnboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { resetAll, exportData, importData } from "@/lib/storage";
 import { ENABLE_LOOKUP_LIMIT } from "@/lib/pro";
@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { getDemoEntryPath } from "@/lib/demoWelcome";
 import { useExperience } from "@/contexts/ExperienceContext";
+import { getStoredTheme, setThemePreference, type ThemePreference } from "@/lib/theme";
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -28,22 +29,11 @@ export default function Settings() {
     toast.success("Signed out");
   }, [signOut]);
 
-  const [dark, setDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem("theme");
-    if (stored) return stored === "dark";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-  });
+  const [themePref, setThemePref] = useState<ThemePreference>(() => getStoredTheme());
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (dark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", dark ? "dark" : "light");
-  }, [dark]);
+    setThemePreference(themePref);
+  }, [themePref]);
 
   const handleExport = useCallback(() => {
     const json = exportData();
@@ -89,25 +79,26 @@ export default function Settings() {
     toast.success(next === "premium" ? "Premium preview enabled on this device" : "Using free tier on this device");
   };
 
-  const cardClass =
-    "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
+  /** Primary tier: one glow per major settings group */
+  const cardClass = "card-primary rounded-[32px] p-6";
+  const cardGlow = "card-primary-glow";
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-stitch-muted";
   const outlineBtn =
-    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground";
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="settings-page relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <main className="relative z-10 mx-auto flex max-w-lg flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
         {/* Plan */}
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Plan</h2>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <Crown className={`h-5 w-5 shrink-0 ${plan === "premium" ? "text-stitch-accent" : "text-stitch-muted"}`} />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-foreground">
                     {plan === "premium" ? "Premium" : "Free"}
                     {plan === "premium" && (
                       <Badge
@@ -131,14 +122,14 @@ export default function Settings() {
                 className={
                   plan === "premium"
                     ? `h-8 shrink-0 text-xs ${outlineBtn}`
-                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-primary-foreground hover:bg-stitch-accent/90"
                 }
                 onClick={togglePlan}
               >
                 {plan === "premium" ? "Turn off premium preview" : "Enable premium preview"}
               </Button>
             </div>
-            <p className="rounded-xl border border-stitch-border/60 bg-stitch-pill/40 px-3 py-2 text-[10px] leading-relaxed text-stitch-muted">
+            <p className="card-secondary border-stitch-border/50 bg-stitch-pill/35 px-3 py-2 text-[10px] leading-relaxed text-stitch-muted">
               App Store billing is not wired up yet. This switch stores your choice on this device so you can test
               paywalled features. It is not a subscription charge.
             </p>
@@ -166,7 +157,7 @@ export default function Settings() {
         </section>
 
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-2">
             <h2 className={sectionTitle}>Disclaimer</h2>
             <p className="text-[11px] leading-relaxed text-stitch-muted">
@@ -177,7 +168,7 @@ export default function Settings() {
         </section>
 
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-3">
             <h2 className={sectionTitle}>Legal</h2>
             <p className="text-[11px] leading-relaxed text-stitch-muted">
@@ -203,7 +194,7 @@ export default function Settings() {
 
         {/* Appearance */}
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Demo mode</h2>
             <p className="text-[11px] leading-relaxed text-stitch-muted">
@@ -223,7 +214,7 @@ export default function Settings() {
               ) : (
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-primary-foreground hover:bg-stitch-accent/90"
                   onClick={() => navigate(getDemoEntryPath())}
                 >
                   Enter demo mode
@@ -234,26 +225,42 @@ export default function Settings() {
         </section>
 
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
+            <RadioGroup
+              value={themePref}
+              onValueChange={(v) => setThemePref(v as ThemePreference)}
+              className="grid gap-3"
+            >
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
+                <RadioGroupItem value="light" id="theme-light" />
+                <Label htmlFor="theme-light" className="flex flex-1 cursor-pointer items-center gap-2 font-normal">
+                  <Sun className="h-4 w-4 text-stitch-accent" />
+                  <span className="text-sm">Light</span>
+                </Label>
               </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
-                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
+                <RadioGroupItem value="dark" id="theme-dark" />
+                <Label htmlFor="theme-dark" className="flex flex-1 cursor-pointer items-center gap-2 font-normal">
+                  <Moon className="h-4 w-4 text-stitch-accent" />
+                  <span className="text-sm">Dark</span>
+                </Label>
               </div>
-            </div>
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
+                <RadioGroupItem value="system" id="theme-system" />
+                <Label htmlFor="theme-system" className="flex flex-1 cursor-pointer flex-col gap-0.5 font-normal">
+                  <span className="text-sm text-foreground">System</span>
+                  <span className="text-xs text-stitch-muted">Match device setting</span>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </section>
 
         {/* Data Management */}
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Data</h2>
             <div className="flex flex-wrap gap-2">
@@ -284,7 +291,7 @@ export default function Settings() {
         {/* Pro Settings */}
         {ENABLE_LOOKUP_LIMIT && (
           <section className={cardClass}>
-            <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+            <div className={cardGlow} aria-hidden />
             <div className="relative z-10 space-y-4">
               <h2 className={sectionTitle}>Lookup Limits</h2>
               <ProSettings />
@@ -294,13 +301,13 @@ export default function Settings() {
 
         {/* Account */}
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Account</h2>
             {user ? (
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-white">Signed in as</p>
+                  <p className="text-sm font-medium text-foreground">Signed in as</p>
                   <p className="mt-0.5 truncate text-xs text-stitch-muted">{user.email}</p>
                 </div>
                 <Button size="sm" variant="outline" className={`h-8 shrink-0 text-xs ${outlineBtn}`} onClick={handleSignOut}>
@@ -316,7 +323,7 @@ export default function Settings() {
                 </p>
                 <Button
                   size="sm"
-                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-9 bg-stitch-accent text-xs font-semibold text-primary-foreground hover:bg-stitch-accent/90"
                   onClick={() => navigate("/auth")}
                 >
                   Create account
@@ -328,7 +335,7 @@ export default function Settings() {
 
         {/* About */}
         <section className={cardClass}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+          <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <div>
               <h2 className={`${sectionTitle} mb-2`}>About</h2>
@@ -336,7 +343,7 @@ export default function Settings() {
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-stitch-border pt-4">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-white">Product tour</p>
+                <p className="text-sm font-medium text-foreground">Product tour</p>
                 <p className="mt-0.5 text-xs text-stitch-muted">Replay the first-run walkthrough from the Portfolio tab</p>
               </div>
               <Button

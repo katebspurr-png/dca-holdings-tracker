@@ -15,6 +15,7 @@ import {
   type SuggestedStep,
   type PortfolioSuggestedStep,
 } from "@/lib/strategy-step";
+import { useSimFees } from "@/contexts/SimFeesContext";
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -84,10 +85,11 @@ function HoldingSuggestion({
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
+  const { includeFees } = useSimFees();
   const step = useMemo(() => {
     if (currentPrice == null) return null;
-    return selectSuggestedStep(holding, currentPrice);
-  }, [holding, currentPrice]);
+    return selectSuggestedStep(holding, currentPrice, includeFees);
+  }, [holding, currentPrice, includeFees]);
 
   if (!step || currentPrice == null) return null;
 
@@ -110,7 +112,7 @@ function HoldingSuggestion({
       input1_value: currentPrice,
       input2_label: "Max budget (shares only, excl. fee)",
       input2_value: step.budget,
-      include_fees: holding.fee_value > 0,
+      include_fees: includeFees,
       fee_amount: step.fee,
       buy_price: currentPrice,
       shares_to_buy: step.sharesToBuy,
@@ -151,9 +153,10 @@ function PortfolioSuggestion({
   navigate: ReturnType<typeof useNavigate>;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
+  const { includeFees } = useSimFees();
   const step = useMemo(() => {
-    return selectPortfolioSuggestedStep(holdings, (h) => livePrices[h.id] ?? null);
-  }, [holdings, livePrices]);
+    return selectPortfolioSuggestedStep(holdings, (h) => livePrices[h.id] ?? null, includeFees);
+  }, [holdings, livePrices, includeFees]);
 
   if (!step) return null;
 
@@ -174,7 +177,7 @@ function PortfolioSuggestion({
       input1_value: step.currentPrice,
       input2_label: "Max budget (shares only, excl. fee)",
       input2_value: step.budget,
-      include_fees: holding.fee_value > 0,
+      include_fees: includeFees,
       fee_amount: step.fee,
       buy_price: step.currentPrice,
       shares_to_buy: step.sharesToBuy,

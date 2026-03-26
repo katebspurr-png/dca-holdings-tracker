@@ -58,9 +58,9 @@ export default function CapitalOptimizer() {
   };
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pb-8 pt-12 sm:px-6 md:px-8">
-        <h1 className="text-xl font-semibold tracking-tight text-white">Budget lab</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Budget lab</h1>
         <p className="text-xs text-stitch-muted">
           One heuristic mode runs today (see below). Illustrative budget split only — not an optimal or recommended
           allocation.
@@ -85,16 +85,16 @@ export default function CapitalOptimizer() {
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-2.5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-3.5 py-3"
+                className="card-secondary flex items-center gap-2.5 bg-stitch-pill/30 px-3.5 py-3"
               >
                 <Icon className="h-4 w-4 shrink-0 text-stitch-accent" />
-                <span className="text-xs font-medium text-white">{label}</span>
+                <span className="text-xs font-medium text-foreground">{label}</span>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-stitch-border bg-stitch-pill/25 p-4">
+        <section className="card-secondary bg-stitch-pill/25 p-4">
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">
             Modeling approach
           </h3>
@@ -106,7 +106,7 @@ export default function CapitalOptimizer() {
             <div className="flex items-start gap-3">
               <RadioGroupItem value="greedy_improvement_per_dollar" id="opt-greedy" className="mt-0.5 border-stitch-border" />
               <Label htmlFor="opt-greedy" className="cursor-pointer text-left text-xs font-normal leading-snug text-stitch-muted">
-                <span className="font-medium text-white">Avg cost change per dollar (chunked greedy)</span>
+                <span className="font-medium text-foreground">Avg cost change per dollar (chunked greedy)</span>
                 <span className="mt-0.5 block text-[10px] text-stitch-muted/85">
                   $100 chunks to the underwater holding with the largest modeled average cost change per dollar at each step
                   — current implementation.
@@ -116,7 +116,7 @@ export default function CapitalOptimizer() {
             <div className="flex items-start gap-3 opacity-50">
               <RadioGroupItem value="lowest_portfolio_average" id="opt-lowest" disabled className="mt-0.5 border-stitch-border" />
               <Label htmlFor="opt-lowest" className="text-left text-xs font-normal leading-snug text-stitch-muted">
-                <span className="font-medium text-white">Lowest portfolio average</span>
+                <span className="font-medium text-foreground">Lowest portfolio average</span>
                 <span className="mt-0.5 block text-[10px]">Roadmap — not implemented.</span>
               </Label>
             </div>
@@ -128,15 +128,15 @@ export default function CapitalOptimizer() {
                 className="mt-0.5 border-stitch-border"
               />
               <Label htmlFor="opt-targets" className="text-left text-xs font-normal leading-snug text-stitch-muted">
-                <span className="font-medium text-white">Modeled scenario averages first</span>
+                <span className="font-medium text-foreground">Modeled scenario averages first</span>
                 <span className="mt-0.5 block text-[10px]">Roadmap — not implemented.</span>
               </Label>
             </div>
           </RadioGroup>
         </section>
 
-        <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+        <section className="card-primary rounded-[32px] p-6">
+          <div className="card-primary-glow" aria-hidden />
           <div className="relative z-10 space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex-1 space-y-1.5">
@@ -150,12 +150,12 @@ export default function CapitalOptimizer() {
                   step={100}
                   value={budgetInput}
                   onChange={(e) => setBudgetInput(e.target.value)}
-                  className="border-stitch-border bg-stitch-pill font-mono text-white placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent"
+                  className="border-stitch-border bg-stitch-pill font-mono text-foreground placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent"
                 />
               </div>
               <Button
                 type="button"
-                className="shrink-0 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="shrink-0 border border-stitch-accent/45 bg-stitch-accent/75 font-semibold text-black hover:bg-stitch-accent/65"
                 onClick={runModel}
                 disabled={optimizerMode !== "greedy_improvement_per_dollar"}
               >
@@ -163,7 +163,7 @@ export default function CapitalOptimizer() {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+            <div className="flex items-center justify-between card-secondary bg-stitch-pill/40 px-4 py-3">
               <Label htmlFor="optimizer-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
                 Include fees in simulation
               </Label>
@@ -192,30 +192,30 @@ export default function CapitalOptimizer() {
             )}
 
             {lastRun && (
-              <div className="overflow-hidden rounded-2xl border border-stitch-border">
-                <div className="flex flex-col gap-1 border-b border-stitch-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="card-secondary overflow-hidden bg-stitch-pill/10">
+                <div className="flex flex-col gap-1 border-b border-stitch-border/30 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                   <span className="text-xs font-semibold text-stitch-muted">Modeled allocation</span>
                   <span className="font-mono text-xs font-semibold text-stitch-accent">
                     Used {fmt(lastRun.usedBudget)} · Unallocated {fmt(lastRun.remainingBudget)}
                   </span>
                 </div>
                 {lastRun.lines.length === 0 ? (
-                  <p className="p-4 text-sm text-stitch-muted">
-                    No modeled deploys — need underwater positions (price below avg) and cached quotes for them.
+                  <p className="p-4 text-sm text-stitch-muted leading-relaxed">
+                    No modeled deploys — underwater positions and cached quotes required.
                   </p>
                 ) : (
-                  <div className="divide-y divide-stitch-border">
+                  <div className="divide-y divide-stitch-border/25">
                     {lastRun.lines.map((line, i) => {
                       const cp = currencyPrefix(line.exchange);
                       return (
-                        <div key={line.holdingId} className="flex items-center justify-between gap-3 px-4 py-3">
+                        <div key={line.holdingId} className="flex items-center justify-between gap-3 px-4 py-3.5">
                           <div className="flex min-w-0 items-center gap-3">
                             <span className="w-4 shrink-0 font-mono text-[10px] text-stitch-muted/50">{i + 1}</span>
-                            <span className="truncate font-mono text-sm font-bold text-white">{line.ticker}</span>
+                            <span className="truncate font-mono text-sm font-bold text-foreground">{line.ticker}</span>
                           </div>
                           <div className="flex shrink-0 items-center gap-4 text-right">
                             <div>
-                              <p className="font-mono text-xs font-semibold text-white">
+                              <p className="font-mono text-xs font-semibold text-foreground">
                                 {cp}
                                 {fmt(line.allocated)}
                               </p>
@@ -237,9 +237,9 @@ export default function CapitalOptimizer() {
                     })}
                   </div>
                 )}
-                <div className="border-t border-stitch-border bg-stitch-accent/5 px-4 py-3">
-                  <p className="text-center text-[11px] text-stitch-muted">
-                    Heuristic simulation only — not financial advice; not a recommended portfolio allocation.
+                <div className="border-t border-stitch-border/30 bg-stitch-accent/[0.04] px-4 py-3">
+                  <p className="text-center text-[11px] text-stitch-muted/90 leading-relaxed">
+                    Heuristic simulation — not advice; not a recommended allocation.
                   </p>
                 </div>
               </div>
@@ -250,10 +250,10 @@ export default function CapitalOptimizer() {
         )}
 
         {!optimizerUnlocked && (
-        <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+        <section className="card-primary rounded-[32px] p-6">
+          <div className="card-primary-glow" aria-hidden />
           <div className="relative z-10">
-            <h2 className="text-[17px] font-semibold text-white">Get early access</h2>
+            <h2 className="text-[17px] font-semibold text-foreground">Get early access</h2>
             <p className="mt-1 text-sm text-stitch-muted">
               Tell us what you want next for budget-allocation modeling and we will follow up.
             </p>

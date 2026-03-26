@@ -21,25 +21,25 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
     list.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+    <section className="card-primary rounded-[32px] p-6">
+      <div className="card-primary-glow" aria-hidden />
       <div className="relative z-10">
         <div className="mb-3 flex items-center gap-2">
           <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" />
-          <h2 className="text-[17px] font-semibold text-white">Progress vs initial snapshot</h2>
+          <h2 className="text-[17px] font-semibold text-foreground">Progress vs initial snapshot</h2>
         </div>
         <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
           Same metrics as the Progress tab: current average cost versus the value when each position was first tracked here
           (not buy/sell advice).
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4">
+          <div className="card-secondary bg-stitch-pill/30 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Positions</p>
-            <p className="mt-1 text-[22px] font-bold leading-none text-white">{improved.length}</p>
+            <p className="mt-1 text-[22px] font-bold leading-none text-foreground">{improved.length}</p>
             <p className="mt-1 text-[9px] text-stitch-muted">Lower avg than initial snapshot</p>
           </div>
 
-          <div className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4 sm:col-span-2">
+          <div className="card-secondary bg-stitch-pill/30 p-4 sm:col-span-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Avg reduction / share</p>
             <div className="mt-2 space-y-2">
               {usImproved.length > 0 && (

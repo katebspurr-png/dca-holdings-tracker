@@ -2,6 +2,7 @@
  * Shared strategy utilities: efficiency scoring, adaptive budgets, and suggested step selection.
  */
 
+import { computeDcaRow, holdingFeeOpts } from "./dca-sim";
 import type { Holding } from "./storage";
 
 const TEST_INVESTMENT = 500;
@@ -38,13 +39,6 @@ export function getAdaptiveBudgets(shares: number, currentPrice: number): number
   return [500, 1000, 2500];
 }
 
-// ── Fee Computation ──────────────────────────────────────────
-
-function computeFee(feeType: string, feeValue: number, budget: number): number {
-  if (feeType === "percent") return budget * (feeValue / 100);
-  return feeValue;
-}
-
 // ── Suggested Strategy Step ──────────────────────────────────
 
 export type SuggestedStep = {
@@ -70,31 +64,44 @@ function computeStepForBudget(
   holding: Holding,
   budget: number,
   currentPrice: number,
+  includeFees: boolean,
 ): SuggestedStep | null {
   const S = holding.shares;
   const A = holding.avg_cost;
   if (currentPrice >= A || currentPrice <= 0 || budget <= 0) return null;
 
-  const sharesToBuy = budget / currentPrice;
-  const fee = computeFee(holding.fee_type, holding.fee_value, budget);
-  const totalSpend = budget + fee;
-  const newAvg = (S * A + budget + fee) / (S + sharesToBuy);
-  const avgImprovement = A - newAvg;
+  const row = computeDcaRow(S, A, currentPrice, budget, holdingFeeOpts(holding, includeFees));
+  if (!row) return null;
+
+  const budgetForStock = row.sharesBought * currentPrice;
+  const fee = Math.round(Math.max(0, budget - budgetForStock) * 100) / 100;
+  const totalSpend = budget;
+  const avgImprovement = row.avgImprovement;
   const improvementPct = A > 0 ? avgImprovement / A : 0;
   const efficiency = totalSpend > 0 ? avgImprovement / totalSpend : 0;
 
-  return { budget, newAvg, avgImprovement, improvementPct, efficiency, sharesToBuy, fee, totalSpend };
+  return {
+    budget,
+    newAvg: row.newAvg,
+    avgImprovement,
+    improvementPct,
+    efficiency,
+    sharesToBuy: row.sharesBought,
+    fee,
+    totalSpend,
+  };
 }
 
 export function selectSuggestedStep(
   holding: Holding,
   currentPrice: number,
+  includeFees: boolean,
 ): SuggestedStep | null {
   if (currentPrice >= holding.avg_cost || currentPrice <= 0) return null;
 
   const budgets = getAdaptiveBudgets(holding.shares, currentPrice);
   const steps = budgets
-    .map((b) => computeStepForBudget(holding, b, currentPrice))
+    .map((b) => computeStepForBudget(holding, b, currentPrice, includeFees))
     .filter((s): s is SuggestedStep => s !== null);
 
   if (steps.length === 0) return null;
@@ -125,6 +132,7 @@ export function selectSuggestedStep(
 export function selectPortfolioSuggestedStep(
   holdings: Holding[],
   getPriceForHolding: (h: Holding) => number | null,
+  includeFees: boolean,
 ): PortfolioSuggestedStep | null {
   let best: PortfolioSuggestedStep | null = null;
 
@@ -132,7 +140,7 @@ export function selectPortfolioSuggestedStep(
     const price = getPriceForHolding(h);
     if (price == null || price <= 0) continue;
 
-    const step = selectSuggestedStep(h, price);
+    const step = selectSuggestedStep(h, price, includeFees);
     if (!step) continue;
 
     const candidate: PortfolioSuggestedStep = {

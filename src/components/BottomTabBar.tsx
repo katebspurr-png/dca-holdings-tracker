@@ -37,7 +37,7 @@ export default function BottomTabBar() {
                 <span
                   className={`h-[3px] w-[28px] shrink-0 rounded-[2px] transition-[background-color,box-shadow,opacity] ${
                     active
-                      ? "bg-stitch-accent shadow-[0_0_8px_rgba(196,251,53,0.5)]"
+                      ? "bg-stitch-accent shadow-[0_0_0_1px_hsl(var(--stitch-accent)/0.22)] dark:shadow-[0_0_12px_hsl(var(--stitch-accent)/0.45)]"
                       : "bg-transparent opacity-0"
                   }`}
                   aria-hidden
@@ -45,7 +45,7 @@ export default function BottomTabBar() {
                 <Icon
                   className={`h-6 w-6 transition-[color,filter] ${
                     active
-                      ? "text-stitch-accent drop-shadow-[0_0_5px_rgba(196,251,53,0.55)]"
+                      ? "text-stitch-accent dark:drop-shadow-[0_0_6px_hsl(var(--stitch-accent)/0.5)]"
                       : "text-stitch-muted"
                   }`}
                   strokeWidth={active ? 2.25 : 2}

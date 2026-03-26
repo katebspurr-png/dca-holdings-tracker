@@ -9,10 +9,10 @@ export default function Progress() {
   const holdings = getHoldings();
 
   return (
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
-        <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+        <section className="card-primary rounded-[32px] p-6">
+          <div className="card-primary-glow" aria-hidden />
           <div className="relative z-10">
             <p className="text-sm leading-relaxed text-stitch-muted">
               This tab is only for portfolio-wide progress versus the average cost snapshot from when each holding was first
@@ -22,7 +22,7 @@ export default function Progress() {
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
               asChild
             >
               <Link to="/">Back to portfolio</Link>

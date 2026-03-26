@@ -64,7 +64,7 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
               >
                 {/* Header */}
                 <div>
-                  <p className="text-[11px] font-medium text-white/80">
+                  <p className="text-[11px] font-medium text-foreground/80">
                     {METHOD_LABELS[s.method] ?? s.method}
                   </p>
                   <p className="text-[10px] text-stitch-muted/50 tabular-nums">
@@ -109,7 +109,7 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   <div>
                     <p className="text-[9px] uppercase tracking-wider text-stitch-muted">Modeled avg</p>
                     <p
-                      className={`font-mono text-xl font-bold leading-tight ${isBestAvg ? "text-stitch-accent" : "text-white"}`}
+                      className={`font-mono text-xl font-bold leading-tight ${isBestAvg ? "text-stitch-accent" : "text-foreground"}`}
                     >
                       {cp}
                       {fmt(s.new_avg_cost)}
@@ -156,7 +156,7 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
                     onClick={() => onUseScenario(s)}
                   >
                     <ArrowRight className="mr-1 h-2.5 w-2.5" />
@@ -185,7 +185,7 @@ function CompareRow({ label, value, highlight }: { label: string; value: string;
     <div className="flex justify-between items-baseline">
       <span className="text-[10px] text-stitch-muted">{label}</span>
       <span
-        className={`font-mono text-[11px] font-medium tabular-nums ${highlight ? "text-stitch-accent" : "text-white"}`}
+        className={`font-mono text-[11px] font-medium tabular-nums ${highlight ? "text-stitch-accent" : "text-foreground"}`}
       >
         {value}
       </span>

@@ -478,13 +478,13 @@ export default function WhatIfScenarios() {
 
   return (
     <>
-    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
           <Button
             variant="outline"
             size="sm"
-            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -494,71 +494,74 @@ export default function WhatIfScenarios() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-8 sm:px-6 md:px-8">
+      <main className="mx-auto max-w-5xl space-y-5 px-4 pb-8 sm:px-6 md:px-8">
         {/* Budget input */}
-        <div className="space-y-4 rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="total-budget" className="text-sm font-semibold text-white">
-                Total Budget to Allocate
-              </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
-                <Input
-                  id="total-budget"
-                  type="number"
-                  step="any"
-                  placeholder="3000"
-                  value={totalBudget}
-                  onChange={(e) => setTotalBudget(e.target.value)}
-                  className="border-stitch-border bg-stitch-pill pl-9 font-mono text-lg text-white placeholder:text-stitch-muted/50"
-                />
+        <div className="relative space-y-4 overflow-hidden card-primary p-6">
+          <div className="card-primary-glow opacity-80" aria-hidden />
+          <div className="relative z-10 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="total-budget" className="text-sm font-semibold text-foreground">
+                  Total Budget to Allocate
+                </Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
+                  <Input
+                    id="total-budget"
+                    type="number"
+                    step="any"
+                    placeholder="3000"
+                    value={totalBudget}
+                    onChange={(e) => setTotalBudget(e.target.value)}
+                    className="rounded-xl border-stitch-border/50 bg-stitch-pill pl-9 font-mono text-lg text-foreground placeholder:text-stitch-muted/50"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-1 pt-6">
+                <Button
+                  size="sm"
+                  variant={inputMode === "dollar" ? "default" : "outline"}
+                  className={
+                    inputMode === "dollar"
+                      ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                      : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
+                  }
+                  onClick={() => setInputMode("dollar")}
+                >
+                  <DollarSign className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={inputMode === "percent" ? "default" : "outline"}
+                  className={
+                    inputMode === "percent"
+                      ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                      : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
+                  }
+                  onClick={() => setInputMode("percent")}
+                >
+                  <Percent className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-1 pt-6">
-              <Button
-                size="sm"
-                variant={inputMode === "dollar" ? "default" : "outline"}
-                className={
-                  inputMode === "dollar"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
-                onClick={() => setInputMode("dollar")}
-              >
-                <DollarSign className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                size="sm"
-                variant={inputMode === "percent" ? "default" : "outline"}
-                className={
-                  inputMode === "percent"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
-                onClick={() => setInputMode("percent")}
-              >
-                <Percent className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
 
-          {budget > 0 && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-stitch-muted">Unallocated:</span>
-              <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-stitch-accent" : ""}`}>
-                ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
-              </span>
-              {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
-              {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
-            </div>
-          )}
+            {budget > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-stitch-muted">Unallocated:</span>
+                <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-stitch-accent" : ""}`}>
+                  ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
+                </span>
+                {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
+                {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
+              </div>
+            )}
 
-          <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
-            <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
-              Include fees in modeled buys (same as portfolio / calculator)
-            </Label>
-            <Switch id="whatif-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            <div className="flex items-center justify-between rounded-2xl border border-stitch-border/35 bg-stitch-pill/30 px-4 py-3">
+              <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
+                Include fees in modeled buys (same as portfolio / calculator)
+              </Label>
+              <Switch id="whatif-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            </div>
           </div>
         </div>
 
@@ -620,7 +623,7 @@ export default function WhatIfScenarios() {
           </div>
 
           {/* Allocation rows */}
-          <div className="rounded-lg border border-stitch-border overflow-hidden">
+          <div className="card-secondary overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-stitch-pill text-stitch-muted">
@@ -657,8 +660,8 @@ export default function WhatIfScenarios() {
                   const dispShares = hLive?.shares ?? alloc.currentShares;
                   const dispAvg = hLive?.avg_cost ?? alloc.currentAvg;
                   return (
-                    <tr key={alloc.holdingId} className={`border-t border-stitch-border ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-stitch-accent/10" : ""}`}>
-                      <td className="px-3 py-2 text-center">
+                    <tr key={alloc.holdingId} className={`border-t border-stitch-border/30 ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-stitch-accent/10" : ""}`}>
+                      <td className="px-3 py-2.5 text-center">
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleRow(ai)}
@@ -748,25 +751,28 @@ export default function WhatIfScenarios() {
 
           {/* Portfolio summary for active scenario */}
           {activeResult && activeResult.totalAllocated > 0 && (
-            <div className="rounded-lg border border-stitch-border bg-stitch-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-stitch-muted mb-3">
-                {scenarios[activeTab].name} — Portfolio Impact
+            <div className="card-primary p-5">
+              <div className="card-primary-glow opacity-60" aria-hidden />
+              <div className="relative z-10">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-stitch-muted mb-4">
+                {scenarios[activeTab].name} — portfolio impact
               </h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div>
-                  <p className="text-xs text-stitch-muted">Total Allocated</p>
+                  <p className="text-xs text-stitch-muted mb-1">Total allocated</p>
                   <p className="text-lg font-mono font-semibold">${fmt(activeResult.totalAllocated)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stitch-muted">New Shares Bought</p>
+                  <p className="text-xs text-stitch-muted mb-1">New shares bought</p>
                   <p className="text-lg font-mono font-semibold">{fmt(activeResult.totalNewShares)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stitch-muted">Weighted Avg Reduction</p>
+                  <p className="text-xs text-stitch-muted mb-1">Weighted avg reduction</p>
                   <p className="text-lg font-mono font-semibold text-stitch-accent">
                     -${fmt(activeResult.avgReduction)}
                   </p>
                 </div>
+              </div>
               </div>
             </div>
           )}
@@ -778,7 +784,7 @@ export default function WhatIfScenarios() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-stitch-muted">
               Scenario Comparison
             </h2>
-            <div className="rounded-lg border border-stitch-border overflow-x-auto">
+            <div className="card-secondary overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-stitch-pill text-stitch-muted">
@@ -792,7 +798,7 @@ export default function WhatIfScenarios() {
                   {holdings.map((h, hi) => {
                     const cp = currencyPrefix(h.exchange ?? "US");
                     return (
-                      <tr key={h.id} className="border-t border-stitch-border">
+                      <tr key={h.id} className="border-t border-stitch-border/30">
                         <td className="px-3 py-2 font-mono font-semibold">
                           {h.ticker}
                           <span className="text-[10px] text-stitch-muted/60 ml-1">{exchangeLabel(h.exchange ?? "US")}</span>
@@ -857,7 +863,7 @@ export default function WhatIfScenarios() {
 
         {/* Apply Confirmation Dialog */}
         <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-          <AlertDialogContent className="max-w-lg border-stitch-border bg-stitch-card text-white">
+          <AlertDialogContent className="max-w-lg border-stitch-border bg-stitch-card text-foreground">
             <AlertDialogHeader>
               <AlertDialogTitle>Apply Scenario to Holdings</AlertDialogTitle>
               <AlertDialogDescription asChild>
@@ -893,7 +899,7 @@ export default function WhatIfScenarios() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              <AlertDialogCancel className="border-stitch-border bg-transparent text-foreground hover:bg-stitch-pill">
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction onClick={handleApplyConfirm}>Confirm & Update</AlertDialogAction>
@@ -921,7 +927,7 @@ export default function WhatIfScenarios() {
                       <div className="flex items-center gap-2 text-xs text-stitch-muted">
                         <Clock className="h-3.5 w-3.5" />
                         {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        <span className="font-mono font-semibold text-white text-sm ml-2">
+                        <span className="font-mono font-semibold text-foreground text-sm ml-2">
                           Budget: ${fmt(comp.totalBudget)}
                         </span>
                       </div>
