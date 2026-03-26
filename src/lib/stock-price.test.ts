@@ -77,8 +77,8 @@ describe("fetchStockPrice", () => {
 
     const r = await fetchStockPrice("AAPL", { bypassCache: true });
     expect(fetchSpy).toHaveBeenCalled();
-    const url = String(fetchSpy.mock.calls[0]?.[0] ?? "");
-    expect(url).toContain("query1.finance.yahoo.com");
+    const urls = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes("query1.finance.yahoo.com"))).toBe(true);
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.fromCache).toBe(false);

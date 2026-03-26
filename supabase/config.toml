@@ -1,1 +1,6 @@
 project_id = "fyzkyuapuhieyoyzdqws"
+
+# Public read helper: browser cannot send sb_publishable_* as Bearer JWT.
+# After deploy, `supabase functions deploy stock-price` picks this up.
+[functions.stock-price]
+verify_jwt = false

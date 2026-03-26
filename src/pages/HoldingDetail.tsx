@@ -330,7 +330,9 @@ export default function HoldingDetail() {
   const handleUseCurrentPrice = async () => {
     if (!holding) return;
     setFetchingPrice(true);
-    const result = await fetchStockPrice(apiTicker(holding.ticker, exchange));
+    const result = await fetchStockPrice(apiTicker(holding.ticker, exchange), {
+      bypassCache: true,
+    });
     setFetchingPrice(false);
     if (result.ok) {
       setVal1(String(result.quote.price));

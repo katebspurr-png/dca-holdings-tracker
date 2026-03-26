@@ -139,7 +139,7 @@ export default function WhatIfScenarios() {
   const fetchPrice = useCallback(async (ticker: string, exchange: Exchange) => {
     const apiSym = apiTicker(ticker, exchange);
     setFetchingTickers((prev) => new Set(prev).add(ticker));
-    const result = await fetchStockPrice(apiSym);
+    const result = await fetchStockPrice(apiSym, { bypassCache: true });
     setFetchingTickers((prev) => {
       const next = new Set(prev);
       next.delete(ticker);
@@ -168,7 +168,7 @@ export default function WhatIfScenarios() {
     const pairs = holdings.map((h) => ({ ticker: h.ticker, exchange: (h.exchange ?? "US") as Exchange }));
     const apiSymbols = pairs.map((p) => apiTicker(p.ticker, p.exchange));
     const results = await Promise.allSettled(
-      apiSymbols.map((t) => fetchStockPrice(t))
+      apiSymbols.map((t) => fetchStockPrice(t, { bypassCache: true }))
     );
     const newPrices: Record<string, number> = { ...livePrices };
     let fetched = 0;

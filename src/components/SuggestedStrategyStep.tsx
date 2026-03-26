@@ -220,51 +220,79 @@ function StepCard({
   onSave: () => void;
 }) {
   return (
-    <div className="rounded-xl border-2 border-primary/30 bg-primary/[0.03] p-4 sm:p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Zap className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Illustrative scenario step</h3>
-        {ticker && (
-          <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 font-mono">{ticker}</Badge>
+    <div className="relative overflow-hidden rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-4 sm:p-5 shadow-lg">
+      <div className="pointer-events-none absolute -left-8 -top-12 h-56 w-56 rounded-full bg-stitch-accent/10 blur-3xl" />
+      <div className="relative z-10">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Zap className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden />
+          <h3 className="text-sm font-semibold text-white">Illustrative scenario step</h3>
+          {ticker && (
+            <Badge
+              variant="outline"
+              className="ml-0.5 h-4 border-stitch-border/80 bg-stitch-card/50 px-1 font-mono text-[9px] text-stitch-muted-soft"
+            >
+              {ticker}
+            </Badge>
+          )}
+        </div>
+
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+          <div>
+            <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-stitch-muted">Invest</p>
+            <p className="text-lg font-bold leading-none text-white font-[family-name:var(--font-heading)]">
+              {cp}
+              {fmt(step.budget)}
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-stitch-muted">Modeled avg</p>
+            <p className="text-lg font-mono font-bold leading-none text-white">
+              {cp}
+              {fmt(step.newAvg)}
+            </p>
+          </div>
+        </div>
+
+        {step.avgImprovement > 0 && (
+          <p className="mb-1 flex flex-wrap items-center gap-1 text-sm font-mono font-medium text-stitch-accent">
+            <ArrowDownRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>
+              avg moves by {cp}
+              {fmt(step.avgImprovement)}
+            </span>
+            <span className="text-[11px] text-stitch-muted">({(step.improvementPct * 100).toFixed(1)}%)</span>
+          </p>
         )}
-      </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-4 mb-2">
-        <p className="text-base font-bold font-[family-name:var(--font-heading)]">
-          Invest {cp}{fmt(step.budget)}
+        <p className="mt-1 font-mono text-[11px] text-stitch-muted">
+          Current avg {cp}
+          {fmt(avgCost)}
         </p>
-        <p className="text-lg font-mono font-bold text-foreground">
-          Modeled avg {cp}{fmt(step.newAvg)}
+
+        <p className="mt-2 text-[10px] italic leading-relaxed text-stitch-muted/90">
+          Based on modeled impact per dollar among fixed rungs. For scenario planning only.
         </p>
-      </div>
 
-      {step.avgImprovement > 0 && (
-        <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mb-1">
-          <ArrowDownRight className="h-3.5 w-3.5" />
-          avg moves by {cp}{fmt(step.avgImprovement)}
-          <span className="text-muted-foreground/60 text-[11px] ml-1">
-            ({(step.improvementPct * 100).toFixed(1)}%)
-          </span>
-        </p>
-      )}
-
-      <p className="text-[11px] text-muted-foreground/50 font-mono mt-1">
-        Current avg {cp}{fmt(avgCost)}
-      </p>
-
-      <p className="text-[10px] text-muted-foreground/50 mt-2 italic">
-        Based on modeled impact per dollar among fixed rungs. For scenario planning only.
-      </p>
-
-      <div className="flex gap-2 mt-3 pt-2.5 border-t border-primary/10">
-        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onUseInCalc}>
-          <ArrowRight className="mr-1 h-3 w-3" />
-          Use in calculator
-        </Button>
-        <Button variant="ghost" size="sm" className="h-7 text-[11px] text-muted-foreground hover:text-foreground" onClick={onSave}>
-          <Save className="mr-1 h-3 w-3" />
-          Save scenario
-        </Button>
+        <div className="mt-3 flex flex-wrap gap-1 border-t border-stitch-border/50 pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] text-stitch-muted hover:bg-stitch-card/60 hover:text-white"
+            onClick={onUseInCalc}
+          >
+            <ArrowRight className="mr-1 h-3 w-3" />
+            Use in calculator
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-[11px] text-stitch-muted hover:bg-stitch-card/60 hover:text-white"
+            onClick={onSave}
+          >
+            <Save className="mr-1 h-3 w-3" />
+            Save scenario
+          </Button>
+        </div>
       </div>
     </div>
   );
