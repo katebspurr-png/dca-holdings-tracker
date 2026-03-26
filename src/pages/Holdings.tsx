@@ -1,95 +1,461 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, type KeyboardEvent } from "react";
+import Onboarding, { getOnboardingDone } from "@/components/onboarding";
 import { useNavigate } from "react-router-dom";
 import {
-  Plus, Pencil, Trash2,
-  TrendingDown, TrendingUp, DollarSign, FileSpreadsheet,
-  ChevronRight, ChevronDown, RefreshCw, Briefcase, ArrowUpDown,
-  Gauge, Activity, BarChart3, Wallet, CheckSquare, Square, X,
+  Plus,
+  Pencil,
+  Trash2,
+  TrendingDown,
+  FileSpreadsheet,
+  ChevronRight,
+  ChevronDown,
+  RefreshCw,
+  ArrowUpDown,
+  CheckSquare,
+  Square,
+  X,
+  MoreHorizontal,
+  SlidersHorizontal,
+  Gauge,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import HoldingFormDialog from "@/components/HoldingFormDialog";
 import CsvImportDialog from "@/components/CsvImportDialog";
 import SuggestedStrategyStep from "@/components/SuggestedStrategyStep";
 import {
-  getHoldings, addHolding, editHolding, removeHolding,
+  getHoldings,
+  addHolding,
+  editHolding,
+  removeHolding,
   getScenariosForHolding,
-  type Holding, type Scenario, currencyPrefix, exchangeLabel, apiTicker,
+  isDemoModeSessionActive,
+  type Holding,
+  type Scenario,
+  currencyPrefix,
+  apiTicker,
 } from "@/lib/storage";
-import { fetchStockPrice, getCachedQuote, type StockQuote } from "@/lib/stock-price";
-import { Badge } from "@/components/ui/badge";
+import { fetchStockPrice } from "@/lib/stock-price";
+import { getCachedPrice } from "@/lib/price-cache";
 import { toast } from "sonner";
+import { useSimFees } from "@/contexts/SimFeesContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
+import { getDemoEntryPath } from "@/lib/demoWelcome";
+import { DemoDataTag } from "@/components/DemoDataTag";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
+import {
+  selectMostEfficientLadderStep,
+  holdingFeeOpts,
+  type DcaRow,
+} from "@/lib/dca-sim";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const SORT_KEY = "dca-holdings-sort";
-type SortMode = "az" | "position" | "loss" | "gain";
+const LAYOUT_KEY = "dca-holdings-layout";
+const OPPORTUNITIES_EXPANDED_KEY = "dca-opportunities-expanded";
+
+type SortMode =
+  | "az"
+  | "za"
+  | "position"
+  | "position_small"
+  | "loss"
+  | "gain"
+  | "loss_pct"
+  | "gain_pct";
 
 const SORT_LABELS: Record<SortMode, string> = {
   az: "A → Z",
+  za: "Z → A",
   position: "Largest Position",
-  loss: "Biggest Loss",
-  gain: "Biggest Gain",
+  position_small: "Smallest Position",
+  loss: "Biggest Loss ($)",
+  gain: "Biggest Gain ($)",
+  loss_pct: "Biggest Loss %",
+  gain_pct: "Biggest Gain %",
 };
 
-const CACHE_KEY = "dca-price-cache";
-
-function readPriceCache(): Record<string, StockQuote> {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+function parseStoredSort(): SortMode {
+  const v = localStorage.getItem(SORT_KEY);
+  if (v && Object.prototype.hasOwnProperty.call(SORT_LABELS, v)) return v as SortMode;
+  return "az";
 }
 
-function getCachedPrice(ticker: string, exchange: string): number | null {
-  const cache = readPriceCache();
-  const key = apiTicker(ticker, exchange as any).toUpperCase();
-  const entry = cache[key];
-  return entry ? entry.price : null;
+type HoldingsLayout = "grid" | "list";
+
+function parseStoredLayout(): HoldingsLayout {
+  const v = localStorage.getItem(LAYOUT_KEY);
+  if (v === "list" || v === "grid") return v;
+  return "grid";
 }
 
-function getCachedQuoteForHolding(ticker: string, exchange: string): StockQuote | null {
-  const key = apiTicker(ticker, exchange as any).toUpperCase();
-  return getCachedQuote(key);
-}
+const AVATAR_PALETTE = [
+  "bg-white text-black",
+  "bg-[#76b900] text-white",
+  "bg-[#627eea] text-white",
+  "bg-[#e31937] text-white",
+] as const;
 
-function formatVolume(vol: number): string {
-  if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
-  if (vol >= 1e6) return `${(vol / 1e6).toFixed(1)}M`;
-  if (vol >= 1e3) return `${(vol / 1e3).toFixed(1)}K`;
-  return vol.toFixed(0);
+function avatarClassForTicker(ticker: string): string {
+  let h = 0;
+  for (let i = 0; i < ticker.length; i++) h = (h + ticker.charCodeAt(i) * (i + 1)) % 997;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
 }
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+type PnlInfo = { pnl: number; pnlPct: number };
+
+function HoldingPortfolioCard({
+  holding: h,
+  layout,
+  price,
+  scenario,
+  pnl,
+  selectMode,
+  isSelected,
+  fetchingTickers,
+  onRowActivate,
+  onStrategy,
+  onFetchPrice,
+  onEdit,
+  onDelete,
+}: {
+  holding: Holding;
+  layout: HoldingsLayout;
+  price: number | null;
+  scenario: Scenario | null;
+  pnl: PnlInfo | null;
+  selectMode: boolean;
+  isSelected: boolean;
+  fetchingTickers: Set<string>;
+  onRowActivate: () => void;
+  onStrategy: () => void;
+  onFetchPrice: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const ex = (h.exchange ?? "US") as "US" | "TSX";
+  const cp = currencyPrefix(ex);
+  const underwater = price != null && price < h.avg_cost;
+  const sliderColor = !price ? "text-stitch-muted" : underwater ? "text-stitch-accent" : "text-stitch-danger";
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onRowActivate();
+    }
+  };
+
+  if (layout === "list") {
+    return (
+      <article
+        role="button"
+        tabIndex={0}
+        onClick={onRowActivate}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          isSelected && "ring-2 ring-stitch-accent/60",
+        )}
+      >
+        {selectMode && (
+          <div className="absolute right-2 top-2">
+            {isSelected ? (
+              <CheckSquare className="h-5 w-5 text-stitch-accent" />
+            ) : (
+              <Square className="h-5 w-5 text-stitch-muted/50" />
+            )}
+          </div>
+        )}
+        <div className={cn("flex min-w-0 items-start gap-2", selectMode && "pr-8")}>
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                avatarClassForTicker(h.ticker),
+              )}
+            >
+              {h.ticker.slice(0, 1)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-[15px] font-bold">{h.ticker}</span>
+                <span className="text-[15px] font-semibold tabular-nums">
+                  {price != null ? `${cp}${fmt(price)}` : "—"}
+                </span>
+                {pnl != null && (
+                  <span
+                    className={cn(
+                      "text-[12px] font-medium tabular-nums",
+                      pnl.pnl >= 0 ? "text-stitch-accent" : "text-stitch-danger",
+                    )}
+                  >
+                    {pnl.pnl >= 0 ? "+" : ""}
+                    {cp}
+                    {fmt(pnl.pnl)} ({pnl.pnlPct >= 0 ? "+" : ""}
+                    {pnl.pnlPct.toFixed(1)}%)
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-[11px] text-stitch-muted">
+                Avg {cp}
+                {fmt(h.avg_cost)}
+              </p>
+              {!selectMode && price == null && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFetchPrice();
+                  }}
+                  disabled={fetchingTickers.has(h.ticker)}
+                  className="mt-1 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+                >
+                  {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStrategy();
+                }}
+                className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
+              >
+                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
+              </button>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1 pt-0.5">
+            <button
+              type="button"
+              className="shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStrategy();
+              }}
+              aria-label="Open Plan tab"
+            >
+              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+            </button>
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+          </div>
+        </div>
+        {!selectMode && (
+          <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+            <button
+              type="button"
+              className="text-[11px] text-stitch-muted hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil className="mr-1 inline h-3 w-3" />
+              Edit
+            </button>
+            <button
+              type="button"
+              className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="mr-1 inline h-3 w-3" />
+              Delete
+            </button>
+          </div>
+        )}
+      </article>
+    );
+  }
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onRowActivate}
+      onKeyDown={onKeyDown}
+      className={cn(
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        isSelected && "ring-2 ring-stitch-accent/60",
+      )}
+    >
+      {selectMode && (
+        <div className="absolute right-2 top-2">
+          {isSelected ? (
+            <CheckSquare className="h-5 w-5 text-stitch-accent" />
+          ) : (
+            <Square className="h-5 w-5 text-stitch-muted/50" />
+          )}
+        </div>
+      )}
+      <div className="mb-2 flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${avatarClassForTicker(h.ticker)}`}
+          >
+            {h.ticker.slice(0, 1)}
+          </div>
+          <span className="text-[15px] font-bold">{h.ticker}</span>
+        </div>
+        <button
+          type="button"
+          className="shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onStrategy();
+          }}
+          aria-label="Open Plan tab"
+        >
+          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+        </button>
+      </div>
+
+      <p className="mb-2 text-[22px] font-bold">{price != null ? `${cp}${fmt(price)}` : "—"}</p>
+
+      {!selectMode && price == null && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onFetchPrice();
+          }}
+          disabled={fetchingTickers.has(h.ticker)}
+          className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+        >
+          {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
+        </button>
+      )}
+
+      <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
+        <span>Your Average:</span>
+        <span className="text-stitch-muted-soft">
+          {cp}
+          {fmt(h.avg_cost)}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onStrategy();
+        }}
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+      >
+        <span className="leading-tight">
+          Target Average:
+          <br />
+          <span className="text-[15px]">
+            {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
+          </span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0" />
+      </button>
+
+      <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
+        Buy to Reach Target:
+        <br />
+        {scenario && scenario.buy_price != null ? (
+          <>
+            <span className="text-stitch-muted-soft">
+              {fmt(scenario.shares_to_buy)} shares at {cp}
+              {fmt(scenario.buy_price)}
+            </span>
+            <br />
+            {underwater && price != null && price > 0 && (
+              <span className="text-stitch-accent">
+                (+{(((h.avg_cost - price) / price) * 100).toFixed(1)}% vs. market)
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-stitch-muted-soft/80">Save a scenario on the Plan tab</span>
+        )}
+      </p>
+
+      {!selectMode && (
+        <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+          <button
+            type="button"
+            className="text-[11px] text-stitch-muted hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            <Pencil className="mr-1 inline h-3 w-3" />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 className="mr-1 inline h-3 w-3" />
+            Delete
+          </button>
+        </div>
+      )}
+    </article>
+  );
+}
+
 export default function Holdings() {
   const navigate = useNavigate();
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !getOnboardingDone() && !isDemoModeSessionActive(),
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Holding | null>(null);
   const [deleting, setDeleting] = useState<Holding | null>(null);
   const [tick, setTick] = useState(0);
   const [csvOpen, setCsvOpen] = useState(false);
   const { refreshing: refreshingAll, refreshAll, lastRefreshed } = useRefreshPrices();
-  const [sortMode, setSortMode] = useState<SortMode>(() => {
-    return (localStorage.getItem(SORT_KEY) as SortMode) || "az";
-  });
+  const [sortMode, setSortMode] = useState<SortMode>(parseStoredSort);
+  const [holdingsLayout, setHoldingsLayout] = useState<HoldingsLayout>(parseStoredLayout);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const { includeFees, setIncludeFees } = useSimFees();
+  const { isDemoMode } = useDemoMode();
+  useStorageRevision();
+
+  useEffect(() => {
+    if (isDemoMode) setShowOnboarding(false);
+  }, [isDemoMode]);
 
   const refresh = () => setTick((t) => t + 1);
 
   const holdings = getHoldings();
 
-  // Live prices from cache
   const livePrices = useMemo(() => {
     const prices: Record<string, number | null> = {};
     holdings.forEach((h) => {
@@ -99,17 +465,15 @@ export default function Holdings() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holdings, tick]);
 
-  // Latest DCA scenario per holding
   const latestDca = useMemo(() => {
     const map: Record<string, Scenario | null> = {};
     holdings.forEach((h) => {
       const scenarios = getScenariosForHolding(h.id);
-      map[h.id] = scenarios.length > 0 ? scenarios[0] : null;
+      map[h.id] = scenarios.length > 0 ? scenarios[0]! : null;
     });
     return map;
   }, [holdings, tick]);
 
-  // P&L calculation
   const getPnl = (h: Holding) => {
     const price = livePrices[h.id];
     if (price == null) return null;
@@ -118,15 +482,20 @@ export default function Holdings() {
     return { pnl, pnlPct, price };
   };
 
-  // Sorting
   const sortedHoldings = useMemo(() => {
     const sorted = [...holdings];
     switch (sortMode) {
       case "az":
         sorted.sort((a, b) => a.ticker.localeCompare(b.ticker));
         break;
+      case "za":
+        sorted.sort((a, b) => b.ticker.localeCompare(a.ticker));
+        break;
       case "position":
-        sorted.sort((a, b) => (b.shares * b.avg_cost) - (a.shares * a.avg_cost));
+        sorted.sort((a, b) => b.shares * b.avg_cost - a.shares * a.avg_cost);
+        break;
+      case "position_small":
+        sorted.sort((a, b) => a.shares * a.avg_cost - b.shares * b.avg_cost);
         break;
       case "loss": {
         sorted.sort((a, b) => {
@@ -144,6 +513,22 @@ export default function Holdings() {
         });
         break;
       }
+      case "loss_pct": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pa?.pnlPct ?? 0) - (pb?.pnlPct ?? 0);
+        });
+        break;
+      }
+      case "gain_pct": {
+        sorted.sort((a, b) => {
+          const pa = getPnl(a);
+          const pb = getPnl(b);
+          return (pb?.pnlPct ?? 0) - (pa?.pnlPct ?? 0);
+        });
+        break;
+      }
     }
     return sorted;
   }, [holdings, sortMode, livePrices]);
@@ -153,13 +538,17 @@ export default function Holdings() {
     localStorage.setItem(SORT_KEY, mode);
   };
 
-  // ── Portfolio metrics ──────────────────────────────────
+  const handleLayoutChange = (layout: HoldingsLayout) => {
+    setHoldingsLayout(layout);
+    localStorage.setItem(LAYOUT_KEY, layout);
+  };
+
   const usdHoldings = holdings.filter((h) => (h.exchange ?? "US") === "US");
   const cadHoldings = holdings.filter((h) => (h.exchange ?? "US") === "TSX");
   const totalUsdInvested = usdHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
   const totalCadInvested = cadHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
-  const totalCostBasis = totalUsdInvested + totalCadInvested;
-  const hasAnyPrice = holdings.some((h) => livePrices[h.id] != null);
+  const hasUsdPrice = usdHoldings.some((h) => livePrices[h.id] != null);
+  const hasCadPrice = cadHoldings.some((h) => livePrices[h.id] != null);
 
   const usdValue = usdHoldings.reduce((sum, h) => {
     const p = livePrices[h.id];
@@ -169,11 +558,11 @@ export default function Holdings() {
     const p = livePrices[h.id];
     return sum + (p != null ? h.shares * p : h.shares * h.avg_cost);
   }, 0);
-  const totalMarketValue = usdValue + cadValue;
-  const totalPnl = totalMarketValue - totalCostBasis;
-  const totalPnlPct = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
+  const usdPnl = usdValue - totalUsdInvested;
+  const cadPnl = cadValue - totalCadInvested;
+  const usdPnlPct = totalUsdInvested > 0 ? (usdPnl / totalUsdInvested) * 100 : 0;
+  const cadPnlPct = totalCadInvested > 0 ? (cadPnl / totalCadInvested) * 100 : 0;
 
-  // ── Refresh all prices ─────────────────────────────────────
   const refreshAllPrices = useCallback(async () => {
     const result = await refreshAll(() => refresh());
     if (result.failed.length === 0) {
@@ -185,21 +574,23 @@ export default function Holdings() {
     }
   }, [refreshAll]);
 
-  // ── Single price fetch ─────────────────────────────────────
   const [fetchingTickers, setFetchingTickers] = useState<Set<string>>(new Set());
   const fetchPrice = useCallback(async (ticker: string, exchange: string) => {
-    const sym = apiTicker(ticker, exchange as any);
+    const sym = apiTicker(ticker, exchange as "US" | "TSX");
     setFetchingTickers((prev) => new Set(prev).add(ticker));
-    const result = await fetchStockPrice(sym);
-    setFetchingTickers((prev) => { const n = new Set(prev); n.delete(ticker); return n; });
+    const result = await fetchStockPrice(sym, { bypassCache: true });
+    setFetchingTickers((prev) => {
+      const n = new Set(prev);
+      n.delete(ticker);
+      return n;
+    });
     if (result.ok) {
       refresh();
     } else {
-      toast.error(`${ticker}: ${'error' in result ? result.error : "Price unavailable"}`);
+      toast.error(`${ticker}: ${"error" in result ? result.error : "Price unavailable"}`);
     }
   }, []);
 
-  // ── Handlers ───────────────────────────────────────────────
   const handleCreate = (data: Omit<Holding, "id" | "created_at" | "initial_avg_cost">) => {
     addHolding(data);
     setFormOpen(false);
@@ -235,7 +626,8 @@ export default function Holdings() {
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -253,314 +645,393 @@ export default function Holdings() {
     setSelected(new Set());
   };
 
+  const fmtUsd = (n: number) => `$${fmt(n)}`;
+  const fmtCad = (n: number) => `C$${fmt(n)}`;
+
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <div style={{ lineHeight: 1 }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>
-              DCA<span style={{ color: "hsl(160 60% 52%)" }}>.</span>
-            </span>
-            <div style={{ fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(215 16% 45%)", marginTop: 2 }}>
-              Strategy Engine
-            </div>
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+      {showOnboarding && (
+        <Onboarding
+          onDone={() => setShowOnboarding(false)}
+          onSetUpPortfolio={() => {
+            setEditing(null);
+            setFormOpen(true);
+          }}
+          showSetUpPortfolioCta={holdings.length === 0}
+          onTryDemo={() => navigate(getDemoEntryPath())}
+        />
+      )}
+      {holdings.length === 0 ? (
+        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-24 pt-20 text-center">
+          <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
+            <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
-          {holdings.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
-                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
-                {refreshingAll ? "…" : "Refresh"}
-              </Button>
-            </div>
-          )}
+          <h3 className="text-lg font-semibold text-white">Start your portfolio or explore a demo</h3>
+          <p className="mt-2 max-w-sm text-sm text-stitch-muted">
+            Add your positions to model averages and scenarios, or use sample data to see how the tools work — all
+            modeling, not advice.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              size="lg"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add your portfolio
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              onClick={() => navigate(getDemoEntryPath())}
+            >
+              Try demo
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              onClick={() => setCsvOpen(true)}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Import CSV
+            </Button>
+          </div>
         </div>
-      </header>
+      ) : (
+        <>
+          <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
+            {selectMode && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
+                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
+                  {selected.size === holdings.length ? "Deselect all" : "Select all"}
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={selected.size === 0}
+                    onClick={() => setBulkDeleting(true)}
+                    className="font-medium text-stitch-danger disabled:opacity-40"
+                  >
+                    Delete ({selected.size})
+                  </button>
+                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
 
-      <main className="mx-auto max-w-4xl px-6 py-8 space-y-8">
-        {holdings.length === 0 ? (
-          /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-            <div className="rounded-full bg-muted p-4">
-              <TrendingDown className="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold">No holdings yet</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Add your first holding to start tracking your average cost and DCA scenarios.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button onClick={() => { setEditing(null); setFormOpen(true); }} size="lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Stock
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => setCsvOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Import CSV
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ════════════════════════════════════════════════
-                SECTION 1 — Portfolio Health
-               ════════════════════════════════════════════════ */}
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="h-4.5 w-4.5 text-primary" />
-                <h2 className="section-label">
-                  Portfolio Health
-                </h2>
-                {lastRefreshed && (
-                  <span className="ml-auto text-[10px] text-muted-foreground/50">
-                    Updated {formatLastRefreshed(lastRefreshed)}
-                  </span>
-                )}
+            {/* Total Portfolio */}
+            <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+              <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h2 className="text-[17px] font-semibold text-white">Total Portfolio</h2>
+                  {isDemoMode && <DemoDataTag />}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      aria-label="Portfolio menu"
+                    >
+                      <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="z-50 min-w-[11rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                  >
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => refreshAllPrices()}
+                      disabled={refreshingAll}
+                    >
+                      <RefreshCw className={`mr-2 h-4 w-4 ${refreshingAll ? "animate-spin" : ""}`} />
+                      Refresh prices
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/update-prices")}
+                    >
+                      Update Prices page
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/what-if")}
+                    >
+                      What-If scenarios
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => navigate("/progress")}
+                    >
+                      Progress (vs initial snapshot)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => setCsvOpen(true)}
+                    >
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      Import CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                      onClick={() => setSelectMode(true)}
+                    >
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Select holdings
+                    </DropdownMenuItem>
+                    {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                      <DropdownMenuItem
+                        key={mode}
+                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        onClick={() => handleSortChange(mode)}
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        Sort: {SORT_LABELS[mode]}
+                        {sortMode === mode ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <HealthCard
-                  icon={<Wallet className="h-4 w-4" />}
-                  label="Market Value"
-                  value={hasAnyPrice ? `$${fmt(totalMarketValue)}` : "—"}
-                />
-                <HealthCard
-                  icon={<DollarSign className="h-4 w-4" />}
-                  label="Cost Basis"
-                  value={`$${fmt(totalCostBasis)}`}
-                />
-                <HealthCard
-                  icon={hasAnyPrice && totalPnl >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  label="Unrealized P/L"
-                  value={hasAnyPrice ? `${totalPnl >= 0 ? "+" : ""}$${fmt(totalPnl)}` : "—"}
-                  sub={hasAnyPrice ? `${totalPnlPct >= 0 ? "+" : ""}${totalPnlPct.toFixed(1)}%` : undefined}
-                  accent={hasAnyPrice ? (totalPnl >= 0 ? "positive" : "negative") : undefined}
-                />
-                <HealthCard
-                  icon={<BarChart3 className="h-4 w-4" />}
-                  label="Holdings"
-                  value={String(holdings.length)}
-                />
-              </div>
+              {usdHoldings.length > 0 && (
+                <div className="relative z-10 mb-5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted mb-2">US positions</p>
+                  <div className="flex justify-between gap-4">
+                    <div>
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Value</p>
+                      <p className="text-[22px] font-bold leading-none text-stitch-accent">
+                        {hasUsdPrice ? fmtUsd(usdValue) : "—"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
+                      <p className="text-[16px] font-medium text-white">{fmtUsd(totalUsdInvested)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
+                    <span className="text-[13px] text-stitch-muted">P&amp;L</span>
+                    <span
+                      className={`text-[15px] font-medium ${
+                        !hasUsdPrice ? "text-stitch-muted" : usdPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
+                      }`}
+                    >
+                      {hasUsdPrice
+                        ? `${usdPnl >= 0 ? "+" : ""}${fmtUsd(usdPnl)} (${usdPnlPct >= 0 ? "+" : ""}${usdPnlPct.toFixed(2)}%)`
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {cadHoldings.length > 0 && (
+                <div className="relative z-10 mb-5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted mb-2">CAD (TSX) positions</p>
+                  <div className="flex justify-between gap-4">
+                    <div>
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Value</p>
+                      <p className="text-[22px] font-bold leading-none text-stitch-accent">
+                        {hasCadPrice ? fmtCad(cadValue) : "—"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="mb-0.5 text-[13px] text-stitch-muted">Invested</p>
+                      <p className="text-[16px] font-medium text-white">{fmtCad(totalCadInvested)}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-stitch-border/40 pt-2">
+                    <span className="text-[13px] text-stitch-muted">P&amp;L</span>
+                    <span
+                      className={`text-[15px] font-medium ${
+                        !hasCadPrice ? "text-stitch-muted" : cadPnl >= 0 ? "text-stitch-accent" : "text-stitch-danger"
+                      }`}
+                    >
+                      {hasCadPrice
+                        ? `${cadPnl >= 0 ? "+" : ""}${fmtCad(cadPnl)} (${cadPnlPct >= 0 ? "+" : ""}${cadPnlPct.toFixed(2)}%)`
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {usdHoldings.length > 0 && cadHoldings.length > 0 && (
+                <p className="relative z-10 mb-3 text-[10px] leading-relaxed text-stitch-muted/80">
+                  US and Canadian totals are shown separately — they are not converted or summed into one number.
+                </p>
+              )}
+              {lastRefreshed && (
+                <p className="relative z-10 mt-3 text-[10px] text-stitch-muted/70">
+                  Updated {formatLastRefreshed(lastRefreshed)}
+                </p>
+              )}
             </section>
 
-            {/* ════════════════════════════════════════════════
-                SECTION 1.5 — Suggested Strategy Step
-               ════════════════════════════════════════════════ */}
+            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+              <Label htmlFor="portfolio-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
+                Include fees in portfolio simulations
+              </Label>
+              <Switch id="portfolio-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+            </div>
+
             <SuggestedStrategyStep mode="portfolio" holdings={holdings} />
 
-            {/* ════════════════════════════════════════════════
-                SECTION 2 — DCA Opportunities
-               ════════════════════════════════════════════════ */}
-            <section>
-              <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
-            </section>
+            <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
-            {/* ════════════════════════════════════════════════
-                SECTION 2.5 — Strategy Impact
-               ════════════════════════════════════════════════ */}
-            <StrategyImpact holdings={holdings} />
-
-            {/* Divider */}
-            <div className="border-t border-border" />
-
-            {/* ════════════════════════════════════════════════
-                SECTION 3 — Your Holdings
-               ════════════════════════════════════════════════ */}
-            <section>
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="h-4.5 w-4.5 text-muted-foreground" />
-                   <h2 className="section-label">
-                    Your Holdings
-                  </h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-pill px-3 py-2.5">
+              <h2 className="text-sm font-semibold text-white">Holdings</h2>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex rounded-xl border border-stitch-border/80 bg-stitch-card/50 p-0.5">
+                  <button
+                    type="button"
+                    aria-label="Grid view"
+                    aria-pressed={holdingsLayout === "grid"}
+                    className={cn(
+                      "rounded-lg p-2 transition-colors",
+                      holdingsLayout === "grid"
+                        ? "bg-stitch-pill text-white"
+                        : "text-stitch-muted hover:text-white",
+                    )}
+                    onClick={() => handleLayoutChange("grid")}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="List view"
+                    aria-pressed={holdingsLayout === "list"}
+                    className={cn(
+                      "rounded-lg p-2 transition-colors",
+                      holdingsLayout === "list"
+                        ? "bg-stitch-pill text-white"
+                        : "text-stitch-muted hover:text-white",
+                    )}
+                    onClick={() => handleLayoutChange("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
                 </div>
-
-                {selectMode ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleSelectAll}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {selected.size === holdings.length ? "Deselect All" : "Select All"}
-                    </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
-                      variant="destructive"
-                      className="h-8"
-                      disabled={selected.size === 0}
-                      onClick={() => setBulkDeleting(true)}
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
                     >
-                      <Trash2 className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Delete ({selected.size})</span>
+                      <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
+                      Sort
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-8 px-2" onClick={exitSelectMode}>
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2" onClick={() => setSelectMode(true)}>
-                      <CheckSquare className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Select</span>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="ghost" className="text-muted-foreground h-8 px-2">
-                          <ArrowUpDown className="mr-1 h-3 w-3" />
-                          <span className="text-xs">{SORT_LABELS[sortMode]}</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-popover border border-border shadow-lg z-50">
-                        {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-                          <DropdownMenuItem
-                            key={mode}
-                            onClick={() => handleSortChange(mode)}
-                            className={sortMode === mode ? "font-semibold text-primary" : ""}
-                          >
-                            {SORT_LABELS[mode]}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => setCsvOpen(true)}>
-                      <FileSpreadsheet className="mr-1 h-3 w-3" />
-                      <span className="text-xs">CSV</span>
-                    </Button>
-                    <Button size="sm" className="h-8" onClick={() => { setEditing(null); setFormOpen(true); }}>
-                      <Plus className="mr-1 h-3 w-3" />
-                      <span className="text-xs">Add</span>
-                    </Button>
-                  </div>
-                )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="z-50 min-w-[12rem] rounded-2xl border-stitch-border bg-stitch-card p-1.5 text-white shadow-lg"
+                  >
+                    {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+                      <DropdownMenuItem
+                        key={mode}
+                        className="rounded-xl focus:bg-stitch-pill focus:text-white"
+                        onClick={() => handleSortChange(mode)}
+                      >
+                        <ArrowUpDown className="mr-2 h-4 w-4" />
+                        {SORT_LABELS[mode]}
+                        {sortMode === mode ? " ✓" : ""}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
+            </div>
 
-              {/* Holdings list */}
-              <div className="space-y-1">
-                {sortedHoldings.map((h) => {
-                  const ex = (h.exchange ?? "US") as any;
-                  const cp = currencyPrefix(ex);
-                  const price = livePrices[h.id];
-                  const pnlData = getPnl(h);
-                  const isFetching = fetchingTickers.has(h.ticker);
-                  const isSelected = selected.has(h.id);
+            <section
+              className={holdingsLayout === "grid" ? "grid grid-cols-2 gap-4" : "flex flex-col gap-2"}
+            >
+              {sortedHoldings.map((h) => {
+                const ex = (h.exchange ?? "US") as "US" | "TSX";
+                const price = livePrices[h.id];
+                const scenario = latestDca[h.id];
+                const isSelected = selected.has(h.id);
+                const pnlFull = getPnl(h);
+                const pnl = pnlFull ? { pnl: pnlFull.pnl, pnlPct: pnlFull.pnlPct } : null;
 
-                  return (
-                    <div
-                      key={h.id}
-                      className={`group rounded-lg border border-border ${isSelected ? "bg-destructive/5" : "bg-card hover:bg-muted/30"} transition-colors cursor-pointer relative`}
-                      onClick={() => selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`)}
-                    >
-                      <div className={`px-4 py-3 ${selectMode ? "pl-3" : "pr-10"}`}>
-                        <div className="flex items-center gap-3">
-                          {selectMode && (
-                            <div className="shrink-0">
-                              {isSelected ? (
-                                <CheckSquare className="h-5 w-5 text-destructive" />
-                              ) : (
-                                <Square className="h-5 w-5 text-muted-foreground/40" />
-                              )}
-                            </div>
-                          )}
-
-                          <div className="flex-1 min-w-0">
-                            {/* Row: ticker | shares | avg | price | P/L */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="text-sm font-bold font-mono tracking-tight">{h.ticker}</span>
-                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full uppercase">{exchangeLabel(ex)}</span>
-                              </div>
-                              {pnlData ? (
-                                <span className={`text-sm font-mono font-semibold shrink-0 ${pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}`}>
-                                  {pnlData.pnl >= 0 ? "+" : ""}{cp}{fmt(pnlData.pnl)}
-                                </span>
-                              ) : (
-                                !selectMode && (
-                                  <button
-                                    onClick={(e) => { e.stopPropagation(); fetchPrice(h.ticker, ex); }}
-                                    disabled={isFetching}
-                                    className="text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium shrink-0"
-                                  >
-                                    {isFetching ? "…" : "Get Price"}
-                                  </button>
-                                )
-                              )}
-                            </div>
-                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono mt-0.5">
-                              <span>{fmt(h.shares)} sh</span>
-                              <span className="text-muted-foreground/30">·</span>
-                              <span>Avg {cp}{fmt(h.avg_cost)}</span>
-                              {price != null && (
-                                <>
-                                  <span className="text-muted-foreground/30">·</span>
-                                  <span>Price {cp}{fmt(price)}</span>
-                                </>
-                              )}
-                              {pnlData && (
-                                <>
-                                  <span className="text-muted-foreground/30">·</span>
-                                  <span className={pnlData.pnl >= 0 ? "text-primary" : "text-destructive"}>
-                                    {pnlData.pnlPct >= 0 ? "+" : ""}{pnlData.pnlPct.toFixed(1)}%
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {!selectMode && (
-                        <>
-                          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
-                          <div className="absolute right-8 top-2 flex items-center gap-0.5 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setEditing(h); setFormOpen(true); }}
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-muted transition-colors"
-                              aria-label="Edit"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setDeleting(h); }}
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-card hover:bg-destructive/10 transition-colors"
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                return (
+                  <HoldingPortfolioCard
+                    key={h.id}
+                    holding={h}
+                    layout={holdingsLayout}
+                    price={price}
+                    scenario={scenario}
+                    pnl={pnl}
+                    selectMode={selectMode}
+                    isSelected={isSelected}
+                    fetchingTickers={fetchingTickers}
+                    onRowActivate={() =>
+                      selectMode ? toggleSelect(h.id) : navigate(`/holdings/${h.id}`)
+                    }
+                    onStrategy={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                    onFetchPrice={() => fetchPrice(h.ticker, ex)}
+                    onEdit={() => {
+                      setEditing(h);
+                      setFormOpen(true);
+                    }}
+                    onDelete={() => setDeleting(h)}
+                  />
+                );
+              })}
             </section>
-          </>
-        )}
-      </main>
+          </main>
+
+          <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setFormOpen(true);
+              }}
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+            >
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <span className="font-semibold text-stitch-accent">Add Stock</span>
+            </button>
+          </div>
+        </>
+      )}
 
       <HoldingFormDialog
         open={formOpen}
-        onOpenChange={(open) => { setFormOpen(open); if (!open) setEditing(null); }}
+        onOpenChange={(open) => {
+          setFormOpen(open);
+          if (!open) setEditing(null);
+        }}
         initial={editing}
         loading={false}
-        onSubmit={(data) => editing ? handleUpdate(data) : handleCreate(data)}
+        onSubmit={(data) => (editing ? handleUpdate(data) : handleCreate(data))}
       />
 
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleting?.ticker} and all its data?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the stock position and all saved calculations for {deleting?.ticker}. This action cannot be undone.
+            <AlertDialogDescription className="text-stitch-muted">
+              This will permanently delete the stock position and all saved calculations for {deleting?.ticker}. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleting && handleDelete(deleting.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
             >
               Delete
             </AlertDialogAction>
@@ -568,71 +1039,40 @@ export default function Holdings() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bulk delete confirmation */}
       <AlertDialog open={bulkDeleting} onOpenChange={(open) => !open && setBulkDeleting(false)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete {selected.size === holdings.length ? "all holdings" : `${selected.size} selected holding${selected.size !== 1 ? "s" : ""}`} and their saved calculations. This action cannot be undone.
+            <AlertDialogTitle>
+              Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stitch-muted">
+              This will permanently delete{" "}
+              {selected.size === holdings.length
+                ? "all holdings"
+                : `${selected.size} selected holding${selected.size !== 1 ? "s" : ""}`}{" "}
+              and their saved calculations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-stitch-danger text-white hover:bg-stitch-danger/90"
             >
-              Delete {selected.size} holding{selected.size !== 1 ? "s" : ""}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <CsvImportDialog
-        open={csvOpen}
-        onOpenChange={setCsvOpen}
-        onImported={() => refresh()}
-      />
+      <CsvImportDialog open={csvOpen} onOpenChange={setCsvOpen} onImported={() => refresh()} />
     </div>
   );
 }
 
-/* ── Health Card ─────────────────────────────────────────── */
-function HealthCard({
-  icon,
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  accent?: "positive" | "negative";
-}) {
-  const accentColor = accent === "positive"
-    ? "text-primary"
-    : accent === "negative"
-    ? "text-destructive"
-    : "text-foreground";
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-      <div className="flex items-center gap-1.5 text-muted-foreground">
-        {icon}
-        <span className="text-[10px] font-semibold uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`leading-none ${accentColor}`} style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em" }}>{value}</p>
-      {sub && (
-        <p className={`text-xs font-mono font-medium ${accentColor}`}>{sub}</p>
-      )}
-    </div>
-  );
-}
-
-/* ── DCA Opportunities ──────────────────────────────────── */
+/* ── Per-holding scenario results (alphabetical — no cross-holding ranking) ───────── */
 function DcaOpportunities({
   holdings,
   livePrices,
@@ -642,158 +1082,129 @@ function DcaOpportunities({
   livePrices: Record<string, number | null>;
   navigate: (path: string) => void;
 }) {
-  const TEST_INVESTMENT = 500;
+  const { includeFees } = useSimFees();
+  const [showAll, setShowAll] = useState(false);
+  const [sectionExpanded, setSectionExpanded] = useState(() => {
+    const s = localStorage.getItem(OPPORTUNITIES_EXPANDED_KEY);
+    if (s === "0" || s === "false") return false;
+    return true;
+  });
 
-  const scored = useMemo(() => {
-    const raw = holdings
-      .map((h) => {
-        const price = livePrices[h.id];
-        if (price == null || price <= 0) return null;
-        if (price >= h.avg_cost) return { holding: h, price, improvement: 0, score: 0 };
-        const sharesBought = TEST_INVESTMENT / price;
-        const newAvg = (h.shares * h.avg_cost + TEST_INVESTMENT) / (h.shares + sharesBought);
-        const improvement = h.avg_cost - newAvg;
-        return { holding: h, price, improvement: Math.max(0, improvement), score: 0 };
-      })
-      .filter(Boolean) as { holding: Holding; price: number; improvement: number; score: number }[];
+  const toggleSectionExpanded = () => {
+    setSectionExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(OPPORTUNITIES_EXPANDED_KEY, next ? "1" : "0");
+      return next;
+    });
+  };
 
-    const maxImprovement = Math.max(...raw.map((r) => r.improvement), 0.001);
-    for (const r of raw) {
-      r.score = Math.round((r.improvement / maxImprovement) * 100);
+  const rows = useMemo(() => {
+    const out: { holding: Holding; price: number; step: DcaRow }[] = [];
+    for (const h of holdings) {
+      const price = livePrices[h.id];
+      if (price == null || price <= 0 || price >= h.avg_cost) continue;
+      const step = selectMostEfficientLadderStep(
+        h.shares,
+        h.avg_cost,
+        price,
+        holdingFeeOpts(h, includeFees)
+      );
+      if (!step || step.avgImprovement <= 0) continue;
+      out.push({ holding: h, price, step });
     }
-    return raw.sort((a, b) => b.score - a.score);
-  }, [holdings, livePrices]);
+    return out.sort((a, b) => a.holding.ticker.localeCompare(b.holding.ticker));
+  }, [holdings, livePrices, includeFees]);
 
   if (holdings.length === 0) return null;
 
-  const hasAnyPrice = scored.length > 0;
-
-  const getBandLabel = (score: number) => {
-    if (score >= 80) return "Very strong impact";
-    if (score >= 60) return "Strong impact";
-    if (score >= 40) return "Moderate impact";
-    if (score >= 20) return "Weak impact";
-    return "Minimal impact";
-  };
-
-  const top = scored[0];
-  const rest = scored.slice(1);
+  const hasRows = rows.length > 0;
+  const COLLAPSE_COUNT = 6;
+  const visibleRows = showAll || rows.length <= COLLAPSE_COUNT ? rows : rows.slice(0, COLLAPSE_COUNT);
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-4">
-        <Gauge className="h-4.5 w-4.5 text-primary" />
-        <h2 className="section-label">
-          DCA Opportunities
-        </h2>
-        <span className="ml-auto text-[10px] text-muted-foreground/40">$500 test investment</span>
-      </div>
-
-      {!hasAnyPrice ? (
-        <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Add current prices to evaluate DCA opportunities.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {/* ── Best Opportunity — featured card ── */}
-          {top && top.score > 0 && (() => {
-            const h = top.holding;
-            const cp = currencyPrefix((h.exchange ?? "US") as any);
-            return (
-              <button
-                key={h.id}
-                onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                className="w-full rounded-xl border p-4 text-left card-glow glow-primary hover:border-primary/30 transition-colors"
-              >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Gauge className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Top Impact</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.35rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{h.ticker}</span>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                      ${TEST_INVESTMENT} → Avg drops {cp}{fmt(top.improvement)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
-                      Avg {cp}{fmt(h.avg_cost)} · Price {cp}{fmt(top.price)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "2.5rem", color: "hsl(160 60% 52%)", letterSpacing: "-0.02em", lineHeight: 1 }}>{top.score}</span>
-                    <span className="text-[8px] text-muted-foreground/50 uppercase tracking-wider">/100</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })()}
-
-          {/* ── Remaining opportunities — compact rows ── */}
-          {rest.length > 0 && (
-            <div className="space-y-0.5">
-              {rest.map(({ holding: h, price, score, improvement }) => {
-                const cp = currencyPrefix((h.exchange ?? "US") as any);
-                return (
-                  <button
-                    key={h.id}
-                    onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                    className="w-full flex items-center gap-3 rounded-lg bg-card hover:bg-muted/30 border border-border px-3 py-2.5 text-left transition-colors"
-                  >
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1rem", color: "hsl(160 60% 52% / 0.65)", width: 28, textAlign: "right" as const, flexShrink: 0 }}>{score}</span>
-                    <span className="text-sm font-mono font-semibold w-16 shrink-0">{h.ticker}</span>
-                    <span className="text-[11px] text-muted-foreground font-mono flex-1 truncate">
-                      {improvement > 0
-                        ? `$${TEST_INVESTMENT} → avg drops ${cp}${fmt(improvement)}`
-                        : "No benefit at current price"}
-                    </span>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground/30 shrink-0" />
-                  </button>
-                );
-              })}
-            </div>
+    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
+      <div className="relative z-10">
+        <button
+          type="button"
+          onClick={toggleSectionExpanded}
+          className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left transition-colors hover:bg-stitch-pill/20"
+        >
+          <div className="flex items-center gap-2">
+            <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
+            <h2 className="text-[17px] font-semibold text-white">Scenario results (per holding)</h2>
+          </div>
+          {sectionExpanded ? (
+            <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
+          ) : (
+            <ChevronRight className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
           )}
+        </button>
 
-          <p className="text-[9px] text-muted-foreground/40 text-center pt-1">
-            Analytical indicator only — not financial advice
+        {!sectionExpanded && (
+          <p className="text-[11px] leading-relaxed text-stitch-muted">
+            {hasRows
+              ? `${rows.length} modeled ${rows.length === 1 ? "line" : "lines"} (illustrative only) — tap to expand`
+              : "Tap header to expand"}
           </p>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
 
+        {sectionExpanded && (
+          <>
+            <p className="mb-4 text-[10px] leading-relaxed text-stitch-muted">
+              One modeled ladder step per ticker (A–Z), using the same rules as each position’s budget-step simulator. Rows
+              are <strong className="font-medium text-stitch-muted">not</strong> ranked or prioritized across holdings —
+              for your review only, not a suggestion to trade.
+            </p>
 
-/* ── Strategy Impact ────────────────────────────────────── */
-function StrategyImpact({ holdings }: { holdings: Holding[] }) {
-  const improved = holdings.filter((h) => h.initial_avg_cost > h.avg_cost);
-  if (improved.length === 0) return null;
+            {!hasRows ? (
+              <div className="rounded-2xl border border-dashed border-stitch-border/60 bg-stitch-pill/20 p-6 text-center">
+                <p className="text-sm text-stitch-muted">
+                  Add prices below average to see modeled ladder steps for each position.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="space-y-0.5">
+                  {visibleRows.map(({ holding: h, price, step }) => {
+                    const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
+                    if (!step) return null;
+                    return (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
+                      >
+                        <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
+                        <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
+                          {cp}
+                          {fmt(step.amount)} sim → avg {cp}
+                          {fmt(step.newAvg)} (−{cp}
+                          {fmt(step.avgImprovement)}/share)
+                        </span>
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
+                      </button>
+                    );
+                  })}
+                  {rows.length > COLLAPSE_COUNT && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAll((v) => !v)}
+                      className="w-full py-1.5 text-center text-[11px] text-stitch-muted/60 transition-colors hover:text-stitch-muted"
+                    >
+                      {showAll ? "Show less" : `Show all ${rows.length}`}
+                    </button>
+                  )}
+                </div>
 
-  const totalReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
-  const avgReduction = improved.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost), 0) / improved.length;
-
-  return (
-    <section>
-      <div className="flex items-center gap-2 mb-3">
-        <TrendingDown className="h-4 w-4 text-primary" />
-        <h2 className="section-label">
-          Strategy Impact
-        </h2>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Positions Improved</p>
-          <p className="mt-1" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>{improved.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Avg Reduction</p>
-          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(avgReduction)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Total Cost Reduction</p>
-          <p className="mt-1 text-primary" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.02em", lineHeight: 1 }}>${fmt(totalReduction)}</p>
-        </div>
+                <p className="pt-1 text-center text-[9px] text-stitch-muted/50">
+                  Illustrative simulations only — not financial advice.
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

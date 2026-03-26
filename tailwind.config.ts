@@ -57,6 +57,17 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        /* Google Stitch dashboard — tweak hexes in one place later */
+        stitch: {
+          bg: "#111113",
+          card: "#1c1c1e",
+          accent: "#C4FB35",
+          danger: "#ff453a",
+          pill: "#2c2c2e",
+          border: "#27272a",
+          muted: "#9ca3af",
+          "muted-soft": "#d1d1d6",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

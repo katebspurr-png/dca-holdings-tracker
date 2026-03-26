@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,12 +19,16 @@ const METHOD_LABELS: Record<string, string> = {
   budget_target: "Budget + Target Avg",
 };
 
+const outlineBtn =
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+
 export default function Scenarios() {
   const navigate = useNavigate();
+  const storageRevision = useStorageRevision();
   const [tickerFilter, setTickerFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("all");
 
-  const scenarios = getScenarios();
+  const scenarios = useMemo(() => getScenarios(), [storageRevision]);
 
   const filtered = useMemo(() => {
     return scenarios.filter((s) => {
@@ -34,65 +39,86 @@ export default function Scenarios() {
   }, [scenarios, tickerFilter, methodFilter]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-5">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Holdings
-          </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Saved Scenarios</h1>
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+      <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="sm" className={outlineBtn} onClick={() => navigate("/")}>
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Portfolio
+            </Button>
+            <h1 className="sr-only">Saved Scenarios</h1>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-8 sm:px-6 md:px-8">
         <div className="flex flex-wrap gap-3">
-          <Input placeholder="Filter by ticker…" value={tickerFilter} onChange={(e) => setTickerFilter(e.target.value)} className="w-48" />
+          <Input
+            placeholder="Filter by ticker…"
+            value={tickerFilter}
+            onChange={(e) => setTickerFilter(e.target.value)}
+            className="w-48 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50"
+          />
           <Select value={methodFilter} onValueChange={setMethodFilter}>
-            <SelectTrigger className="w-52 bg-background">
+            <SelectTrigger className={`w-52 ${outlineBtn}`}>
               <SelectValue placeholder="All methods" />
             </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
+            <SelectContent className="z-50 border-stitch-border bg-stitch-card text-white">
               <SelectItem value="all">All methods</SelectItem>
               {Object.entries(METHOD_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+                <SelectItem key={k} value={k}>
+                  {v}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No scenarios found.</p>
+          <p className="text-sm text-stitch-muted">No scenarios found.</p>
         ) : (
-          <div className="rounded-lg border border-border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Ticker</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead className="text-right">Budget</TableHead>
-                  <TableHead className="text-right">Fee</TableHead>
-                  <TableHead className="text-right">Total Spend</TableHead>
-                  <TableHead className="text-right">Shares to Buy</TableHead>
-                  <TableHead className="text-right">New Avg Cost</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((s) => (
-                  <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/scenarios/${s.id}`)}>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{new Date(s.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-mono font-semibold">{s.ticker}</TableCell>
-                    <TableCell className="text-sm">{METHOD_LABELS[s.method] ?? s.method}</TableCell>
-                    <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
-                    <TableCell className="text-right font-mono text-primary font-semibold">${Number(s.new_avg_cost).toFixed(2)}</TableCell>
+          <div className="overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card shadow-lg">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-stitch-border hover:bg-transparent">
+                    <TableHead className="text-stitch-muted">Date</TableHead>
+                    <TableHead className="text-stitch-muted">Ticker</TableHead>
+                    <TableHead className="text-stitch-muted">Method</TableHead>
+                    <TableHead className="text-right text-stitch-muted">Budget</TableHead>
+                    <TableHead className="text-right text-stitch-muted">Fee</TableHead>
+                    <TableHead className="text-right text-stitch-muted">Total Spend</TableHead>
+                    <TableHead className="text-right text-stitch-muted">Shares to Buy</TableHead>
+                    <TableHead className="text-right text-stitch-muted">New Avg Cost</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer border-stitch-border hover:bg-stitch-pill/30"
+                      onClick={() => navigate(`/scenarios/${s.id}`)}
+                    >
+                      <TableCell className="whitespace-nowrap text-sm text-stitch-muted">
+                        {new Date(s.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="font-mono font-semibold text-white">{s.ticker}</TableCell>
+                      <TableCell className="text-sm text-stitch-muted-soft">
+                        {METHOD_LABELS[s.method] ?? s.method}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
+                      <TableCell className="text-right font-mono font-semibold text-stitch-accent">
+                        ${Number(s.new_avg_cost).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </main>

@@ -1,13 +1,18 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Briefcase, Layers, Sparkles, Settings, TrendingDown, Lock } from "lucide-react";
-import { hasFeature } from "@/lib/feature-access";
+import type { LucideIcon } from "lucide-react";
+import { Wallet, Sparkles, TrendingUp, Settings } from "lucide-react";
 
-const TABS = [
-  { path: "/", label: "Holdings", icon: Briefcase, match: (p: string) => p === "/", premiumFeature: null },
-  { path: "/what-if", label: "Scenarios", icon: Layers, match: (p: string) => p === "/what-if" || p === "/scenarios" || p.startsWith("/scenarios/"), premiumFeature: null },
-  { path: "/planner", label: "Planner", icon: Sparkles, match: (p: string) => p === "/planner", premiumFeature: "planner" as const },
-  { path: "/settings", label: "Settings", icon: Settings, match: (p: string) => p === "/settings", premiumFeature: null },
-] as const;
+const TABS: {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  match: (p: string) => boolean;
+}[] = [
+  { path: "/", label: "Portfolio", icon: Wallet, match: (p) => p === "/" || p.startsWith("/holdings/") },
+  { path: "/optimizer", label: "Budget lab", icon: Sparkles, match: (p) => p === "/optimizer" },
+  { path: "/progress", label: "Progress", icon: TrendingUp, match: (p) => p === "/progress" },
+  { path: "/settings", label: "Settings", icon: Settings, match: (p) => p === "/settings" },
+];
 
 export default function BottomTabBar() {
   const navigate = useNavigate();
@@ -15,37 +20,48 @@ export default function BottomTabBar() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-stitch-border bg-stitch-bg/95 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[backdrop-filter]:bg-stitch-bg/80"
+      aria-label="Main navigation"
     >
-      <div className="mx-auto flex max-w-4xl items-stretch">
+      <ul className="mx-auto flex h-[88px] max-w-md items-center justify-around px-4 pb-4 pt-2">
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           const Icon = tab.icon;
-          const locked = tab.premiumFeature && !hasFeature(tab.premiumFeature);
           return (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors relative ${
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <div className="relative">
-                <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
-                {locked && (
-                  <Lock className="h-2.5 w-2.5 absolute -top-1 -right-1.5 text-primary" />
-                )}
-              </div>
-              <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>
-                {tab.label}
-              </span>
-            </button>
+            <li key={tab.path} className="flex h-full w-full flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={() => navigate(tab.path)}
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 transition-colors"
+              >
+                <span
+                  className={`h-[3px] w-[28px] shrink-0 rounded-[2px] transition-[background-color,box-shadow,opacity] ${
+                    active
+                      ? "bg-stitch-accent shadow-[0_0_8px_rgba(196,251,53,0.5)]"
+                      : "bg-transparent opacity-0"
+                  }`}
+                  aria-hidden
+                />
+                <Icon
+                  className={`h-6 w-6 transition-[color,filter] ${
+                    active
+                      ? "text-stitch-accent drop-shadow-[0_0_5px_rgba(196,251,53,0.55)]"
+                      : "text-stitch-muted"
+                  }`}
+                  strokeWidth={active ? 2.25 : 2}
+                />
+                <span
+                  className={`text-[10px] font-mono uppercase tracking-wide ${
+                    active ? "font-medium text-stitch-accent" : "font-medium text-stitch-muted"
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </nav>
   );
 }

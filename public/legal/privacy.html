@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy — PositionPilot</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem 3rem; line-height: 1.55; color: #111; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.75rem; }
+    p, li { margin: 0.65rem 0; font-size: 0.95rem; }
+    ul { padding-left: 1.25rem; }
+    .muted { color: #444; font-size: 0.9rem; }
+    .contact { background: #f4f4f4; padding: 1rem; border-radius: 8px; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Privacy Policy</h1>
+  <p class="muted">Last updated: <span id="d"></span></p>
+  <script>document.getElementById("d").textContent = new Date().toISOString().slice(0, 10);</script>
+
+  <p>
+    This Privacy Policy describes how PositionPilot (“we,” “us,” or “the app”) handles information when you use the
+    PositionPilot web or mobile application. PositionPilot is a <strong>personal math and scenario modeling tool</strong>
+    for the portfolio data you choose to enter. It is not a brokerage and does not execute trades.
+  </p>
+
+  <h2>1. Information you provide</h2>
+  <p>We process information that you actively enter or import, for example:</p>
+  <ul>
+    <li>Account credentials if you sign in (handled by our authentication provider).</li>
+    <li>Holdings and related fields you track (such as ticker symbols, exchanges, share counts, average cost, fees, notes).</li>
+    <li>Saved scenarios, transactions, and similar records you create inside the app.</li>
+    <li>Optional waitlist or feedback submissions if you choose to send them.</li>
+  </ul>
+
+  <h2>2. Where data is stored</h2>
+  <p><strong>On your device (local storage).</strong> The app stores data in your browser or app WebView using local storage so it can work offline-first and load quickly. This includes your workspace data, UI preferences, demo-mode flags, and cached market quotes for a short time (typically a few minutes).</p>
+  <p><strong>In the cloud (if you create an account).</strong> When you sign in, holdings, scenarios, transactions, and related records you sync are stored in a database hosted by <strong>Supabase</strong> (PostgreSQL), tied to your user account. Signing out on a device clears the association of local data with your account on that device according to app behavior; cloud copies remain until you delete them or close your account per Supabase/your account settings.</p>
+  <p><strong>Demo mode.</strong> If you use “Try demo,” the app loads sample data into local storage on your device. Demo data is separate from data tied to a signed-in account and is intended for exploration only.</p>
+
+  <h2>3. Market price data</h2>
+  <p>To show quotes and calculations, the app may request market data in these ways:</p>
+  <ul>
+    <li><strong>Yahoo Finance (public chart API).</strong> The app may call Yahoo’s public finance endpoints from your device, sending <strong>ticker symbols</strong> you are viewing. Yahoo operates its own privacy practices; we do not control their services.</li>
+    <li><strong>Optional Supabase Edge Function.</strong> If configured, the app may first request quotes through a server function we host on Supabase, which may fetch data from third-party market sources. Only tickers needed for your request are sent.</li>
+  </ul>
+  <p>We do not sell your portfolio contents or use them for targeted advertising.</p>
+
+  <h2>4. Authentication</h2>
+  <p>Sign-in (e.g. email magic link or password, depending on what we enable) is processed by <strong>Supabase Auth</strong>. Supabase receives authentication-related data necessary to create and maintain your session. See Supabase’s documentation for how they process auth data.</p>
+
+  <h2>5. Analytics and tracking</h2>
+  <p>Unless we disclose otherwise in-app or in an updated policy, we do not use third-party advertising SDKs. If we add analytics in the future, we will update this policy and, where required, ask for consent.</p>
+
+  <h2>6. Security</h2>
+  <p>We rely on industry-standard transport encryption (HTTPS) for network requests. No method of storage or transmission is 100% secure; you use the app at your own risk as described in our Terms of Use.</p>
+
+  <h2>7. Retention and deletion</h2>
+  <p>You can delete individual holdings and related records inside the app where the UI allows. Clearing site data or uninstalling the app removes locally stored data on that device. To delete cloud-backed data tied to your account, use in-app deletion where available or contact us using the information below. Some residual backups or logs may persist for a limited time with our service providers.</p>
+
+  <h2>8. Children’s privacy</h2>
+  <p>PositionPilot is not directed at children under 13 (or the minimum age in your jurisdiction). We do not knowingly collect personal information from children.</p>
+
+  <h2>9. International users</h2>
+  <p>Our service providers may process data in the United States or other countries. By using the app, you understand your information may be transferred to jurisdictions with different data protection laws.</p>
+
+  <h2>10. Changes</h2>
+  <p>We may update this policy from time to time. The “Last updated” date at the top will change when we do. Continued use after changes means you accept the revised policy.</p>
+
+  <div class="contact">
+    <h2>11. Contact</h2>
+    <p>
+      For privacy questions or requests, contact us through the <strong>support URL or email listed on the App Store
+      product page</strong> for PositionPilot (or in the app’s Settings, if provided). Replace this sentence with your
+      real support email or form before launch if you do not rely solely on the store listing.
+    </p>
+  </div>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Undo2, TrendingDown, TrendingUp, Award, ArrowRight,
@@ -27,8 +28,15 @@ import {
 import {
   getHolding, getScenariosForHolding, getTransactionsForHolding,
   undoLastBuy, removeScenario, currencyPrefix, exchangeLabel, apiTicker,
-  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding,
+  addScenario, applyBuyToHolding, editHolding, type Scenario, type Holding, type Transaction,
 } from "@/lib/storage";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDemoMode } from "@/contexts/DemoModeContext";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
+import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
+import { DemoDataTag } from "@/components/DemoDataTag";
+import { transactionFromDbRow } from "@/lib/sync";
 import { getCachedQuote, fetchStockPrice } from "@/lib/stock-price";
 import { canLookup } from "@/lib/pro";
 import { canSaveScenario, scenariosRemaining, hasFeature, FREE_SCENARIO_LIMIT } from "@/lib/feature-access";
@@ -39,14 +47,18 @@ type WorkspaceTab = "overview" | "strategy" | "calculator" | "history" | "insigh
 
 const WORKSPACE_TABS: { key: WorkspaceTab; label: string; icon: React.ElementType }[] = [
   { key: "overview", label: "Overview", icon: Eye },
-  { key: "strategy", label: "Strategy", icon: TargetIcon },
+  { key: "strategy", label: "Plan", icon: TargetIcon },
   { key: "calculator", label: "Calculator", icon: Calculator },
   { key: "history", label: "History", icon: History },
-  { key: "insights", label: "Insights", icon: Lightbulb },
+  { key: "insights", label: "Math", icon: Lightbulb },
 ];
 
 const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt4 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+
+function formatHistoryDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 function formatVolume(vol: number): string {
   if (vol >= 1e9) return `${(vol / 1e9).toFixed(1)}B`;
@@ -60,7 +72,7 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 
 const METHOD_OPTIONS: { value: Method; label: string; desc: string }[] = [
   { value: "price_shares", label: "Price + Shares", desc: "Set buy price & share count" },
-  { value: "price_budget", label: "Price + Budget", desc: "Target workflow" },
+  { value: "price_budget", label: "Price + Budget", desc: "Set buy price and max budget" },
   { value: "price_target", label: "Price + Target Avg", desc: "Target a specific average" },
   { value: "budget_target", label: "Budget + Target Avg", desc: "Fixed budget, target avg" },
 ];
@@ -171,7 +183,11 @@ export default function HoldingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { isDemoMode } = useDemoMode();
+  const storageRevision = useStorageRevision();
   const { toast } = useToast();
+  const { requestPersist, preAuthUpsellDialog } = usePreAuthSaveUpsell();
   const [version, setVersion] = useState(0);
   const [undoing, setUndoing] = useState(false);
   const [showUndoConfirm, setShowUndoConfirm] = useState(false);
@@ -207,12 +223,45 @@ export default function HoldingDetail() {
   const [scenarioToApply, setScenarioToApply] = useState<Scenario | null>(null);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, version]);
+  const holding = useMemo(() => (id ? getHolding(id) : undefined), [id, version, storageRevision]);
   const scenarios = id ? getScenariosForHolding(id) : [];
-  const transactions = id ? getTransactionsForHolding(id) : [];
-  void version; void calcTick;
+  const localTransactions = useMemo(
+    () => (id ? getTransactionsForHolding(id) : []),
+    [id, version, storageRevision],
+  );
+  void calcTick;
 
-  const latestTx = transactions[0];
+  const {
+    data: cloudTransactions,
+    isPending: historyLoading,
+    isError: historyError,
+  } = useQuery({
+    queryKey: ["holding-transactions", id, user?.id],
+    queryFn: async (): Promise<Transaction[]> => {
+      const { data, error } = await (supabase as any)
+        .from("transactions")
+        .select("*")
+        .eq("holding_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((row) => transactionFromDbRow(row as Record<string, unknown>));
+    },
+    enabled: Boolean(user?.id && id && activeTab === "history" && !isDemoMode),
+  });
+
+  const historyRows: Transaction[] = useMemo(() => {
+    if (!user || isDemoMode || cloudTransactions === undefined || historyError) return localTransactions;
+    const byId = new Map<string, Transaction>();
+    for (const t of cloudTransactions) byId.set(t.id, t);
+    for (const t of localTransactions) {
+      if (!byId.has(t.id)) byId.set(t.id, t);
+    }
+    return [...byId.values()].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [user, isDemoMode, cloudTransactions, historyError, localTransactions]);
+
+  const latestTx = localTransactions[0];
   const canUndo = latestTx && latestTx.transaction_type === "buy" && !latestTx.is_undone;
 
   const exchange = holding?.exchange ?? "US";
@@ -319,7 +368,7 @@ export default function HoldingDetail() {
     if (!canSaveScenario(currentCount)) {
       toast({
         title: "Scenario limit reached",
-        description: `Free users can save up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Upgrade to Premium for unlimited scenarios.`,
+        description: `Free tier allows up to ${FREE_SCENARIO_LIMIT} scenarios per holding. Enable premium preview in Settings for unlimited.`,
         variant: "destructive",
       });
       return;
@@ -330,23 +379,25 @@ export default function HoldingDetail() {
     if (calcMethod !== "budget_target") buyPrice = n1;
     else if (r.effectivePrice !== null) buyPrice = r.effectivePrice;
 
-    addScenario({
-      holding_id: holding.id, ticker: holding.ticker, method: calcMethod,
-      input1_label: flds[0].label, input1_value: n1,
-      input2_label: flds[1].label, input2_value: n2,
-      include_fees: includeFees, fee_amount: r.feeApplied,
-      buy_price: buyPrice, shares_to_buy: r.x,
-      budget_invested: r.budget, fee_applied: r.feeApplied,
-      total_spend: r.totalSpend, new_total_shares: r.totalShares,
-      new_avg_cost: r.newAvg,
-      recommended_target: isPriceBudget ? r.newAvg : null,
-      budget_percent_used: isPriceBudget ? budgetPercent : null,
-      notes: null,
+    requestPersist(() => {
+      addScenario({
+        holding_id: holding.id, ticker: holding.ticker, method: calcMethod,
+        input1_label: flds[0].label, input1_value: n1,
+        input2_label: flds[1].label, input2_value: n2,
+        include_fees: includeFees, fee_amount: r.feeApplied,
+        buy_price: buyPrice, shares_to_buy: r.x,
+        budget_invested: r.budget, fee_applied: r.feeApplied,
+        total_spend: r.totalSpend, new_total_shares: r.totalShares,
+        new_avg_cost: r.newAvg,
+        recommended_target: isPriceBudget ? r.newAvg : null,
+        budget_percent_used: isPriceBudget ? budgetPercent : null,
+        notes: null,
+      });
+      toast({ title: "Scenario saved" });
+      setVal1(""); setVal2(""); setBudgetPercent(100);
+      setCalcTick((t) => t + 1);
+      setVersion((v) => v + 1);
     });
-    toast({ title: "Scenario saved" });
-    setVal1(""); setVal2(""); setBudgetPercent(100);
-    setCalcTick((t) => t + 1);
-    setVersion((v) => v + 1);
   };
 
   const handleApplyBuy = () => {
@@ -356,23 +407,25 @@ export default function HoldingDetail() {
 
   const confirmApplyBuy = () => {
     if (!holding || !r || applying) return;
-    setApplying(true);
     setShowApplyConfirm(false);
-    try {
-      applyBuyToHolding({
-        holdingId: holding.id, buyPrice: getBuyPrice(), sharesBought: r.x,
-        budgetInvested: r.budget, feeApplied: r.feeApplied, totalSpend: r.totalSpend,
-        includeFees, newTotalShares: r.totalShares, newAvgCost: r.newAvg, method: calcMethod,
-      });
-      toast({ title: "Buy applied successfully" });
-      setVal1(""); setVal2(""); setBudgetPercent(100);
-      setVersion((v) => v + 1);
-      setCalcTick((t) => t + 1);
-    } catch (e: any) {
-      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
-    } finally {
-      setApplying(false);
-    }
+    requestPersist(() => {
+      setApplying(true);
+      try {
+        applyBuyToHolding({
+          holdingId: holding.id, buyPrice: getBuyPrice(), sharesBought: r.x,
+          budgetInvested: r.budget, feeApplied: r.feeApplied, totalSpend: r.totalSpend,
+          includeFees, newTotalShares: r.totalShares, newAvgCost: r.newAvg, method: calcMethod,
+        });
+        toast({ title: "Buy applied successfully" });
+        setVal1(""); setVal2(""); setBudgetPercent(100);
+        setVersion((v) => v + 1);
+        setCalcTick((t) => t + 1);
+      } catch (e: any) {
+        toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+      } finally {
+        setApplying(false);
+      }
+    });
   };
 
   const handleApplyScenario = (s: Scenario) => {
@@ -383,24 +436,26 @@ export default function HoldingDetail() {
   const confirmApplyScenario = () => {
     if (!holding || !scenarioToApply || applying) return;
     const s = scenarioToApply;
-    setApplying(true);
     setScenarioToApply(null);
-    try {
-      applyBuyToHolding({
-        holdingId: holding.id, buyPrice: s.buy_price ?? s.input1_value,
-        sharesBought: s.shares_to_buy, budgetInvested: s.budget_invested,
-        feeApplied: s.fee_applied, totalSpend: s.total_spend,
-        includeFees: s.include_fees, newTotalShares: s.new_total_shares,
-        newAvgCost: s.new_avg_cost, method: s.method,
-      });
-      toast({ title: "Buy applied successfully" });
-      setVersion((v) => v + 1);
-      setCalcTick((t) => t + 1);
-    } catch (e: any) {
-      toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
-    } finally {
-      setApplying(false);
-    }
+    requestPersist(() => {
+      setApplying(true);
+      try {
+        applyBuyToHolding({
+          holdingId: holding.id, buyPrice: s.buy_price ?? s.input1_value,
+          sharesBought: s.shares_to_buy, budgetInvested: s.budget_invested,
+          feeApplied: s.fee_applied, totalSpend: s.total_spend,
+          includeFees: s.include_fees, newTotalShares: s.new_total_shares,
+          newAvgCost: s.new_avg_cost, method: s.method,
+        });
+        toast({ title: "Buy applied successfully" });
+        setVersion((v) => v + 1);
+        setCalcTick((t) => t + 1);
+      } catch (e: any) {
+        toast({ title: "Failed to apply buy", description: e?.message ?? "Unknown error", variant: "destructive" });
+      } finally {
+        setApplying(false);
+      }
+    });
   };
 
   // ── Navigate to calculator tab with prefill ─────────────────
@@ -414,8 +469,8 @@ export default function HoldingDetail() {
 
   if (!holding) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Holding not found.</p>
+      <div className="relative flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 text-white">
+        <p className="text-stitch-muted">Holding not found.</p>
       </div>
     );
   }
@@ -426,24 +481,49 @@ export default function HoldingDetail() {
   const presets1 = getPresets(calcMethod, 1);
   const presets2 = getPresets(calcMethod, 2);
 
+  // Goal Ladder helpers
+  const shares = Number(holding.shares);
+  const avgCost = Number(holding.avg_cost);
+  const currentPrice = Number(holding.current_price ?? marketPrice ?? 0);
+  const isUnderwater = currentPrice > 0 && currentPrice < avgCost;
+
+  function calcNewAvg(investAmount: number): { newAvg: number; improvement: number } {
+    if (currentPrice <= 0) return { newAvg: avgCost, improvement: 0 };
+    const sharesBought = investAmount / currentPrice;
+    const newAvg = (shares * avgCost + investAmount) / (shares + sharesBought);
+    const improvement = avgCost - newAvg;
+    return { newAvg, improvement };
+  }
+
+  const ladderAmounts = [250, 500, 1000, 2500, 5000];
+
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <>
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="sticky top-0 z-20 border-b border-stitch-border bg-stitch-bg/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 sm:px-6 py-3">
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate("/")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            onClick={() => navigate("/")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <h1 className="text-lg font-bold tracking-tight truncate">
-              <span className="text-primary font-mono">{holding.ticker}</span>
-              <span className="text-muted-foreground font-normal ml-1.5 text-sm">Position</span>
+              <span className="text-stitch-accent font-mono">{holding.ticker}</span>
+              <span className="text-stitch-muted font-normal ml-1.5 text-sm">Position</span>
             </h1>
-            <Badge variant="outline" className="text-[10px] px-1.5 h-5 shrink-0">{exchangeLabel(exchange)}</Badge>
+            <Badge variant="outline" className="h-5 shrink-0 border-stitch-border px-1.5 text-[10px] text-stitch-muted-soft">
+              {exchangeLabel(exchange)}
+            </Badge>
+            {isDemoMode && <DemoDataTag />}
           </div>
           {canUndo && (
             <Button
-              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-muted-foreground hover:text-destructive"
+              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive"
               disabled={undoing} onClick={() => setShowUndoConfirm(true)}
             >
               <Undo2 className="mr-1 h-3 w-3" /> Undo
@@ -459,8 +539,8 @@ export default function HoldingDetail() {
                 onClick={() => switchTab(key)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                    ? "border-stitch-accent text-stitch-accent"
+                    : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -475,10 +555,10 @@ export default function HoldingDetail() {
         {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
         {activeTab === "overview" && (
           <>
-            <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+            <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Position Overview</h2>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-foreground" onClick={() => setEditOpen(true)}>
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Position Overview</h2>
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white" onClick={() => setEditOpen(true)}>
                   <Pencil className="mr-1 h-3 w-3" /> Edit
                 </Button>
               </div>
@@ -499,7 +579,7 @@ export default function HoldingDetail() {
               </div>
               {/* Trading data */}
               {quote && quote.todayOpen != null ? (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stitch-muted font-mono mt-3 pt-3 border-t border-stitch-border">
                   <span>Open {cp}{quote.todayOpen.toFixed(2)}</span>
                   {quote.todayLow != null && <span>Low {cp}{quote.todayLow.toFixed(2)}</span>}
                   {quote.todayHigh != null && <span>High {cp}{quote.todayHigh.toFixed(2)}</span>}
@@ -507,7 +587,7 @@ export default function HoldingDetail() {
                   <span>Fee: {feeLabel}</span>
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground font-mono mt-3 pt-3 border-t border-border">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-stitch-muted font-mono mt-3 pt-3 border-t border-stitch-border">
                   <span>Fee: {feeLabel} ({holding.fee_type})</span>
                 </div>
               )}
@@ -518,7 +598,7 @@ export default function HoldingDetail() {
           </>
         )}
 
-        {/* ═══════════════ STRATEGY TAB ═══════════════ */}
+        {/* ═══════════════ PLAN TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
             <SuggestedStrategyStep
@@ -529,21 +609,79 @@ export default function HoldingDetail() {
               onSaved={() => setVersion((v) => v + 1)}
             />
 
-            <GoalLadder
-              holding={holding}
-              onUseInCalculator={openCalculatorPrefilled}
-              onSaved={() => setVersion((v) => v + 1)}
-            />
+            {/* Example scenario — fixed $500 buy impact */}
+            {isUnderwater && (
+              <div className="rounded-lg border border-primary/30 bg-card p-6" style={{ boxShadow: "0 0 18px hsl(160 60% 52% / 0.08)" }}>
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-primary mb-4 flex items-center gap-2">
+                  <span>⚡</span> Example scenario
+                </h2>
+                {(() => {
+                  const { newAvg, improvement } = calcNewAvg(500);
+                  return (
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <p className="text-xs text-muted-foreground mb-3">Invest {cp}500 →</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current Avg</p>
+                          <p className="text-lg font-mono font-semibold text-muted-foreground">{cp}{avgCost.toFixed(2)}</p>
+                        </div>
+                        <span className="text-primary text-xl">→</span>
+                        <div className="text-right">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                          <p className="text-lg font-mono font-semibold text-primary">{cp}{newAvg.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Average cost change: <span className="text-primary font-mono">{cp}{improvement.toFixed(2)}</span>{" "}
+                        / share (modeled)
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Hypothetical buy amounts — buy impact ladder */}
+            {isUnderwater && (
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+                  Buy impact (sample amounts)
+                </h2>
+                <div className="space-y-2">
+                  {ladderAmounts.map((amt) => {
+                    const { newAvg, improvement } = calcNewAvg(amt);
+                    return (
+                      <div key={amt} className="flex items-center justify-between rounded-lg bg-muted/20 border border-border px-4 py-3 hover:bg-muted/40 transition-colors">
+                        <span className="text-sm font-mono text-muted-foreground">Invest {cp}{amt.toLocaleString()}</span>
+                        <div className="flex items-center gap-4 text-right">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                            <p className="text-sm font-mono font-semibold text-foreground">{cp}{newAvg.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Δ / share</p>
+                            <p className="text-sm font-mono font-semibold text-primary">↓{cp}{improvement.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Budget-step simulator (preset rungs) */}
+            <GoalLadder holding={holding} />
 
             {/* Saved scenarios */}
             <div className="space-y-3">
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Saved Scenarios</h2>
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
+                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Saved Scenarios</h2>
+                  <p className="text-[11px] text-stitch-muted/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
                 </div>
                 {scenarios.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground/50 tabular-nums">{scenarios.length} total</span>
+                  <span className="text-[10px] text-stitch-muted/50 tabular-nums">{scenarios.length} total</span>
                 )}
               </div>
 
@@ -566,18 +704,18 @@ export default function HoldingDetail() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
               {/* Left: Inputs */}
               <div className="lg:col-span-3 space-y-4">
-                <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
+                <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">Method</Label>
+                    <Label className="text-[11px] uppercase tracking-widest text-stitch-muted font-semibold">Method</Label>
                     <Select value={calcMethod} onValueChange={handleMethodChange}>
-                      <SelectTrigger className="w-full bg-background h-9 text-sm">
+                      <SelectTrigger className="w-full bg-stitch-pill h-9 text-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
+                      <SelectContent className="z-50 border-stitch-border bg-stitch-card text-white">
                         {METHOD_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             <span className="font-medium">{o.label}</span>
-                            <span className="text-muted-foreground ml-1.5 text-xs hidden sm:inline">— {o.desc}</span>
+                            <span className="text-stitch-muted ml-1.5 text-xs hidden sm:inline">— {o.desc}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -588,33 +726,33 @@ export default function HoldingDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="input1" className="text-xs text-muted-foreground">{fields[0].label}</Label>
+                        <Label htmlFor="input1" className="text-xs text-stitch-muted">{fields[0].label}</Label>
                         {input1IsPrice && (
-                          <button type="button" className="text-[11px] text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
+                          <button type="button" className="text-[11px] text-stitch-accent hover:text-stitch-accent/80 font-medium flex items-center gap-1 transition-colors disabled:opacity-40"
                             disabled={fetchingPrice || !canLookup()} onClick={handleUseCurrentPrice}>
                             <Zap className={`h-3 w-3 ${fetchingPrice ? "animate-pulse" : ""}`} /> Live price
                           </button>
                         )}
                       </div>
                       <Input id="input1" type="number" step="any" placeholder="0.00" value={val1}
-                        onChange={(e) => setVal1(e.target.value)} className="h-9 font-mono text-sm bg-background" />
+                        onChange={(e) => setVal1(e.target.value)} className="h-9 font-mono text-sm bg-stitch-pill" />
                       {presets1.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets1.map((p) => (
-                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-stitch-border bg-stitch-pill/50 hover:bg-stitch-pill/70 text-stitch-muted hover:text-white transition-colors"
                               onClick={() => setVal1(p.value)}>{p.label}</button>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="input2" className="text-xs text-muted-foreground">{fields[1].label}</Label>
+                      <Label htmlFor="input2" className="text-xs text-stitch-muted">{fields[1].label}</Label>
                       <Input id="input2" type="number" step="any" placeholder="0.00" value={val2}
-                        onChange={(e) => setVal2(e.target.value)} className="h-9 font-mono text-sm bg-background" />
+                        onChange={(e) => setVal2(e.target.value)} className="h-9 font-mono text-sm bg-stitch-pill" />
                       {presets2.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets2.map((p) => (
-                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            <button key={p.value} type="button" className="text-[10px] font-mono px-2 py-0.5 rounded-md border border-stitch-border bg-stitch-pill/50 hover:bg-stitch-pill/70 text-stitch-muted hover:text-white transition-colors"
                               onClick={() => setVal2(p.value)}>{p.label}</button>
                           ))}
                         </div>
@@ -624,11 +762,11 @@ export default function HoldingDetail() {
 
                   {isPriceBudget && (
                     <div className="space-y-2 pt-1">
-                      <Label className="text-xs text-muted-foreground">Budget allocation: <span className="text-foreground font-semibold">{budgetPercent}%</span></Label>
+                      <Label className="text-xs text-stitch-muted">Budget allocation: <span className="text-white font-semibold">{budgetPercent}%</span></Label>
                       <Slider min={25} max={100} step={25} value={[budgetPercent]} onValueChange={(v) => setBudgetPercent(v[0])} />
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <div className="flex justify-between text-[10px] text-stitch-muted">
                         {SLIDER_STEPS.map((s) => (
-                          <span key={s} className={budgetPercent === s ? "text-primary font-bold" : ""}>{s}%</span>
+                          <span key={s} className={budgetPercent === s ? "text-stitch-accent font-bold" : ""}>{s}%</span>
                         ))}
                       </div>
                     </div>
@@ -636,7 +774,7 @@ export default function HoldingDetail() {
 
                   <div className="flex items-center gap-2.5 pt-1">
                     <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} className="scale-90" />
-                    <Label htmlFor="include-fees" className="cursor-pointer text-xs text-muted-foreground">Include fees</Label>
+                    <Label htmlFor="include-fees" className="cursor-pointer text-xs text-stitch-muted">Include fees</Label>
                   </div>
                 </div>
 
@@ -647,7 +785,7 @@ export default function HoldingDetail() {
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {err.error}
                     </div>
                   ) : (
-                    <p className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                    <p className="flex items-center gap-2 text-xs text-stitch-muted px-1">
                       <Info className="h-3.5 w-3.5 shrink-0" /> {err.error}
                     </p>
                   );
@@ -656,23 +794,23 @@ export default function HoldingDetail() {
 
               {/* Right: Results */}
               <div className="lg:col-span-2">
-                <div className={`rounded-xl border bg-card transition-all sticky top-28 ${isValid ? "border-primary/20" : "border-border opacity-50"}`}>
+                <div className={`rounded-xl border bg-stitch-card transition-all sticky top-28 ${isValid ? "border-stitch-accent/20" : "border-stitch-border opacity-50"}`}>
                   <div className="p-4 sm:p-5">
-                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted mb-4">
                       {isValid ? "Projected Outcome" : "Results"}
                     </h2>
                     {isValid && r ? (
                       <div className="space-y-4">
-                        <div className="text-center pb-3 border-b border-border">
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                        <div className="text-center pb-3 border-b border-stitch-border">
+                          <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-1">
                             {isPriceBudget ? "Achievable Target" : "New Average Cost"}
                           </p>
-                          <p className="text-3xl font-mono font-bold text-primary leading-none">{cp}{fmt2(r.newAvg)}</p>
+                          <p className="text-3xl font-mono font-bold text-stitch-accent leading-none">{cp}{fmt2(r.newAvg)}</p>
                           <div className="flex items-center justify-center gap-1.5 mt-2">
-                            <span className="text-[11px] text-muted-foreground font-mono">Current {cp}{fmt2(A)}</span>
+                            <span className="text-[11px] text-stitch-muted font-mono">Current {cp}{fmt2(A)}</span>
                             <span className="text-[11px] mx-0.5">→</span>
                             {avgImproves ? (
-                              <span className="text-[11px] font-medium text-primary flex items-center gap-0.5">
+                              <span className="text-[11px] font-medium text-stitch-accent flex items-center gap-0.5">
                                 <TrendingDown className="h-3 w-3" /> −{cp}{fmt2(Math.abs(avgDiff))}/share
                               </span>
                             ) : avgWorsens ? (
@@ -680,7 +818,7 @@ export default function HoldingDetail() {
                                 <TrendingUp className="h-3 w-3" /> +{cp}{fmt2(Math.abs(avgDiff))}/share
                               </span>
                             ) : (
-                              <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-0.5">
+                              <span className="text-[11px] font-medium text-stitch-muted flex items-center gap-0.5">
                                 <Minus className="h-3 w-3" /> No change
                               </span>
                             )}
@@ -694,7 +832,7 @@ export default function HoldingDetail() {
                           <ResultRow label="New total shares" value={fmt4(r.totalShares)} />
                           {r.effectivePrice !== null && <ResultRow label="Eff. buy price" value={`${cp}${fmt2(r.effectivePrice)}`} />}
                         </div>
-                        <div className="flex flex-col gap-2 pt-2 border-t border-border">
+                        <div className="flex flex-col gap-2 pt-2 border-t border-stitch-border">
                           {isPriceBudget && (
                             <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleUseAsTarget}>
                               <TargetIcon className="mr-1.5 h-3.5 w-3.5" /> Use as target
@@ -711,14 +849,14 @@ export default function HoldingDetail() {
                           </div>
                           {!canSaveScenario(scenarios.length) && (
                             <p className="text-[10px] text-destructive text-center">
-                              Limit reached ({FREE_SCENARIO_LIMIT}/{FREE_SCENARIO_LIMIT}). Upgrade to Premium for unlimited.
+                              Limit reached ({FREE_SCENARIO_LIMIT}/{FREE_SCENARIO_LIMIT}). Premium preview in Settings unlocks unlimited.
                             </p>
                           )}
                         </div>
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-stitch-muted">
                           {hasInputs ? "Adjust inputs to see results." : "Enter values to see projected outcome."}
                         </p>
                       </div>
@@ -730,16 +868,16 @@ export default function HoldingDetail() {
 
             {/* Sticky bottom bar on valid result - mobile */}
             {isValid && r && (
-              <div className="fixed bottom-14 left-0 right-0 z-20 border-t border-border bg-card/95 backdrop-blur-sm lg:hidden"
+              <div className="fixed bottom-14 left-0 right-0 z-20 border-t border-stitch-border bg-stitch-card/95 backdrop-blur-sm lg:hidden"
                 style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
                 <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-2.5 gap-3">
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="min-w-0">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
-                      <p className="text-sm font-mono font-bold text-primary">{cp}{fmt2(r.newAvg)}</p>
+                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">New Avg</p>
+                      <p className="text-sm font-mono font-bold text-stitch-accent">{cp}{fmt2(r.newAvg)}</p>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Spend</p>
+                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">Spend</p>
                       <p className="text-sm font-mono font-semibold">{cp}{fmt2(r.totalSpend)}</p>
                     </div>
                   </div>
@@ -760,59 +898,63 @@ export default function HoldingDetail() {
         {/* ═══════════════ HISTORY TAB ═══════════════ */}
         {activeTab === "history" && (
           <div className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Transaction History</h2>
-            {transactions.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center space-y-1.5">
-                <History className="h-5 w-5 mx-auto text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">No transactions yet.</p>
-                <p className="text-[11px] text-muted-foreground/50">Applied buys and undo actions will appear here.</p>
+            <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">History</h2>
+            {user && historyLoading && (
+              <p className="text-[10px] text-stitch-muted font-mono">Loading cloud history…</p>
+            )}
+            {user && historyError && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive font-mono">
+                Could not load history.
+                {localTransactions.length > 0 ? (
+                  <span className="block text-stitch-muted font-normal mt-1">
+                    Showing on-device history below.
+                  </span>
+                ) : null}
+              </div>
+            )}
+            {historyRows.length === 0 && !(user && historyLoading) ? (
+              <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-6 text-center space-y-1 font-mono text-[11px] text-stitch-muted">
+                <History className="h-4 w-4 mx-auto text-stitch-muted/50 mb-1" />
+                <p>No history yet. Executed buys will appear here.</p>
               </div>
             ) : (
-              <div className="grid gap-2">
-                {transactions.map((t) => {
+              <div className="space-y-1.5 font-mono text-[11px] leading-snug">
+                {historyRows.map((t) => {
                   const isUndo = t.is_undone;
                   return (
-                    <div key={t.id} className={`rounded-xl border border-border bg-card p-3.5 transition-all ${isUndo ? "opacity-50" : ""}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={isUndo ? "outline" : "secondary"} className="text-[9px] px-1.5 h-4">
-                            {isUndo ? "Undone" : t.transaction_type === "buy" ? "Buy" : t.transaction_type}
+                    <div
+                      key={t.id}
+                      className={`rounded-lg border border-stitch-border/80 bg-stitch-card/60 px-3 py-2.5 ${
+                        isUndo ? "opacity-55 border-dashed" : ""
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-stitch-muted">{formatHistoryDate(t.created_at)}</span>
+                        {isUndo ? (
+                          <Badge variant="outline" className="text-[8px] px-1 h-4">
+                            Undone
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground tabular-nums">
-                            {new Date(t.created_at).toLocaleDateString()} {new Date(t.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {METHOD_LABELS[t.method] ?? t.method}
-                        </span>
+                        ) : null}
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Shares</span>
-                          <span className="font-mono font-medium">{t.shares_bought.toFixed(4)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Price</span>
-                          <span className="font-mono font-medium">{cp}{Number(t.buy_price).toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Total Spend</span>
-                          <span className="font-mono font-medium">{cp}{fmt2(t.total_spend)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">New Avg</span>
-                          <span className="font-mono font-medium text-primary">{cp}{fmt2(t.new_avg_cost)}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Total Shares</span>
-                          <span className="font-mono font-medium">{t.new_total_shares.toFixed(4)}</span>
-                        </div>
-                      </div>
-                      {isUndo && t.undone_at && (
-                        <p className="text-[10px] text-muted-foreground mt-2 pt-1.5 border-t border-border/50 italic">
-                          Undone on {new Date(t.undone_at).toLocaleDateString()}
+                      <p className="text-white/90">
+                        Bought {t.shares_bought.toFixed(4)} shares at {cp}
+                        {Number(t.buy_price).toFixed(2)}
+                      </p>
+                      <p className="text-stitch-muted">
+                        Total: {cp}
+                        {fmt2(t.total_spend)}
+                      </p>
+                      {t.fee_applied > 0 ? (
+                        <p className="text-stitch-muted">
+                          Fees: {cp}
+                          {fmt2(t.fee_applied)}
                         </p>
-                      )}
+                      ) : null}
+                      {isUndo && t.undone_at ? (
+                        <p className="text-[10px] text-stitch-muted/70 mt-1 pt-1 border-t border-stitch-border/40">
+                          Undone {formatHistoryDate(t.undone_at)}
+                        </p>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -848,7 +990,7 @@ export default function HoldingDetail() {
 
       {/* Undo confirmation */}
       <AlertDialog open={showUndoConfirm} onOpenChange={setShowUndoConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Undo the last applied buy for {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -856,7 +998,9 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmUndo}>Undo</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -864,7 +1008,7 @@ export default function HoldingDetail() {
 
       {/* Apply confirmation dialog */}
       <AlertDialog open={showApplyConfirm} onOpenChange={setShowApplyConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Apply this buy to {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -872,7 +1016,9 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmApplyBuy}>Apply</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -880,7 +1026,7 @@ export default function HoldingDetail() {
 
       {/* Scenario apply confirmation */}
       <AlertDialog open={!!scenarioToApply} onOpenChange={(o) => !o && setScenarioToApply(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Apply this scenario to {holding.ticker}?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -888,12 +1034,17 @@ export default function HoldingDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmApplyScenario}>Apply</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
+    {preAuthUpsellDialog}
+    </>
   );
 }
 
@@ -903,12 +1054,12 @@ function MiniStat({ label, value, accent, sub, positive, negative }: {
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-0.5">{label}</p>
       <p className={`text-sm font-mono font-semibold leading-tight ${
-        accent ? "text-primary" : positive ? "text-primary" : negative ? "text-destructive" : ""
+        accent ? "text-stitch-accent" : positive ? "text-stitch-accent" : negative ? "text-destructive" : ""
       }`}>{value}</p>
       {sub && (
-        <p className={`text-[10px] font-mono ${positive ? "text-primary" : negative ? "text-destructive" : "text-muted-foreground"}`}>{sub}</p>
+        <p className={`text-[10px] font-mono ${positive ? "text-stitch-accent" : negative ? "text-destructive" : "text-stitch-muted"}`}>{sub}</p>
       )}
     </div>
   );
@@ -917,7 +1068,7 @@ function MiniStat({ label, value, accent, sub, positive, negative }: {
 function ResultRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-baseline">
-      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[11px] text-stitch-muted">{label}</span>
       <span className="text-xs font-mono font-medium tabular-nums">{value}</span>
     </div>
   );
