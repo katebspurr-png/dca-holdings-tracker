@@ -1,32 +1,35 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
+  ArrowDownRight,
   ArrowRight,
+  ChevronDown,
   Save,
   TrendingDown,
   TrendingUp,
-  ChevronDown,
-  ArrowDownRight,
   Zap,
-  AlertTriangle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { getCachedQuote } from "@/lib/stock-price";
 import {
+  addScenario,
+  apiTicker,
+  currencyPrefix,
   type Holding,
   type Scenario,
-  addScenario,
-  currencyPrefix,
-  apiTicker,
 } from "@/lib/storage";
-import { getCachedQuote } from "@/lib/stock-price";
-import { useToast } from "@/hooks/use-toast";
 import {
   buildGoalLadder,
-  type GoalStep,
   type GoalLadderResult,
+  type GoalStep,
   type TakeProfitStep,
 } from "@/lib/goalLadder";
+import { useSimFees } from "@/contexts/SimFeesContext";
 
 const fmt = (n: number) =>
   n.toLocaleString("en-US", {
@@ -47,229 +50,192 @@ export default function GoalLadder({
 }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { includeFees, setIncludeFees } = useSimFees();
   const cp = currencyPrefix(holding.exchange ?? "US");
 
   const currentPrice = useMemo(() => {
-    const key = apiTicker(
-      holding.ticker,
-      (holding.exchange ?? "US") as any
-    ).toUpperCase();
+    const key = apiTicker(holding.ticker, holding.exchange ?? "US").toUpperCase();
     const q = getCachedQuote(key);
     return q?.price ?? null;
-  }, [holding]);
+  }, [holding.exchange, holding.ticker]);
 
   const result: GoalLadderResult | null = useMemo(() => {
-    if (!currentPrice) return null;
-    return buildGoalLadder(holding, currentPrice);
-  }, [holding, currentPrice]);
+    if (currentPrice == null) return null;
+    return buildGoalLadder(holding, currentPrice, includeFees);
+  }, [currentPrice, holding, includeFees]);
 
   const handleUseInCalc = (method: string, v1: string, v2: string) => {
     if (onUseInCalculator) {
       onUseInCalculator(method, v1, v2);
-    } else {
-      navigate(
-        `/holdings/${holding.id}/dca?method=${method}&val1=${v1}&val2=${v2}`
-      );
+      return;
     }
+
+    navigate(`/holdings/${holding.id}/dca?method=${method}&val1=${v1}&val2=${v2}`);
   };
 
   const handleSaveStep = (step: GoalStep) => {
-    const includeFees = holding.fee_value > 0;
-    if (step.kind === "budget") {
-      const scenario: Omit<Scenario, "id" | "created_at"> = {
-        holding_id: holding.id,
-        ticker: holding.ticker,
-        method: "price_budget",
-        input1_label: "Buy price",
-        input1_value: step.buyPrice,
-        input2_label: "Max budget (shares only, excl. fee)",
-        input2_value: step.investment,
-        include_fees: includeFees,
-        fee_amount: step.feeApplied,
-        buy_price: step.buyPrice,
-        shares_to_buy: step.sharesBought,
-        budget_invested: step.investment,
-        fee_applied: step.feeApplied,
-        total_spend: step.totalSpend,
-        new_total_shares: step.newTotalShares,
-        new_avg_cost: step.newAvgCost,
-        recommended_target: null,
-        budget_percent_used: 100,
-        notes: `Goal Ladder: Invest ${cp}${fmt(step.investment)}`,
-      };
-      addScenario(scenario);
-    } else {
-      const scenario: Omit<Scenario, "id" | "created_at"> = {
-        holding_id: holding.id,
-        ticker: holding.ticker,
-        method: "price_target",
-        input1_label: "Buy price",
-        input1_value: step.buyPrice,
-        input2_label: "Target average cost",
-        input2_value: step.targetAvg!,
-        include_fees: includeFees,
-        fee_amount: step.feeApplied,
-        buy_price: step.buyPrice,
-        shares_to_buy: step.sharesBought,
-        budget_invested: step.investment,
-        fee_applied: step.feeApplied,
-        total_spend: step.totalSpend,
-        new_total_shares: step.newTotalShares,
-        new_avg_cost: step.newAvgCost,
-        recommended_target: null,
-        budget_percent_used: null,
-        notes: `Goal Ladder: Target avg under ${cp}${fmt(step.targetAvg!)}`,
-      };
-      addScenario(scenario);
-    }
+    const scenario: Omit<Scenario, "id" | "created_at"> = {
+      holding_id: holding.id,
+      ticker: holding.ticker,
+      method: step.kind === "budget" ? "price_budget" : "price_target",
+      input1_label: "Buy price",
+      input1_value: step.buyPrice,
+      input2_label:
+        step.kind === "budget"
+          ? "Max budget (shares only, excl. fee)"
+          : "Target average cost",
+      input2_value: step.kind === "budget" ? step.investment : step.targetAvg!,
+      include_fees: includeFees,
+      fee_amount: step.feeApplied,
+      buy_price: step.buyPrice,
+      shares_to_buy: step.sharesBought,
+      budget_invested: step.investment,
+      fee_applied: step.feeApplied,
+      total_spend: step.totalSpend,
+      new_total_shares: step.newTotalShares,
+      new_avg_cost: step.newAvgCost,
+      recommended_target: null,
+      budget_percent_used: step.kind === "budget" ? 100 : null,
+      notes:
+        step.kind === "budget"
+          ? `Goal Ladder: Invest ${cp}${fmt(step.investment)}`
+          : `Goal Ladder: Target avg under ${cp}${fmt(step.targetAvg!)}`,
+    };
+
+    addScenario(scenario);
     toast({ title: "Scenario saved" });
     onSaved?.();
   };
 
-  const calcParamsForStep = (step: GoalStep) => {
-    if (step.kind === "budget") {
-      return {
-        method: "price_budget",
-        v1: String(step.buyPrice),
-        v2: String(step.investment),
-      };
-    }
-    return {
-      method: "price_target",
-      v1: String(step.buyPrice),
-      v2: String(step.targetAvg),
-    };
-  };
+  const calcParamsForStep = (step: GoalStep) =>
+    step.kind === "budget"
+      ? {
+          method: "price_budget",
+          v1: String(step.buyPrice),
+          v2: String(step.investment),
+        }
+      : {
+          method: "price_target",
+          v1: String(step.buyPrice),
+          v2: String(step.targetAvg),
+        };
 
-  // ── No price available ──
-  if (!currentPrice || !result) {
+  if (currentPrice == null || result == null) {
     return (
-      <div className="rounded-xl border border-border bg-card/50 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
-          <TrendingDown className="h-4 w-4 text-primary" />
-          Goal Ladder
+      <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm text-stitch-muted">
+        <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+          <TrendingDown className="h-4 w-4" />
+          Strategy simulator
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Enter a current market price on the{" "}
+        <p>
+          Add a current market price from the Overview tab or{" "}
           <button
+            type="button"
             onClick={() => navigate("/update-prices")}
-            className="text-primary underline underline-offset-2 hover:opacity-80"
+            className="text-stitch-accent underline underline-offset-2 hover:opacity-90"
           >
             Update Prices
           </button>{" "}
-          page to generate goal scenarios.
+          to see simulated DCA steps.
         </p>
       </div>
     );
   }
 
-  // ── Green position: take-profit view ──
   if (result.isGreen) {
     return (
       <GreenPositionView
-        steps={result.takeProfitSteps}
-        cp={cp}
         avgCost={holding.avg_cost}
+        cp={cp}
         currentPrice={currentPrice}
         shares={holding.shares}
+        steps={result.takeProfitSteps}
       />
     );
   }
 
-  // ── Red position: Next Best Move + Budget & Target steps ──
   return (
     <div className="space-y-5">
-      {/* Next Best Move */}
+      <div className="flex items-center justify-between rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 px-4 py-3 font-mono text-sm">
+        <Label htmlFor="goal-ladder-fees" className="cursor-pointer text-[11px] text-stitch-muted">
+          Include fees in ladder math
+        </Label>
+        <Switch id="goal-ladder-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+      </div>
+
       {result.nextBestMove && (
         <NextBestMoveCard
-          step={result.nextBestMove.step}
-          cp={cp}
           avgCost={holding.avg_cost}
-          onUseInCalc={() => {
-            const p = calcParamsForStep(result.nextBestMove!.step);
-            handleUseInCalc(p.method, p.v1, p.v2);
-          }}
+          cp={cp}
           onSave={() => handleSaveStep(result.nextBestMove!.step)}
+          onUseInCalc={() => {
+            const params = calcParamsForStep(result.nextBestMove!.step);
+            handleUseInCalc(params.method, params.v1, params.v2);
+          }}
+          step={result.nextBestMove.step}
         />
       )}
 
-      {/* Other Strategy Steps heading */}
-      {(result.budgetSteps.length > 0 || result.targetSteps.length > 0) && (
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Other Strategy Steps
-        </h2>
-      )}
-
-      {/* Budget Steps */}
       {result.budgetSteps.length > 0 && (
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-primary" />
-            Budget Steps
+        <section className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
+          <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+            <TrendingDown className="h-4 w-4" />
+            Budget steps
           </h2>
-          <p className="text-[11px] text-muted-foreground/70 mb-4">
-            Impact of investing at {cp}
-            {fmt(currentPrice)}/share. For scenario planning only.
+          <p className="mb-4 text-[11px] text-stitch-muted/90">
+            Uses preset dollar amounts at {cp}
+            {fmt(currentPrice)}/share. Illustrative only, not a trade instruction.
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {result.budgetSteps.map((step) => (
               <GoalStepCard
-                key={`b-${step.investment}`}
-                step={step}
-                cp={cp}
+                key={`budget-${step.investment}`}
                 avgCost={holding.avg_cost}
-                isNextBestMove={
-                  result.nextBestMove?.step === step
-                }
-                onUseInCalc={() => {
-                  const p = calcParamsForStep(step);
-                  handleUseInCalc(p.method, p.v1, p.v2);
-                }}
+                cp={cp}
+                isNextBestMove={result.nextBestMove?.step === step}
                 onSave={() => handleSaveStep(step)}
+                onUseInCalc={() => {
+                  const params = calcParamsForStep(step);
+                  handleUseInCalc(params.method, params.v1, params.v2);
+                }}
+                step={step}
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Target Averages */}
       {result.targetSteps.length > 0 && (
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-primary" />
-            Target Averages
+        <section className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-5 font-mono text-sm">
+          <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+            <TrendingDown className="h-4 w-4" />
+            Target averages
           </h2>
-          <p className="text-[11px] text-muted-foreground/70 mb-4">
-            What it takes to reach specific average cost targets at {cp}
-            {fmt(currentPrice)}/share.
+          <p className="mb-4 text-[11px] text-stitch-muted/90">
+            What it takes to reach specific average-cost targets if shares are bought at {cp}
+            {fmt(currentPrice)}.
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {result.targetSteps.map((step) => (
               <GoalStepCard
-                key={`t-${step.targetAvg}`}
-                step={step}
-                cp={cp}
+                key={`target-${step.targetAvg}`}
                 avgCost={holding.avg_cost}
-                isNextBestMove={
-                  result.nextBestMove?.step === step
-                }
-                onUseInCalc={() => {
-                  const p = calcParamsForStep(step);
-                  handleUseInCalc(p.method, p.v1, p.v2);
-                }}
+                cp={cp}
+                isNextBestMove={result.nextBestMove?.step === step}
                 onSave={() => handleSaveStep(step)}
+                onUseInCalc={() => {
+                  const params = calcParamsForStep(step);
+                  handleUseInCalc(params.method, params.v1, params.v2);
+                }}
+                step={step}
               />
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
 }
-
-/* ── Next Best Move Card ──────────────────────────────────── */
 
 function NextBestMoveCard({
   step,
@@ -285,73 +251,55 @@ function NextBestMoveCard({
   onSave: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-primary/40 bg-card/50 p-5 shadow-[0_0_24px_hsl(160_60%_52%/0.08)] relative overflow-hidden">
-      {/* Subtle glow accent */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
-
+    <div className="relative overflow-hidden rounded-2xl border border-stitch-accent/35 bg-stitch-card p-5 font-mono text-sm shadow-[0_0_24px_rgba(61,227,181,0.08)]">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stitch-accent/10 via-transparent to-transparent" />
       <div className="relative">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Next Best Move
-          </span>
+        <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+          <Zap className="h-4 w-4" />
+          Next best move
         </div>
-
-        {/* Investment amount */}
-        <p className="text-base font-bold font-[family-name:var(--font-heading)]">
+        <p className="text-base font-semibold text-white">
           {step.kind === "target"
             ? `Target avg ${cp}${fmt(step.targetAvg!)}`
             : `Invest ${cp}${fmt(step.investment)}`}
         </p>
-
-        {/* New average */}
-        <p className="text-lg font-mono font-bold text-foreground mt-1">
+        <p className="mt-1 text-lg font-semibold text-white">
           Avg becomes {cp}
           {fmt(step.newAvgCost)}
         </p>
-
-        {/* Improvement */}
-        {step.avgImprovement > 0 && (
-          <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-1">
-            <ArrowDownRight className="h-3.5 w-3.5" />
-            Improves avg by {cp}
-            {fmt(step.avgImprovement)}
-          </p>
-        )}
-
-        {/* Tagline */}
-        <p className="text-[11px] text-muted-foreground/70 mt-2">
-          Best balance of impact and capital used
+        <p className="mt-1 flex items-center gap-1 text-sm text-stitch-accent">
+          <ArrowDownRight className="h-3.5 w-3.5" />
+          Improves avg by {cp}
+          {fmt(step.avgImprovement)}
         </p>
-
-        {/* Actions */}
-        <div className="flex gap-2 mt-3 pt-2.5 border-t border-primary/20">
+        <p className="mt-2 text-[11px] text-stitch-muted">
+          Current avg {cp}
+          {fmt(avgCost)}. Picked for modeled balance of impact and capital used.
+        </p>
+        <div className="mt-4 flex gap-2 border-t border-stitch-border/40 pt-3">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-[11px] text-primary hover:text-primary hover:bg-primary/10"
+            className="h-7 text-[11px] text-stitch-accent hover:bg-stitch-accent/10 hover:text-stitch-accent"
             onClick={onUseInCalc}
           >
             <ArrowRight className="mr-1 h-3 w-3" />
-            Use in Calculator
+            Use in calculator
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+            className="h-7 text-[11px] text-stitch-muted hover:text-white"
             onClick={onSave}
           >
             <Save className="mr-1 h-3 w-3" />
-            Save Scenario
+            Save scenario
           </Button>
         </div>
       </div>
     </div>
   );
 }
-
-/* ── Unified Goal Step Card ───────────────────────────────── */
 
 function GoalStepCard({
   step,
@@ -372,120 +320,104 @@ function GoalStepCard({
 
   const labelText =
     step.label === "best-efficiency"
-      ? "Best Efficiency"
+      ? "Best efficiency"
       : step.label === "biggest-impact"
-        ? "Biggest Impact"
+        ? "Biggest impact"
         : step.label === "large-investment"
-          ? "Large investment required"
+          ? "Large investment"
           : null;
-
-  const labelVariant =
-    step.label === "large-investment" ? "destructive" : "default";
 
   return (
     <div
-      className={`group rounded-lg border bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors ${
+      className={[
+        "rounded-xl border p-4 transition-colors",
         isNextBestMove
-          ? "border-primary/30 ring-1 ring-primary/20"
-          : "border-border/60"
-      }`}
+          ? "border-stitch-accent/40 bg-stitch-accent/5"
+          : "border-stitch-border/60 bg-stitch-card/60",
+      ].join(" ")}
     >
-      {/* Badge row */}
-      <div className="flex items-center gap-2 mb-1 min-h-[20px]">
+      <div className="mb-2 flex min-h-[20px] items-center gap-2">
         {labelText && (
           <Badge
-            variant={labelVariant}
-            className={`text-[10px] px-1.5 py-0 ${
+            variant={step.label === "large-investment" ? "destructive" : "outline"}
+            className={
               step.label === "large-investment"
-                ? ""
-                : "bg-primary/15 text-primary border-primary/30 hover:bg-primary/20"
-            }`}
+                ? "text-[10px]"
+                : "border-stitch-accent/30 bg-stitch-accent/10 px-1.5 py-0 text-[10px] text-stitch-accent"
+            }
           >
-            {step.label === "large-investment" && (
-              <AlertTriangle className="mr-1 h-2.5 w-2.5" />
-            )}
+            {step.label === "large-investment" && <AlertTriangle className="mr-1 h-2.5 w-2.5" />}
             {labelText}
           </Badge>
         )}
         {isNextBestMove && (
           <Badge
             variant="outline"
-            className="text-[10px] px-1.5 py-0 border-primary/30 text-primary"
+            className="border-stitch-accent/30 px-1.5 py-0 text-[10px] text-stitch-accent"
           >
             <Zap className="mr-0.5 h-2.5 w-2.5" />
-            Best Move
+            Best move
           </Badge>
         )}
       </div>
 
-      {/* Primary: Investment amount or target */}
-      <p className="text-base font-bold font-[family-name:var(--font-heading)]">
+      <p className="text-base font-semibold text-white">
         {step.kind === "target"
-          ? `Invest ${cp}${fmt(step.investment)}`
+          ? `Target avg ${cp}${fmt(step.targetAvg!)}`
           : `Invest ${cp}${fmt(step.investment)}`}
       </p>
-
-      {/* Primary: Resulting average */}
-      <p className="text-lg font-mono font-bold text-foreground mt-1">
+      <p className="mt-1 text-lg font-semibold text-white">
         Avg becomes {cp}
         {fmt(step.newAvgCost)}
       </p>
-
-      {/* Improvement indicator */}
-      {step.avgImprovement > 0 && (
-        <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mt-1">
-          <ArrowDownRight className="h-3.5 w-3.5" />
-          improves by {cp}
-          {fmt(step.avgImprovement)}
-          <span className="text-muted-foreground/60 text-[11px] ml-1">
-            ({step.avgImprovementPct.toFixed(1)}%)
-          </span>
-        </p>
-      )}
-
-      {/* Current avg reference */}
-      <p className="text-[11px] text-muted-foreground/50 font-mono mt-2">
+      <p className="mt-1 flex items-center gap-1 text-sm text-stitch-accent">
+        <ArrowDownRight className="h-3.5 w-3.5" />
+        Improves by {cp}
+        {fmt(step.avgImprovement)}
+        <span className="text-[11px] text-stitch-muted">
+          ({step.avgImprovementPct.toFixed(1)}%)
+        </span>
+      </p>
+      <p className="mt-2 text-[11px] text-stitch-muted">
         Current avg {cp}
         {fmt(avgCost)}
       </p>
 
-      {/* Expandable detail */}
       <button
-        onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground mt-2 transition-colors"
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="mt-2 flex items-center gap-1 text-[11px] text-stitch-muted transition-colors hover:text-white"
       >
-        <ChevronDown
-          className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
         Details
       </button>
+
       {expanded && (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono text-muted-foreground mt-2 pt-2 border-t border-border/30">
+        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-stitch-border/40 pt-2 text-[11px] text-stitch-muted">
           <span>{step.kind === "budget" ? "Shares to buy" : "Shares needed"}</span>
-          <span className="text-right">{step.sharesBought.toFixed(4)}</span>
+          <span className="text-right text-white">{step.sharesBought.toFixed(4)}</span>
           {step.feeApplied > 0 && (
             <>
               <span>Fee</span>
-              <span className="text-right">
+              <span className="text-right text-white">
                 {cp}
                 {fmt(step.feeApplied)}
               </span>
             </>
           )}
           <span>Total spend</span>
-          <span className="text-right">
+          <span className="text-right text-white">
             {cp}
             {fmt(step.totalSpend)}
           </span>
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-2 mt-3 pt-2.5 border-t border-border/30">
+      <div className="mt-4 flex gap-2 border-t border-stitch-border/40 pt-3">
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+          className="h-7 text-[11px] text-stitch-muted hover:text-white"
           onClick={onUseInCalc}
         >
           <ArrowRight className="mr-1 h-3 w-3" />
@@ -494,7 +426,7 @@ function GoalStepCard({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-[11px] text-muted-foreground hover:text-foreground"
+          className="h-7 text-[11px] text-stitch-muted hover:text-white"
           onClick={onSave}
         >
           <Save className="mr-1 h-3 w-3" />
@@ -504,8 +436,6 @@ function GoalStepCard({
     </div>
   );
 }
-
-/* ── Green Position View (Take-Profit) ────────────────────── */
 
 function GreenPositionView({
   steps,
@@ -525,35 +455,26 @@ function GreenPositionView({
 
   return (
     <div className="space-y-5">
-      {/* Position in Profit header card */}
-      <div className="rounded-xl border border-primary/40 bg-card/50 p-5 shadow-[0_0_24px_hsl(160_60%_52%/0.08)] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl border border-stitch-accent/35 bg-stitch-card p-5 font-mono text-sm shadow-[0_0_24px_rgba(61,227,181,0.08)]">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-stitch-accent/10 via-transparent to-transparent" />
         <div className="relative">
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-primary">
-              Position in Profit
-            </span>
+          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+            <TrendingUp className="h-4 w-4" />
+            Position in profit
           </div>
-          <p className="text-[11px] text-muted-foreground/70">
+          <p className="text-[11px] text-stitch-muted">
             Your average cost ({cp}
             {fmt(avgCost)}) is below the current price ({cp}
-            {fmt(currentPrice)}). Here are potential take-profit scenarios.
+            {fmt(currentPrice)}). Here are illustrative take-profit checkpoints.
           </p>
-          <div className="flex gap-6 mt-3">
+          <div className="mt-4 flex gap-6">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                Current Gain
-              </p>
-              <p className="text-lg font-mono font-bold text-primary">
-                +{currentGain.toFixed(1)}%
-              </p>
+              <p className="text-[10px] uppercase tracking-widest text-stitch-muted">Current gain</p>
+              <p className="text-lg font-semibold text-stitch-accent">+{currentGain.toFixed(1)}%</p>
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                Unrealized Profit
-              </p>
-              <p className="text-lg font-mono font-bold text-primary">
+              <p className="text-[10px] uppercase tracking-widest text-stitch-muted">Unrealized profit</p>
+              <p className="text-lg font-semibold text-stitch-accent">
                 {cp}
                 {fmt(currentProfit)}
               </p>
@@ -562,35 +483,25 @@ function GreenPositionView({
         </div>
       </div>
 
-      {/* Take-profit milestone cards */}
       {steps.length > 0 && (
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-1 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Take-Profit Milestones
+        <section className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-5 font-mono text-sm">
+          <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
+            <TrendingUp className="h-4 w-4" />
+            Take-profit milestones
           </h2>
-          <p className="text-[11px] text-muted-foreground/70 mb-4">
-            Potential profit at different price targets. For informational
-            purposes only.
+          <p className="mb-4 text-[11px] text-stitch-muted">
+            Potential profit at different price targets. Informational only.
           </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {steps.map((s) => (
-              <TakeProfitCard
-                key={s.targetPrice}
-                step={s}
-                cp={cp}
-                avgCost={avgCost}
-              />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {steps.map((step) => (
+              <TakeProfitCard key={step.targetPrice} avgCost={avgCost} cp={cp} step={step} />
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );
 }
-
-/* ── Take-Profit Card ─────────────────────────────────────── */
 
 function TakeProfitCard({
   step,
@@ -602,32 +513,25 @@ function TakeProfitCard({
   avgCost: number;
 }) {
   return (
-    <div className="group rounded-lg border border-border/60 bg-background/50 p-4 hover:border-primary/30 hover:bg-muted/20 transition-colors">
-      {/* Target price */}
-      <p className="text-base font-bold font-[family-name:var(--font-heading)]">
+    <div className="rounded-xl border border-stitch-border/60 bg-stitch-card/60 p-4">
+      <p className="text-base font-semibold text-white">
         If price reaches {cp}
         {fmt(step.targetPrice)}
       </p>
-
-      {/* Gain % */}
-      <p className="text-lg font-mono font-bold text-primary mt-1">
-        +{step.gainPct.toFixed(1)}% gain
-      </p>
-
-      {/* Profit details */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono text-muted-foreground mt-3 pt-2 border-t border-border/30">
+      <p className="mt-1 text-lg font-semibold text-stitch-accent">+{step.gainPct.toFixed(1)}% gain</p>
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-stitch-border/40 pt-2 text-[11px] text-stitch-muted">
         <span>Profit/share</span>
-        <span className="text-right text-primary">
+        <span className="text-right text-stitch-accent">
           {cp}
           {fmt(step.profitPerShare)}
         </span>
         <span>Total profit</span>
-        <span className="text-right text-primary">
+        <span className="text-right text-stitch-accent">
           {cp}
           {fmt(step.totalProfit)}
         </span>
         <span>Avg cost</span>
-        <span className="text-right">
+        <span className="text-right text-white">
           {cp}
           {fmt(avgCost)}
         </span>

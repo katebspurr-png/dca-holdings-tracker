@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local tooling / IDE artifacts
+.specstory/
+
+# Supabase CLI temp
+supabase/.temp/

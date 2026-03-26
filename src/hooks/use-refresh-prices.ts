@@ -45,7 +45,7 @@ export function useRefreshPrices() {
     }));
 
     const results = await Promise.allSettled(
-      symbols.map((s) => fetchStockPrice(s.symbol))
+      symbols.map((s) => fetchStockPrice(s.symbol, { bypassCache: true }))
     );
 
     let success = 0;

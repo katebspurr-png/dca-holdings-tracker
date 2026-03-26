@@ -303,7 +303,8 @@ export function generateTakeProfitSteps(
 
 export function buildGoalLadder(
   holding: Holding,
-  currentPrice: number
+  currentPrice: number,
+  includeFees = holding.fee_value > 0
 ): GoalLadderResult {
   const tier = getPositionTier(holding.shares, currentPrice);
   const isGreen = currentPrice >= holding.avg_cost;
@@ -319,8 +320,6 @@ export function buildGoalLadder(
       takeProfitSteps: generateTakeProfitSteps(holding, currentPrice),
     };
   }
-
-  const includeFees = holding.fee_value > 0;
 
   // Budget steps
   const budgetAmounts = getBudgetAmounts(tier);

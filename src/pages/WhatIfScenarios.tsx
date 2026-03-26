@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +13,27 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  getHoldings, addWhatIfComparison, getWhatIfComparisons, removeWhatIfComparison,
-  applyScenarioToHoldings,
-  type Holding, type WhatIfScenarioTab, type WhatIfAllocation, type WhatIfComparison,
-  type Exchange, currencyPrefix, exchangeLabel, apiTicker,
+  getHoldings,
+  getHolding,
+  addWhatIfComparison,
+  getWhatIfComparisons,
+  removeWhatIfComparison,
+  applyBuyToHolding,
+  type Holding,
+  type WhatIfScenarioTab,
+  type WhatIfAllocation,
+  type WhatIfComparison,
+  type Exchange,
+  currencyPrefix,
+  exchangeLabel,
+  apiTicker,
 } from "@/lib/storage";
 import { fetchStockPrice, type StockQuote } from "@/lib/stock-price";
+import { computeWhatIfAllocationRow } from "@/lib/dca-sim";
+import { useSimFees } from "@/contexts/SimFeesContext";
+import { usePreAuthSaveUpsell } from "@/hooks/use-pre-auth-save-upsell";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 const MAX_SCENARIOS = 3;
 const DEFAULT_NAMES = ["Scenario A", "Scenario B", "Scenario C"];
@@ -65,11 +80,15 @@ const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2,
 
 export default function WhatIfScenarios() {
   const navigate = useNavigate();
-  const holdings = getHoldings();
+  const { requestPersist, preAuthUpsellDialog } = usePreAuthSaveUpsell();
+  const storageRevision = useStorageRevision();
+  const holdings = useMemo(() => getHoldings(), [storageRevision]);
+  const holdingIdsKey = useMemo(() => holdings.map((h) => h.id).sort().join(","), [holdings]);
+  const { includeFees, setIncludeFees } = useSimFees();
 
   const [totalBudget, setTotalBudget] = useState("");
-  const [scenarios, setScenarios] = useState<WhatIfScenarioTab[]>([
-    makeScenario(DEFAULT_NAMES[0], holdings),
+  const [scenarios, setScenarios] = useState<WhatIfScenarioTab[]>(() => [
+    makeScenario(DEFAULT_NAMES[0], getHoldings()),
   ]);
   const [activeTab, setActiveTab] = useState(0);
   const [inputMode, setInputMode] = useState<"dollar" | "percent">("dollar");
@@ -81,7 +100,7 @@ export default function WhatIfScenarios() {
 
   const [livePrices, setLivePrices] = useState<Record<string, number>>(() => {
     const prices: Record<string, number> = {};
-    holdings.forEach((h) => {
+    getHoldings().forEach((h) => {
       const ex = h.exchange ?? "US";
       const p = getCachedPrice(h.ticker, ex);
       if (p) prices[apiTicker(h.ticker, ex)] = p;
@@ -89,7 +108,23 @@ export default function WhatIfScenarios() {
     return prices;
   });
 
-  const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh]);
+  // Only reset builder tabs when the set of holding *ids* changes (e.g. demo toggle, add/remove).
+  // Do not depend on `holdings` — it gets a new array reference on every storageRevision, which would
+  // wipe tabs after any write (save comparison, apply buy, etc.).
+  useEffect(() => {
+    const nextHoldings = getHoldings();
+    setScenarios([makeScenario(DEFAULT_NAMES[0], nextHoldings)]);
+    setActiveTab(0);
+    const prices: Record<string, number> = {};
+    nextHoldings.forEach((h) => {
+      const ex = h.exchange ?? "US";
+      const p = getCachedPrice(h.ticker, ex);
+      if (p) prices[apiTicker(h.ticker, ex)] = p;
+    });
+    setLivePrices(prices);
+  }, [holdingIdsKey]);
+
+  const savedComparisons = useMemo(() => getWhatIfComparisons(), [savedRefresh, storageRevision]);
 
   const budget = parseFloat(totalBudget) || 0;
 
@@ -230,15 +265,53 @@ export default function WhatIfScenarios() {
   const scenarioResults = useMemo(() => {
     return scenarios.map((s) => {
       const rows = s.allocations.map((a) => {
-        if (!a.buyPrice || a.buyPrice <= 0 || a.allocated <= 0) {
-          return { ...a, sharesBought: 0, newTotalShares: a.currentShares, newAvg: a.currentAvg, reduction: 0, reductionPct: 0 };
+        const h = holdings.find((x) => x.id === a.holdingId);
+        if (!h || !a.buyPrice || a.buyPrice <= 0 || a.allocated <= 0) {
+          return {
+            ...a,
+            sharesBought: 0,
+            newTotalShares: h?.shares ?? a.currentShares,
+            newAvg: h?.avg_cost ?? a.currentAvg,
+            reduction: 0,
+            reductionPct: 0,
+            feeApplied: 0,
+            totalSpend: 0,
+            budgetInvested: 0,
+            currentShares: h?.shares ?? a.currentShares,
+            currentAvg: h?.avg_cost ?? a.currentAvg,
+          };
         }
-        const sharesBought = a.allocated / a.buyPrice;
-        const newTotalShares = a.currentShares + sharesBought;
-        const newAvg = (a.currentShares * a.currentAvg + a.allocated) / newTotalShares;
-        const reduction = a.currentAvg - newAvg;
-        const reductionPct = (reduction / a.currentAvg) * 100;
-        return { ...a, sharesBought, newTotalShares, newAvg, reduction, reductionPct };
+        const c = computeWhatIfAllocationRow(h, a.buyPrice, a.allocated, includeFees);
+        if (!c) {
+          return {
+            ...a,
+            sharesBought: 0,
+            newTotalShares: h.shares,
+            newAvg: h.avg_cost,
+            reduction: 0,
+            reductionPct: 0,
+            feeApplied: 0,
+            totalSpend: 0,
+            budgetInvested: 0,
+            currentShares: h.shares,
+            currentAvg: h.avg_cost,
+          };
+        }
+        const reduction = h.avg_cost - c.newAvg;
+        const reductionPct = h.avg_cost > 0 ? (reduction / h.avg_cost) * 100 : 0;
+        return {
+          ...a,
+          currentShares: h.shares,
+          currentAvg: h.avg_cost,
+          sharesBought: c.sharesBought,
+          newTotalShares: c.newTotalShares,
+          newAvg: c.newAvg,
+          reduction,
+          reductionPct,
+          feeApplied: c.feeApplied,
+          totalSpend: c.totalSpend,
+          budgetInvested: c.budgetInvested,
+        };
       });
       const totalAllocated = s.allocations.reduce((sum, a) => sum + a.allocated, 0);
       const totalNewShares = rows.reduce((sum, r) => sum + r.sharesBought, 0);
@@ -247,7 +320,7 @@ export default function WhatIfScenarios() {
       const avgReduction = totalWeight > 0 ? weightedReduction / totalWeight : 0;
       return { rows, totalAllocated, totalNewShares, avgReduction };
     });
-  }, [scenarios]);
+  }, [scenarios, holdings, includeFees]);
 
   const activeResult = scenarioResults[activeTab];
   const rawUnallocated = budget - (activeResult?.totalAllocated ?? 0);
@@ -259,7 +332,8 @@ export default function WhatIfScenarios() {
   const toggleRow = (idx: number) => {
     setSelectedRows((prev) => {
       const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
       return next;
     });
   };
@@ -295,6 +369,7 @@ export default function WhatIfScenarios() {
           holdingId: r.holdingId,
           ticker: r.ticker,
           exchange: r.exchange,
+          allocated: r.allocated,
           sharesBought: r.sharesBought,
           buyPrice: r.buyPrice!,
           newAvg: r.newAvg,
@@ -304,29 +379,47 @@ export default function WhatIfScenarios() {
   }, [activeResult, selectedRows]);
 
   const handleApplyConfirm = () => {
-    applyScenarioToHoldings(
-      selectedTrades.map((t) => ({
-        holdingId: t.holdingId,
-        sharesBought: t.sharesBought,
-        buyPrice: t.buyPrice,
-      }))
-    );
-    // Save scenario with "Applied" tag
-    const now = new Date();
-    const label = `Applied on ${now.toLocaleDateString()}`;
-    addWhatIfComparison({
-      totalBudget: budget,
-      scenarios: scenarios.map((s) => ({
-        ...s,
-        name: `${s.name} — ${label}`,
-      })),
+    requestPersist(() => {
+      try {
+        for (const t of selectedTrades) {
+          const h = getHolding(t.holdingId);
+          if (!h) continue;
+          const row = computeWhatIfAllocationRow(h, t.buyPrice, t.allocated, includeFees);
+          if (!row || row.sharesBought <= 0) continue;
+          applyBuyToHolding({
+            holdingId: h.id,
+            buyPrice: t.buyPrice,
+            sharesBought: row.sharesBought,
+            budgetInvested: row.budgetInvested,
+            feeApplied: row.feeApplied,
+            totalSpend: row.totalSpend,
+            includeFees,
+            newTotalShares: row.newTotalShares,
+            newAvgCost: row.newAvg,
+            method: "what_if",
+            notes: "What-If scenario apply",
+          });
+        }
+        const now = new Date();
+        const label = `Applied on ${now.toLocaleDateString()}`;
+        addWhatIfComparison({
+          totalBudget: budget,
+          scenarios: scenarios.map((s) => ({
+            ...s,
+            name: `${s.name} — ${label}`,
+          })),
+        });
+        const tickers = selectedTrades.map((t) => t.ticker).join(", ");
+        toast.success(`Updated holdings for ${tickers}`);
+        setShowApplyDialog(false);
+        setSelectedRows(new Set());
+        setSavedRefresh((r) => r + 1);
+        navigate("/");
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        toast.error(`Apply failed: ${msg}`);
+      }
     });
-    const tickers = selectedTrades.map((t) => t.ticker).join(", ");
-    toast.success(`Updated holdings for ${tickers}`);
-    setShowApplyDialog(false);
-    setSelectedRows(new Set());
-    setSavedRefresh((r) => r + 1);
-    navigate("/");
   };
 
 
@@ -338,9 +431,11 @@ export default function WhatIfScenarios() {
       toast.error("Add allocations before saving");
       return;
     }
-    addWhatIfComparison({ totalBudget: budget, scenarios });
-    toast.success("Comparison saved");
-    setSavedRefresh((r) => r + 1);
+    requestPersist(() => {
+      addWhatIfComparison({ totalBudget: budget, scenarios });
+      toast.success("Comparison saved");
+      setSavedRefresh((r) => r + 1);
+    });
   };
 
   const handleDeleteSaved = (id: string) => {
@@ -350,17 +445,28 @@ export default function WhatIfScenarios() {
   };
 
   const computeSavedResults = (comp: WhatIfComparison) => {
+    const map = new Map(getHoldings().map((x) => [x.id, x]));
     return comp.scenarios.map((s) => {
       const rows = s.allocations.map((a) => {
-        if (!a.buyPrice || a.buyPrice <= 0 || a.allocated <= 0) {
-          return { ...a, sharesBought: 0, newAvg: a.currentAvg, reduction: 0, reductionPct: 0 };
+        const h = map.get(a.holdingId);
+        if (!h || !a.buyPrice || a.buyPrice <= 0 || a.allocated <= 0) {
+          return { ...a, sharesBought: 0, newAvg: h?.avg_cost ?? a.currentAvg, reduction: 0, reductionPct: 0, currentShares: h?.shares ?? a.currentShares, currentAvg: h?.avg_cost ?? a.currentAvg };
         }
-        const sharesBought = a.allocated / a.buyPrice;
-        const newTotalShares = a.currentShares + sharesBought;
-        const newAvg = (a.currentShares * a.currentAvg + a.allocated) / newTotalShares;
-        const reduction = a.currentAvg - newAvg;
-        const reductionPct = a.currentAvg > 0 ? (reduction / a.currentAvg) * 100 : 0;
-        return { ...a, sharesBought, newAvg, reduction, reductionPct };
+        const c = computeWhatIfAllocationRow(h, a.buyPrice, a.allocated, includeFees);
+        if (!c) {
+          return { ...a, sharesBought: 0, newAvg: h.avg_cost, reduction: 0, reductionPct: 0, currentShares: h.shares, currentAvg: h.avg_cost };
+        }
+        const reduction = h.avg_cost - c.newAvg;
+        const reductionPct = h.avg_cost > 0 ? (reduction / h.avg_cost) * 100 : 0;
+        return {
+          ...a,
+          currentShares: h.shares,
+          currentAvg: h.avg_cost,
+          sharesBought: c.sharesBought,
+          newAvg: c.newAvg,
+          reduction,
+          reductionPct,
+        };
       });
       const totalAllocated = s.allocations.reduce((sum, a) => sum + a.allocated, 0);
       const weightedReduction = rows.reduce((sum, r) => sum + r.reduction * r.currentShares, 0);
@@ -371,25 +477,33 @@ export default function WhatIfScenarios() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-5">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+    <>
+    <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
+      <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            onClick={() => navigate("/")}
+          >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">What-If Scenarios</h1>
+          <h1 className="sr-only">What-If Scenarios</h1>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-8 sm:px-6 md:px-8">
         {/* Budget input */}
-        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <div className="space-y-4 rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
           <div className="flex items-center gap-4">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="total-budget" className="text-sm font-semibold">Total Budget to Allocate</Label>
+              <Label htmlFor="total-budget" className="text-sm font-semibold text-white">
+                Total Budget to Allocate
+              </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
                 <Input
                   id="total-budget"
                   type="number"
@@ -397,7 +511,7 @@ export default function WhatIfScenarios() {
                   placeholder="3000"
                   value={totalBudget}
                   onChange={(e) => setTotalBudget(e.target.value)}
-                  className="pl-9 text-lg font-mono"
+                  className="border-stitch-border bg-stitch-pill pl-9 font-mono text-lg text-white placeholder:text-stitch-muted/50"
                 />
               </div>
             </div>
@@ -405,6 +519,11 @@ export default function WhatIfScenarios() {
               <Button
                 size="sm"
                 variant={inputMode === "dollar" ? "default" : "outline"}
+                className={
+                  inputMode === "dollar"
+                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                }
                 onClick={() => setInputMode("dollar")}
               >
                 <DollarSign className="h-3.5 w-3.5" />
@@ -412,6 +531,11 @@ export default function WhatIfScenarios() {
               <Button
                 size="sm"
                 variant={inputMode === "percent" ? "default" : "outline"}
+                className={
+                  inputMode === "percent"
+                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                }
                 onClick={() => setInputMode("percent")}
               >
                 <Percent className="h-3.5 w-3.5" />
@@ -421,19 +545,26 @@ export default function WhatIfScenarios() {
 
           {budget > 0 && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Unallocated:</span>
-              <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-primary" : ""}`}>
+              <span className="text-stitch-muted">Unallocated:</span>
+              <span className={`font-mono font-semibold ${displayUnallocated < 0 ? "text-destructive" : displayUnallocated === 0 ? "text-stitch-accent" : ""}`}>
                 ${fmt(Math.abs(displayUnallocated) < 0.01 ? 0 : displayUnallocated)}
               </span>
               {displayUnallocated === 0 && <Badge variant="default" className="text-xs">Fully allocated</Badge>}
               {displayUnallocated < -0.01 && <Badge variant="destructive" className="text-xs">Over budget</Badge>}
             </div>
           )}
+
+          <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+            <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
+              Include fees in modeled buys (same as portfolio / calculator)
+            </Label>
+            <Switch id="whatif-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+          </div>
         </div>
 
         {/* Mixed currency note */}
         {hasMixedCurrency && (
-          <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 border border-border">
+          <p className="text-xs text-stitch-muted bg-stitch-pill/50 rounded-md px-3 py-2 border border-stitch-border">
             Note: Allocations include stocks in both USD and CAD. Totals are shown per currency.
           </p>
         )}
@@ -450,7 +581,7 @@ export default function WhatIfScenarios() {
                       <span
                         role="button"
                         onClick={(e) => { e.stopPropagation(); removeScenarioTab(i); }}
-                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-foreground/10"
+                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-white/15"
                       >
                         ×
                       </span>
@@ -489,10 +620,10 @@ export default function WhatIfScenarios() {
           </div>
 
           {/* Allocation rows */}
-          <div className="rounded-lg border border-border overflow-hidden">
+          <div className="rounded-lg border border-stitch-border overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted text-muted-foreground">
+                <tr className="bg-stitch-pill text-stitch-muted">
                   <th className="px-3 py-2.5 text-center w-10">
                     <Checkbox
                       checked={allSelected}
@@ -522,8 +653,11 @@ export default function WhatIfScenarios() {
                   const cp = currencyPrefix(alloc.exchange);
                   const isRowSelectable = row && row.sharesBought > 0;
                   const isSelected = selectedRows.has(ai);
+                  const hLive = holdings.find((x) => x.id === alloc.holdingId);
+                  const dispShares = hLive?.shares ?? alloc.currentShares;
+                  const dispAvg = hLive?.avg_cost ?? alloc.currentAvg;
                   return (
-                    <tr key={alloc.holdingId} className={`border-t border-border ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-primary/5" : ""}`}>
+                    <tr key={alloc.holdingId} className={`border-t border-stitch-border ${!hasBuyPrice ? "opacity-50" : ""} ${isSelected ? "bg-stitch-accent/10" : ""}`}>
                       <td className="px-3 py-2 text-center">
                         <Checkbox
                           checked={isSelected}
@@ -535,11 +669,11 @@ export default function WhatIfScenarios() {
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-semibold">{alloc.ticker}</span>
-                          <span className="text-[10px] text-muted-foreground/60">
+                          <span className="text-[10px] text-stitch-muted/60">
                             {exchangeLabel(alloc.exchange)}
                           </span>
                           {livePrice ? (
-                            <span className="text-xs text-muted-foreground font-mono">{cp}{fmt(livePrice)}</span>
+                            <span className="text-xs text-stitch-muted font-mono">{cp}{fmt(livePrice)}</span>
                           ) : (
                             <Button
                               size="sm"
@@ -554,8 +688,8 @@ export default function WhatIfScenarios() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono">{fmt(alloc.currentShares)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{cp}{fmt(alloc.currentAvg)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{fmt(dispShares)}</td>
+                      <td className="px-3 py-2 text-right font-mono">{cp}{fmt(dispAvg)}</td>
                       <td className="px-3 py-2 text-right">
                         <Input
                           type="number"
@@ -571,7 +705,7 @@ export default function WhatIfScenarios() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         {!hasBuyPrice ? (
-                          <span className="text-xs text-muted-foreground italic">
+                          <span className="text-xs text-stitch-muted italic">
                             {livePrice ? "Enter price" : "Fetch price or enter manually"}
                           </span>
                         ) : (
@@ -600,7 +734,7 @@ export default function WhatIfScenarios() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         {row && row.reduction > 0 ? (
-                          <span className="text-primary font-mono font-semibold">
+                          <span className="text-stitch-accent font-mono font-semibold">
                             -{cp}{fmt(row.reduction)} ({row.reductionPct.toFixed(1)}%)
                           </span>
                         ) : "—"}
@@ -614,22 +748,22 @@ export default function WhatIfScenarios() {
 
           {/* Portfolio summary for active scenario */}
           {activeResult && activeResult.totalAllocated > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            <div className="rounded-lg border border-stitch-border bg-stitch-card p-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-stitch-muted mb-3">
                 {scenarios[activeTab].name} — Portfolio Impact
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Allocated</p>
+                  <p className="text-xs text-stitch-muted">Total Allocated</p>
                   <p className="text-lg font-mono font-semibold">${fmt(activeResult.totalAllocated)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">New Shares Bought</p>
+                  <p className="text-xs text-stitch-muted">New Shares Bought</p>
                   <p className="text-lg font-mono font-semibold">{fmt(activeResult.totalNewShares)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Weighted Avg Reduction</p>
-                  <p className="text-lg font-mono font-semibold text-primary">
+                  <p className="text-xs text-stitch-muted">Weighted Avg Reduction</p>
+                  <p className="text-lg font-mono font-semibold text-stitch-accent">
                     -${fmt(activeResult.avgReduction)}
                   </p>
                 </div>
@@ -641,13 +775,13 @@ export default function WhatIfScenarios() {
         {/* Comparison table (when 2+ scenarios) */}
         {scenarios.length >= 2 && budget > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-stitch-muted">
               Scenario Comparison
             </h2>
-            <div className="rounded-lg border border-border overflow-x-auto">
+            <div className="rounded-lg border border-stitch-border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted text-muted-foreground">
+                  <tr className="bg-stitch-pill text-stitch-muted">
                     <th className="px-3 py-2.5 text-left font-medium">Ticker</th>
                     {scenarios.map((s, i) => (
                       <th key={i} className="px-3 py-2.5 text-center font-medium">{s.name}</th>
@@ -656,20 +790,17 @@ export default function WhatIfScenarios() {
                 </thead>
                 <tbody>
                   {holdings.map((h, hi) => {
-                    const reductions = scenarioResults.map((sr) => sr.rows[hi]?.reduction ?? 0);
-                    const maxReduction = Math.max(...reductions);
                     const cp = currencyPrefix(h.exchange ?? "US");
                     return (
-                      <tr key={h.id} className="border-t border-border">
+                      <tr key={h.id} className="border-t border-stitch-border">
                         <td className="px-3 py-2 font-mono font-semibold">
                           {h.ticker}
-                          <span className="text-[10px] text-muted-foreground/60 ml-1">{exchangeLabel(h.exchange ?? "US")}</span>
+                          <span className="text-[10px] text-stitch-muted/60 ml-1">{exchangeLabel(h.exchange ?? "US")}</span>
                         </td>
                         {scenarioResults.map((sr, si) => {
                           const row = sr.rows[hi];
-                          const isBest = maxReduction > 0 && row && row.reduction === maxReduction;
                           return (
-                            <td key={si} className={`px-3 py-2 text-center font-mono ${isBest ? "text-primary font-semibold" : ""}`}>
+                            <td key={si} className="px-3 py-2 text-center font-mono">
                               {row && row.reduction > 0
                                 ? `${cp}${fmt(row.newAvg)} (−${row.reductionPct.toFixed(1)}%)`
                                 : "—"
@@ -680,14 +811,11 @@ export default function WhatIfScenarios() {
                       </tr>
                     );
                   })}
-                  <tr className="border-t-2 border-border bg-muted/50">
+                  <tr className="border-t-2 border-stitch-border bg-stitch-pill/50">
                     <td className="px-3 py-2 font-semibold">Portfolio Impact</td>
                     {scenarioResults.map((sr, si) => {
-                      const reductions = scenarioResults.map((s) => s.avgReduction);
-                      const maxR = Math.max(...reductions);
-                      const isBest = maxR > 0 && sr.avgReduction === maxR;
                       return (
-                        <td key={si} className={`px-3 py-2 text-center font-mono ${isBest ? "text-primary font-semibold" : ""}`}>
+                        <td key={si} className="px-3 py-2 text-center font-mono">
                           {sr.totalAllocated > 0
                             ? `−$${fmt(sr.avgReduction)} avg`
                             : "—"
@@ -707,13 +835,13 @@ export default function WhatIfScenarios() {
           <div className="flex items-center gap-3">
             {selectedCount > 0 && (
               <>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-stitch-muted">
                   {selectedCount} of {selectableIndices.length} stocks selected
                 </span>
                 <Button
                   variant="outline"
                   onClick={() => setShowApplyDialog(true)}
-                  className="border-primary text-primary hover:bg-primary/10"
+                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10"
                 >
                   <CheckSquare className="mr-1.5 h-4 w-4" />
                   Apply to Holdings
@@ -729,13 +857,13 @@ export default function WhatIfScenarios() {
 
         {/* Apply Confirmation Dialog */}
         <AlertDialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-          <AlertDialogContent className="max-w-lg">
+          <AlertDialogContent className="max-w-lg border-stitch-border bg-stitch-card text-white">
             <AlertDialogHeader>
               <AlertDialogTitle>Apply Scenario to Holdings</AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div className="space-y-3">
                   <p>The following changes will be made to your holdings:</p>
-                  <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2 text-sm">
+                  <div className="rounded-md border border-stitch-border bg-stitch-pill/30 p-3 space-y-2 text-sm">
                     {selectedTrades.map((t) => {
                       const cp = currencyPrefix(t.exchange);
                       return (
@@ -743,57 +871,63 @@ export default function WhatIfScenarios() {
                           <span className="font-semibold">{t.ticker}:</span>{" "}
                           +{fmt(t.sharesBought)} shares at {cp}{fmt(t.buyPrice)} →{" "}
                           new avg {cp}{fmt(t.newAvg)}{" "}
-                          <span className="text-muted-foreground">(was {cp}{fmt(t.currentAvg)})</span>
+                          <span className="text-stitch-muted">(was {cp}{fmt(t.currentAvg)})</span>
                         </div>
                       );
                     })}
                   </div>
                   <p className="text-destructive font-medium">
-                    This will update your holdings as if you executed these trades. This cannot be undone.
+                    This will update your holdings as if you executed these trades. Each selected line creates its own
+                    transaction record on that holding.
                   </p>
-                  <p className="text-xs text-muted-foreground italic">
-                    Make sure you've actually executed these trades with your broker before updating your holdings here.
+                  <p className="text-xs text-stitch-muted leading-relaxed">
+                    <strong className="text-stitch-muted">Undo:</strong> there is no single “undo whole batch” action. Each
+                    position’s <strong className="text-stitch-muted">History</strong> tab can undo only the{" "}
+                    <strong className="text-stitch-muted">most recent</strong> applied buy for that ticker. If you applied
+                    multiple lines to the same holding elsewhere, undo in reverse chronological order.
+                  </p>
+                  <p className="text-xs text-stitch-muted italic">
+                    Make sure you have actually executed these trades with your broker before updating your holdings here.
                   </p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleApplyConfirm}>
-                Confirm & Update
-              </AlertDialogAction>
+              <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleApplyConfirm}>Confirm & Update</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
         {/* Saved Scenarios */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-stitch-muted">
             Recent Scenarios
           </h2>
           {savedComparisons.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border p-6 text-center">
-              <p className="text-sm text-muted-foreground">No saved scenarios yet. Build a comparison above and click Save.</p>
+            <div className="rounded-lg border border-dashed border-stitch-border p-6 text-center">
+              <p className="text-sm text-stitch-muted">No saved scenarios yet. Build a comparison above and click Save.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {savedComparisons.map((comp) => {
                 const results = computeSavedResults(comp);
-                const bestIdx = results.reduce((best, r, i) => (r.avgReduction > (results[best]?.avgReduction ?? 0) ? i : best), 0);
                 const date = new Date(comp.created_at);
                 return (
-                  <div key={comp.id} className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <div key={comp.id} className="rounded-lg border border-stitch-border bg-stitch-card p-4 space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-stitch-muted">
                         <Clock className="h-3.5 w-3.5" />
                         {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        <span className="font-mono font-semibold text-foreground text-sm ml-2">
+                        <span className="font-mono font-semibold text-white text-sm ml-2">
                           Budget: ${fmt(comp.totalBudget)}
                         </span>
                       </div>
                       <button
                         onClick={() => handleDeleteSaved(comp.id)}
-                        className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stitch-muted hover:text-destructive hover:bg-destructive/10 transition-colors"
                         aria-label="Delete scenario"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -801,19 +935,15 @@ export default function WhatIfScenarios() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {results.map((sr, si) => {
-                        const isBest = results.length > 1 && si === bestIdx && sr.avgReduction > 0;
                         return (
                           <div
                             key={si}
-                            className={`rounded-md border p-3 text-sm space-y-1.5 ${
-                              isBest ? "border-primary bg-primary/5" : "border-border bg-muted/30"
-                            }`}
+                            className="rounded-md border border-stitch-border bg-stitch-pill/30 p-3 text-sm space-y-1.5"
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-xs">{sr.name}</span>
-                              {isBest && <Badge variant="default" className="text-[10px] px-1.5 py-0">Best</Badge>}
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-stitch-muted">
                               Allocated: <span className="font-mono">${fmt(sr.totalAllocated)}</span>
                             </p>
                             <div className="space-y-0.5">
@@ -822,15 +952,15 @@ export default function WhatIfScenarios() {
                                 return (
                                   <div key={r.holdingId} className="flex justify-between text-xs font-mono">
                                     <span>{r.ticker}: {rcp}{fmt(r.allocated)}</span>
-                                    <span className="text-primary">
+                                    <span className="text-stitch-accent">
                                       {rcp}{fmt(r.newAvg)} (−{r.reductionPct.toFixed(1)}%)
                                     </span>
                                   </div>
                                 );
                               })}
                             </div>
-                            <p className="text-xs border-t border-border pt-1 mt-1">
-                              Avg reduction: <span className="font-mono text-primary font-semibold">−${fmt(sr.avgReduction)}</span>
+                            <p className="text-xs border-t border-stitch-border pt-1 mt-1">
+                              Avg reduction: <span className="font-mono text-stitch-accent font-semibold">−${fmt(sr.avgReduction)}</span>
                             </p>
                           </div>
                         );
@@ -844,10 +974,12 @@ export default function WhatIfScenarios() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-xs text-muted-foreground text-center pb-6">
+        <p className="text-xs text-stitch-muted text-center pb-6">
           This tool shows mathematical projections only. It is not financial advice. Always do your own research before making investment decisions.
         </p>
       </main>
     </div>
+    {preAuthUpsellDialog}
+    </>
   );
 }

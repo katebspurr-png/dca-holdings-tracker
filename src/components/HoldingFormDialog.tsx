@@ -17,10 +17,27 @@ import {
 } from "@/components/ui/select";
 import type { Holding, FeeType, Exchange } from "@/lib/storage";
 
+const inputClass =
+  "border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent";
+
+const selectTriggerClass =
+  "border-stitch-border bg-stitch-pill text-white focus:ring-stitch-accent";
+
+const selectContentClass = "z-50 border-stitch-border bg-stitch-card text-white";
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { ticker: string; exchange: Exchange; shares: number; avg_cost: number; fee: number; fee_type: FeeType; fee_value: number; initial_avg_cost?: number }) => void;
+  onSubmit: (data: {
+    ticker: string;
+    exchange: Exchange;
+    shares: number;
+    avg_cost: number;
+    fee: number;
+    fee_type: FeeType;
+    fee_value: number;
+    initial_avg_cost?: number;
+  }) => void;
   initial?: Holding | null;
   loading?: boolean;
 };
@@ -69,15 +86,17 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="border-stitch-border bg-stitch-card text-white sm:max-w-md sm:rounded-[24px]">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">
+          <DialogTitle className="text-lg font-semibold text-white">
             {initial ? "Edit Holding" : "Add Holding"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="ticker">Ticker</Label>
+            <Label htmlFor="ticker" className="text-stitch-muted">
+              Ticker
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="ticker"
@@ -85,13 +104,13 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
                 required
-                className="font-mono uppercase flex-1"
+                className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
-                <SelectTrigger className="w-24 bg-background">
+                <SelectTrigger className={`w-24 ${selectTriggerClass}`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
+                <SelectContent className={selectContentClass}>
                   <SelectItem value="US">US</SelectItem>
                   <SelectItem value="TSX">TSX</SelectItem>
                 </SelectContent>
@@ -100,7 +119,9 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="shares">Shares</Label>
+              <Label htmlFor="shares" className="text-stitch-muted">
+                Shares
+              </Label>
               <Input
                 id="shares"
                 type="number"
@@ -110,10 +131,13 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 value={shares}
                 onChange={(e) => setShares(e.target.value)}
                 required
+                className={inputClass}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="avg_cost">Avg Cost ({currSymbol})</Label>
+              <Label htmlFor="avg_cost" className="text-stitch-muted">
+                Avg Cost ({currSymbol})
+              </Label>
               <Input
                 id="avg_cost"
                 type="number"
@@ -123,28 +147,30 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 value={avgCost}
                 onChange={(e) => setAvgCost(e.target.value)}
                 required
+                className={inputClass}
               />
             </div>
           </div>
 
-          {/* Fee type + value */}
           <div className="space-y-2">
-            <Label>Trading fee type</Label>
+            <Label className="text-stitch-muted">Trading fee type</Label>
             <Select value={feeType} onValueChange={(v) => setFeeType(v as FeeType)}>
-              <SelectTrigger className="w-full bg-background">
+              <SelectTrigger className={`w-full ${selectTriggerClass}`}>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
+              <SelectContent className={selectContentClass}>
                 <SelectItem value="flat">Flat fee ({currSymbol})</SelectItem>
                 <SelectItem value="percent">Percentage (%)</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fee_value">Trading fee value</Label>
+            <Label htmlFor="fee_value" className="text-stitch-muted">
+              Trading fee value
+            </Label>
             <div className="relative">
               {feeType === "flat" && (
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currSymbol}</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-stitch-muted">{currSymbol}</span>
               )}
               <Input
                 id="fee_value"
@@ -154,19 +180,28 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 placeholder="0"
                 value={feeValue}
                 onChange={(e) => setFeeValue(e.target.value)}
-                className={feeType === "flat" ? "pl-9" : "pr-7"}
+                className={`${inputClass} ${feeType === "flat" ? "pl-9" : "pr-7"}`}
               />
               {feeType === "percent" && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stitch-muted">%</span>
               )}
             </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+            >
               {initial ? "Save" : "Add"}
             </Button>
           </div>
