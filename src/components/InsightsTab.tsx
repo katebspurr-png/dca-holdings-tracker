@@ -152,8 +152,8 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   if (marketPrice == null) {
     return (
       <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-8 text-center space-y-1.5">
-        <Lightbulb className="h-5 w-5 mx-auto text-stitch-muted/50" />
-        <p className="text-xs text-stitch-muted">Refresh market prices to unlock the Math tab.</p>
+        <Lightbulb className="mx-auto h-5 w-5 text-stitch-muted/50" aria-hidden />
+        <p className="text-xs text-stitch-muted leading-relaxed">Add or refresh market prices to use the Math tab.</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         ) : (
           <div className="space-y-2.5">
             {rescueTargets.map((t, i) => (
-              <div key={t.target} className="card-secondary bg-stitch-pill/35 p-3.5 hover:border-stitch-accent/25 transition-colors">
+              <div key={t.target} className="card-secondary bg-stitch-pill/35 p-3.5 transition-interactive hover:border-stitch-accent/25">
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-stitch-muted uppercase tracking-wider">{["Sample A","Sample B","Sample C"][i]}</span>
@@ -202,14 +202,14 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                 </div>
                 <div className="flex gap-4 text-[11px] font-mono text-stitch-muted mb-2.5">
                   <span>{t.shares.toFixed(2)} shares</span>
-                  <span>New avg: {cp}{fmt2(t.newAvg)}</span>
+                  <span>Modeled new avg: {cp}{fmt2(t.newAvg)}</span>
                 </div>
                 <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-foreground"
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                     onClick={() => onUseInCalculator("price_target", String(marketPrice), String(t.target))}>
                     <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-foreground"
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                     onClick={() => saveRescueScenario(t)}>
                     <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
                   </Button>
@@ -229,7 +229,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                 </div>
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-primary-foreground transition-interactive hover:bg-stitch-accent/90 dark:text-black"
                   onClick={handleCustomRescue}
                 >
                   Calculate
@@ -245,14 +245,14 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                   </div>
                   <div className="flex gap-4 text-[11px] font-mono text-stitch-muted mb-2.5">
                     <span>{customRescueResult.shares.toFixed(2)} shares</span>
-                    <span>New avg: {cp}{fmt2(customRescueResult.newAvg)}</span>
+                    <span>Modeled new avg: {cp}{fmt2(customRescueResult.newAvg)}</span>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-foreground"
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                       onClick={() => onUseInCalculator("price_target", String(marketPrice), customTarget)}>
                       <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-foreground"
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-stitch-muted transition-interactive hover:text-foreground"
                       onClick={handleCustomRescue}>
                       <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
                     </Button>
@@ -298,7 +298,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         <div className="pt-3 border-t border-stitch-border/30">
           <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-stitch-pill/80">
             <div
-              className="h-full rounded-full bg-stitch-accent/90 transition-all"
+              className="h-full rounded-full bg-stitch-accent/90 transition-[width] duration-200 ease-out"
               style={{ width: `${efficiencyScore}%` }}
             />
           </div>

@@ -508,7 +508,7 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-foreground"
+            className="h-10 min-h-[44px] min-w-[44px] px-2 text-stitch-muted transition-interactive hover:bg-stitch-pill/40 hover:text-foreground"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -534,26 +534,37 @@ export default function HoldingDetail() {
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
-            {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === key
-                    ? "border-stitch-accent text-stitch-accent"
-                    : "border-transparent text-stitch-muted hover:text-foreground hover:border-stitch-border"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
+          <div
+            role="tablist"
+            aria-label="Position views"
+            className="-mb-px flex gap-0 overflow-x-auto"
+          >
+            {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => {
+              const selected = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  id={`holding-tab-${key}`}
+                  onClick={() => switchTab(key)}
+                  className={`transition-interactive flex min-h-[40px] shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3.5 py-2.5 text-xs font-medium outline-none focus-visible:border-stitch-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
+                    selected
+                      ? "border-stitch-accent text-stitch-accent"
+                      : "border-transparent text-stitch-muted hover:border-stitch-border hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-5">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
         {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
         {activeTab === "overview" && (
           <>
@@ -784,7 +795,7 @@ export default function HoldingDetail() {
                         )}
                       </div>
                       <Input id="input1" type="number" step="any" placeholder="0.00" value={val1}
-                        onChange={(e) => setVal1(e.target.value)} className="h-10 rounded-xl border-stitch-border/45 bg-stitch-pill/50 px-3 font-mono text-sm" />
+                        onChange={(e) => setVal1(e.target.value)} className="input-stitch h-10 rounded-xl font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-stitch-border/45 dark:bg-stitch-pill/50 dark:focus-visible:ring-2 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-2" />
                       {presets1.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets1.map((p) => (
@@ -797,7 +808,7 @@ export default function HoldingDetail() {
                     <div className="space-y-1.5">
                       <Label htmlFor="input2" className="text-xs text-stitch-muted">{fields[1].label}</Label>
                       <Input id="input2" type="number" step="any" placeholder="0.00" value={val2}
-                        onChange={(e) => setVal2(e.target.value)} className="h-10 rounded-xl border-stitch-border/45 bg-stitch-pill/50 px-3 font-mono text-sm" />
+                        onChange={(e) => setVal2(e.target.value)} className="input-stitch h-10 rounded-xl font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-stitch-border/45 dark:bg-stitch-pill/50 dark:focus-visible:ring-2 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-2" />
                       {presets2.length > 0 && (
                         <div className="flex gap-1.5 flex-wrap">
                           {presets2.map((p) => (
@@ -821,7 +832,7 @@ export default function HoldingDetail() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2.5 rounded-xl border border-stitch-border/30 bg-stitch-pill/20 px-3 py-2.5">
+                  <div className="stitch-toggle-row flex items-center gap-2.5 rounded-xl border border-stitch-border/30 bg-stitch-pill/20 px-3 py-2.5">
                     <Switch id="include-fees" checked={includeFees} onCheckedChange={setIncludeFees} className="scale-90" />
                     <Label htmlFor="include-fees" className="cursor-pointer text-xs text-stitch-muted">Include fees</Label>
                   </div>
@@ -885,16 +896,16 @@ export default function HoldingDetail() {
                         </div>
                         <div className="flex flex-col gap-2 pt-2 border-t border-stitch-border">
                           {isPriceBudget && (
-                            <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleUseAsTarget}>
+                            <Button variant="outline" size="sm" className="h-8 w-full text-xs transition-interactive" onClick={handleUseAsTarget}>
                               <TargetIcon className="mr-1.5 h-3.5 w-3.5" /> Use in calculator
                             </Button>
                           )}
                           <div className="flex gap-2">
-                            <Button onClick={handleSave} size="sm" variant="outline" className="flex-1 h-8 text-xs"
+                            <Button onClick={handleSave} size="sm" variant="outline" className="flex-1 h-8 text-xs transition-interactive"
                               disabled={!canSaveScenario(scenarios.length)}>
                               <Save className="mr-1.5 h-3.5 w-3.5" /> Save
                             </Button>
-                            <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="flex-1 h-8 text-xs">
+                            <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="flex-1 h-8 text-xs transition-interactive">
                               <CheckCircle className="mr-1.5 h-3.5 w-3.5" /> {applying ? "Applying…" : "Apply Buy"}
                             </Button>
                           </div>
@@ -911,11 +922,11 @@ export default function HoldingDetail() {
                           {hasInputs ? "Adjust inputs to see results." : "Enter values to see modeled outcome."}
                         </p>
                         <div className="card-secondary border-dashed border-stitch-border/35 bg-stitch-pill/15 px-4 py-5 space-y-3">
-                          <div className="h-8 w-24 mx-auto rounded-md bg-stitch-pill/40 animate-pulse" />
+                          <div className="mx-auto h-8 w-24 rounded-md bg-stitch-pill/40" />
                           <div className="space-y-2">
-                            <div className="h-3 rounded bg-stitch-pill/30 w-full" />
-                            <div className="h-3 rounded bg-stitch-pill/25 w-4/5 mx-auto" />
-                            <div className="h-3 rounded bg-stitch-pill/20 w-3/5 mx-auto" />
+                            <div className="h-3 w-full rounded bg-stitch-pill/30" />
+                            <div className="mx-auto h-3 w-4/5 rounded bg-stitch-pill/25" />
+                            <div className="mx-auto h-3 w-3/5 rounded bg-stitch-pill/20" />
                           </div>
                         </div>
                       </div>
@@ -941,11 +952,11 @@ export default function HoldingDetail() {
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
-                    <Button onClick={handleSave} size="sm" variant="outline" className="h-7 text-[11px] px-2.5">
+                    <Button onClick={handleSave} size="sm" variant="outline" className="h-7 px-2.5 text-[11px] transition-interactive">
                       <Save className="h-3 w-3" />
                     </Button>
-                    <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="h-7 text-[11px] px-2.5">
-                      <CheckCircle className="h-3 w-3 mr-1" /> Apply
+                    <Button onClick={handleApplyBuy} size="sm" disabled={applying} className="h-7 px-2.5 text-[11px] transition-interactive">
+                      <CheckCircle className="mr-1 h-3 w-3" /> Apply
                     </Button>
                   </div>
                 </div>
@@ -972,8 +983,8 @@ export default function HoldingDetail() {
               </div>
             )}
             {historyRows.length === 0 && !(user && historyLoading) ? (
-              <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-6 text-center space-y-1 font-mono text-[11px] text-stitch-muted">
-                <History className="h-4 w-4 mx-auto text-stitch-muted/50 mb-1" />
+              <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-6 text-center font-mono text-[11px] text-stitch-muted space-y-1">
+                <History className="mx-auto mb-1 h-4 w-4 text-stitch-muted/50" aria-hidden />
                 <p>No history yet. Executed buys will appear here.</p>
               </div>
             ) : (

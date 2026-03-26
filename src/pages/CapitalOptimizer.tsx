@@ -85,7 +85,7 @@ export default function CapitalOptimizer() {
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="card-secondary flex items-center gap-2.5 bg-stitch-pill/30 px-3.5 py-3"
+                className="card-secondary flex items-center gap-2.5 bg-stitch-pill/30 px-3.5 py-3 transition-interactive"
               >
                 <Icon className="h-4 w-4 shrink-0 text-stitch-accent" />
                 <span className="text-xs font-medium text-foreground">{label}</span>
@@ -150,12 +150,12 @@ export default function CapitalOptimizer() {
                   step={100}
                   value={budgetInput}
                   onChange={(e) => setBudgetInput(e.target.value)}
-                  className="border-stitch-border bg-stitch-pill font-mono text-foreground placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent"
+                  className="input-stitch h-10 font-mono text-foreground placeholder:text-stitch-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-stitch-border dark:bg-stitch-pill dark:focus-visible:ring-2 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-2"
                 />
               </div>
               <Button
                 type="button"
-                className="shrink-0 border border-stitch-accent/45 bg-stitch-accent/75 font-semibold text-black hover:bg-stitch-accent/65"
+                className="shrink-0 border border-stitch-accent/45 bg-stitch-accent/75 font-semibold text-black transition-interactive hover:bg-stitch-accent/65 active:opacity-95"
                 onClick={runModel}
                 disabled={optimizerMode !== "greedy_improvement_per_dollar"}
               >
@@ -163,21 +163,21 @@ export default function CapitalOptimizer() {
               </Button>
             </div>
 
-            <div className="flex items-center justify-between card-secondary bg-stitch-pill/40 px-4 py-3">
+            <div className="stitch-toggle-row flex items-center justify-between card-secondary bg-stitch-pill/40 px-4 py-3">
               <Label htmlFor="optimizer-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
                 Include fees in simulation
               </Label>
               <Switch id="optimizer-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
             </div>
 
-            <p className="text-[10px] text-stitch-muted">
-              <Link to="/update-prices" className="text-stitch-accent underline underline-offset-2">
+            <p className="text-[10px] leading-relaxed text-stitch-muted">
+              <Link to="/update-prices" className="text-stitch-accent underline underline-offset-2 transition-interactive hover:text-stitch-accent/90">
                 Refresh prices
               </Link>{" "}
-              first if results look empty.{" "}
+              if results look empty.{" "}
               <button
                 type="button"
-                className="text-stitch-accent underline underline-offset-2"
+                className="text-stitch-accent underline underline-offset-2 transition-interactive hover:text-stitch-accent/90"
                 onClick={() => setTick((t) => t + 1)}
               >
                 Reload cache
@@ -185,9 +185,9 @@ export default function CapitalOptimizer() {
             </p>
 
             {hasMixedCurrency && (
-              <p className="text-[10px] text-amber-400/90">
-                You hold both US and TSX positions. One budget number mixes currencies without FX — treat totals as
-                notional, not a single real-world bank balance.
+              <p className="rounded-md border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-[10px] leading-relaxed text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200/90">
+                US and TSX positions are mixed — one budget line mixes currencies without FX. Treat totals as notional, not
+                a single bank balance.
               </p>
             )}
 

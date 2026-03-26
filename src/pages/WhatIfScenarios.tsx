@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Percent, DollarSign, Scale, X, Clock, RefreshCw, Zap, BarChart3, CheckSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -484,7 +484,7 @@ export default function WhatIfScenarios() {
           <Button
             variant="outline"
             size="sm"
-            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -494,7 +494,23 @@ export default function WhatIfScenarios() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-5 px-4 pb-8 sm:px-6 md:px-8">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 pb-8 sm:px-6 md:px-8">
+        {holdings.length === 0 && (
+          <section className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-6 text-center">
+            <p className="text-sm leading-relaxed text-stitch-muted">
+              Add positions from the portfolio screen to model allocations here.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground"
+              onClick={() => navigate("/")}
+            >
+              Back to portfolio
+            </Button>
+          </section>
+        )}
+
         {/* Budget input */}
         <div className="relative space-y-4 overflow-hidden card-primary p-6">
           <div className="card-primary-glow opacity-80" aria-hidden />
@@ -513,7 +529,7 @@ export default function WhatIfScenarios() {
                     placeholder="3000"
                     value={totalBudget}
                     onChange={(e) => setTotalBudget(e.target.value)}
-                    className="rounded-xl border-stitch-border/50 bg-stitch-pill pl-9 font-mono text-lg text-foreground placeholder:text-stitch-muted/50"
+                    className="input-stitch rounded-xl pl-9 font-mono text-lg text-foreground placeholder:text-stitch-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-stitch-border/50 dark:bg-stitch-pill dark:focus-visible:ring-2 dark:focus-visible:ring-ring dark:focus-visible:ring-offset-2"
                   />
                 </div>
               </div>
@@ -556,7 +572,7 @@ export default function WhatIfScenarios() {
               </div>
             )}
 
-            <div className="flex items-center justify-between rounded-2xl border border-stitch-border/35 bg-stitch-pill/30 px-4 py-3">
+            <div className="stitch-toggle-row flex items-center justify-between rounded-2xl border border-stitch-border/35 bg-stitch-pill/30 px-4 py-3">
               <Label htmlFor="whatif-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
                 Include fees in modeled buys (same as portfolio / calculator)
               </Label>
@@ -567,13 +583,13 @@ export default function WhatIfScenarios() {
 
         {/* Mixed currency note */}
         {hasMixedCurrency && (
-          <p className="text-xs text-stitch-muted bg-stitch-pill/50 rounded-md px-3 py-2 border border-stitch-border">
-            Note: Allocations include stocks in both USD and CAD. Totals are shown per currency.
+          <p className="rounded-md border border-amber-500/25 bg-amber-500/[0.06] px-3 py-2.5 text-xs leading-relaxed text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200/90">
+            US and Canadian positions are mixed — totals stay per currency; they are not converted into one balance.
           </p>
         )}
 
         {/* Scenario tabs */}
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center gap-2">
             <Tabs value={String(activeTab)} onValueChange={(v) => setActiveTab(Number(v))} className="flex-1">
               <TabsList>
@@ -641,8 +657,8 @@ export default function WhatIfScenarios() {
                   <th className="px-3 py-2.5 text-right font-medium">
                     {inputMode === "dollar" ? "Allocate ($)" : "Allocate (%)"}
                   </th>
-                  <th className="px-3 py-2.5 text-right font-medium">Shares Bought</th>
-                  <th className="px-3 py-2.5 text-right font-medium">New Avg</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Shares bought</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Modeled avg</th>
                   <th className="px-3 py-2.5 text-right font-medium">Reduction</th>
                 </tr>
               </thead>
@@ -681,12 +697,16 @@ export default function WhatIfScenarios() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 px-1.5 text-[10px]"
+                              className="h-7 min-w-[4.5rem] px-1.5 text-[10px] transition-interactive"
                               disabled={isFetching}
                               onClick={() => fetchPrice(alloc.ticker, alloc.exchange)}
                             >
-                              <Zap className={`h-3 w-3 mr-0.5 ${isFetching ? "animate-pulse" : ""}`} />
-                              {isFetching ? "…" : "Get Price"}
+                              {isFetching ? (
+                                <Loader2 className="mr-1 h-3 w-3 shrink-0 animate-spin" aria-hidden />
+                              ) : (
+                                <Zap className="mr-0.5 h-3 w-3 shrink-0" aria-hidden />
+                              )}
+                              {isFetching ? "Loading" : "Get price"}
                             </Button>
                           )}
                         </div>
@@ -847,7 +867,7 @@ export default function WhatIfScenarios() {
                 <Button
                   variant="outline"
                   onClick={() => setShowApplyDialog(true)}
-                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10"
+                  className="border-stitch-accent text-stitch-accent transition-interactive hover:bg-stitch-accent/10"
                 >
                   <CheckSquare className="mr-1.5 h-4 w-4" />
                   Apply to Holdings
@@ -855,9 +875,9 @@ export default function WhatIfScenarios() {
               </>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!budget}>
+          <Button variant="outline" onClick={handleSave} disabled={!budget} className="transition-interactive">
             <Save className="mr-1.5 h-4 w-4" />
-            Save Comparison
+            Save comparison
           </Button>
         </div>
 
@@ -913,8 +933,10 @@ export default function WhatIfScenarios() {
             Recent Scenarios
           </h2>
           {savedComparisons.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-stitch-border p-6 text-center">
-              <p className="text-sm text-stitch-muted">No saved scenarios yet. Build a comparison above and click Save.</p>
+            <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-6 text-center">
+              <p className="text-sm leading-relaxed text-stitch-muted">
+                No saved comparisons yet. Build a model above, then save.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -980,8 +1002,8 @@ export default function WhatIfScenarios() {
         </div>
 
         {/* Disclaimer */}
-        <p className="text-xs text-stitch-muted text-center pb-6">
-          This tool shows mathematical projections only. It is not financial advice. Always do your own research before making investment decisions.
+        <p className="pb-6 text-center text-xs leading-relaxed text-stitch-muted/90">
+          Illustrative projections only — not advice. For your own review before any real-world decision.
         </p>
       </main>
     </div>

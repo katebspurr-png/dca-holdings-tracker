@@ -84,11 +84,11 @@ export default function Settings() {
   const cardGlow = "card-primary-glow";
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-stitch-muted";
   const outlineBtn =
-    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-foreground";
+    "border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-interactive hover:bg-stitch-card hover:text-foreground";
 
   return (
     <div className="settings-page relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-foreground antialiased">
-      <main className="relative z-10 mx-auto flex max-w-lg flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
+      <main className="relative z-10 mx-auto flex max-w-lg flex-1 flex-col gap-5 px-4 pt-12 sm:px-6 md:px-8">
         {/* Plan */}
         <section className={cardClass}>
           <div className={cardGlow} aria-hidden />
@@ -156,7 +156,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className={cardClass}>
+        <section className={`${cardClass} settings-section-muted`}>
           <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-2">
             <h2 className={sectionTitle}>Disclaimer</h2>
@@ -167,7 +167,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className={cardClass}>
+        <section className={`${cardClass} settings-section-muted`}>
           <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-3">
             <h2 className={sectionTitle}>Legal</h2>
@@ -233,22 +233,22 @@ export default function Settings() {
               onValueChange={(v) => setThemePref(v as ThemePreference)}
               className="grid gap-3"
             >
-              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
-                <RadioGroupItem value="light" id="theme-light" />
-                <Label htmlFor="theme-light" className="flex flex-1 cursor-pointer items-center gap-2 font-normal">
-                  <Sun className="h-4 w-4 text-stitch-accent" />
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-3">
+                <RadioGroupItem value="light" id="theme-light" className="border-stitch-border" />
+                <Label htmlFor="theme-light" className="flex flex-1 cursor-pointer items-center gap-2.5 font-normal">
+                  <Sun className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden />
                   <span className="text-sm">Light</span>
                 </Label>
               </div>
-              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
-                <RadioGroupItem value="dark" id="theme-dark" />
-                <Label htmlFor="theme-dark" className="flex flex-1 cursor-pointer items-center gap-2 font-normal">
-                  <Moon className="h-4 w-4 text-stitch-accent" />
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-3">
+                <RadioGroupItem value="dark" id="theme-dark" className="border-stitch-border" />
+                <Label htmlFor="theme-dark" className="flex flex-1 cursor-pointer items-center gap-2.5 font-normal">
+                  <Moon className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden />
                   <span className="text-sm">Dark</span>
                 </Label>
               </div>
-              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-2.5">
-                <RadioGroupItem value="system" id="theme-system" />
+              <div className="flex items-center gap-3 rounded-xl border border-stitch-border/50 bg-stitch-pill/25 px-3 py-3">
+                <RadioGroupItem value="system" id="theme-system" className="border-stitch-border" />
                 <Label htmlFor="theme-system" className="flex flex-1 cursor-pointer flex-col gap-0.5 font-normal">
                   <span className="text-sm text-foreground">System</span>
                   <span className="text-xs text-stitch-muted">Match device setting</span>
@@ -334,7 +334,7 @@ export default function Settings() {
         </section>
 
         {/* About */}
-        <section className={cardClass}>
+        <section className={`${cardClass} settings-section-muted`}>
           <div className={cardGlow} aria-hidden />
           <div className="relative z-10 space-y-4">
             <div>

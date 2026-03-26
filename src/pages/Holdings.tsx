@@ -176,7 +176,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-interactive hover:border-stitch-border/60 active:opacity-[0.98]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -251,7 +251,7 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-interactive hover:bg-stitch-pill/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -260,7 +260,7 @@ function HoldingPortfolioCard({
             >
               <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
             </button>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" aria-hidden />
           </div>
         </div>
         {!selectMode && (
@@ -300,7 +300,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "holdings-position-card relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-interactive hover:border-stitch-border/60 active:opacity-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -324,7 +324,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-interactive hover:bg-stitch-pill/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
@@ -365,7 +365,7 @@ function HoldingPortfolioCard({
           e.stopPropagation();
           onStrategy();
         }}
-        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+        className="holdings-modeled-cta mb-3 flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-[13px] font-semibold transition-interactive active:opacity-95 dark:bg-stitch-accent dark:text-black dark:hover:bg-stitch-accent/90"
       >
         <span className="leading-tight">
           Modeled average:
@@ -662,7 +662,7 @@ export default function Holdings() {
         />
       )}
       {holdings.length === 0 ? (
-        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-24 pt-20 text-center">
+        <div className="mx-auto flex max-w-md flex-col items-center justify-center px-4 pb-28 pt-12 text-center sm:px-6 md:px-8">
           <div className="mb-4 rounded-full bg-stitch-card p-4 ring-1 ring-stitch-border">
             <TrendingDown className="h-10 w-10 text-stitch-muted" />
           </div>
@@ -673,7 +673,7 @@ export default function Holdings() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent font-semibold text-primary-foreground hover:bg-stitch-accent/90 dark:text-black"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
@@ -738,7 +738,7 @@ export default function Holdings() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-stitch-pill transition-interactive hover:bg-stitch-pill/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
                       aria-label="Portfolio menu"
                     >
                       <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
@@ -875,7 +875,7 @@ export default function Holdings() {
               )}
             </section>
 
-            <div className="flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
+            <div className="stitch-toggle-row flex items-center justify-between rounded-2xl border border-stitch-border bg-stitch-pill px-4 py-3">
               <Label htmlFor="portfolio-sim-fees" className="cursor-pointer text-xs text-stitch-muted">
                 Include fees in portfolio simulations
               </Label>
@@ -895,28 +895,28 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-interactive active:opacity-90",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-foreground"
                         : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("grid")}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" aria-hidden />
                   </button>
                   <button
                     type="button"
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-interactive active:opacity-90",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-foreground"
                         : "text-stitch-muted hover:text-foreground",
                     )}
                     onClick={() => handleLayoutChange("list")}
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-4 w-4" aria-hidden />
                   </button>
                 </div>
                 <DropdownMenu>
@@ -925,7 +925,7 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-foreground"
+                      className="h-9 min-h-[44px] border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft transition-interactive hover:bg-stitch-pill hover:text-foreground"
                     >
                       <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
                       Sort
@@ -996,7 +996,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-interactive hover:bg-stitch-card active:opacity-95 dark:hover:bg-stitch-pill/90"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>

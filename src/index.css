@@ -6,84 +6,87 @@
 
 @layer base {
   :root {
-    /* Stitch surfaces — warm, calm light */
-    --stitch-bg: 42 22% 96%;
-    --stitch-card: 40 35% 99%;
-    --stitch-pill: 220 14% 93%;
-    --stitch-border: 220 11% 86%;
-    --stitch-accent: 78 48% 34%;
-    --stitch-muted: 220 12% 38%;
-    --stitch-muted-soft: 220 11% 34%;
-    --stitch-danger: 0 62% 46%;
+    /* Stitch surfaces — light: warm app canvas, clear lift vs cards (dark mode unchanged) */
+    --stitch-bg: 34 18% 86%;
+    --stitch-card: 0 0% 100%;
+    --stitch-pill: 220 14% 90%;
+    --stitch-border: 220 12% 78%;
+    /* Canonical light accent: same hue family as dark lime, more saturated than olive — not neon */
+    --stitch-accent: 82 53% 36%;
+    --stitch-muted: 220 12% 36%;
+    --stitch-muted-soft: 220 11% 32%;
+    --stitch-danger: 0 62% 44%;
 
     /* Semantic aliases (same scale as stitch / shadcn) */
-    --bg-app: 42 22% 96%;
-    --bg-surface: 40 35% 99%;
-    --bg-surface-subtle: 220 14% 93%;
-    --text-primary: 224 28% 14%;
-    --text-secondary: 224 18% 32%;
-    --text-muted: 220 12% 38%;
-    --accent-primary: 78 48% 34%;
-    --accent-positive: 78 52% 36%;
-    --accent-negative: 0 62% 46%;
-    --surface-hover: 220 14% 91%;
-    --button-primary-bg: 78 52% 36%;
+    --bg-app: 34 18% 86%;
+    --bg-surface: 0 0% 100%;
+    --bg-surface-subtle: 220 14% 90%;
+    --text-primary: 224 28% 13%;
+    --text-secondary: 224 18% 30%;
+    --text-muted: 220 12% 36%;
+    --accent-primary: 82 53% 36%;
+    --accent-positive: 82 54% 35%;
+    --accent-negative: 0 62% 44%;
+    --surface-hover: 220 13% 87%;
+    --button-primary-bg: 82 55% 34%;
     --button-primary-text: 224 43% 8%;
-    --button-secondary-bg: 220 14% 93%;
-    --button-secondary-border: 220 11% 86%;
+    --button-secondary-bg: 220 14% 90%;
+    --button-secondary-border: 220 12% 78%;
 
-    /* Card tiers */
-    --card-primary-bg: 40 40% 99.5%;
-    --card-primary-border: 220 12% 88%;
-    --card-primary-glow-strength: 0.07;
-    --card-primary-shadow: 0 1px 2px hsl(220 25% 50% / 0.05), 0 10px 32px -12px hsl(220 22% 45% / 0.1);
-    --card-secondary-bg: 220 14% 95%;
-    --card-secondary-border: 220 10% 90%;
+    /* Card tiers — primary brighter + lifted; secondary flatter, recessed */
+    --card-primary-bg: 0 0% 100%;
+    --card-primary-border: 220 13% 80%;
+    --card-primary-glow-strength: 0.09;
+    --card-primary-shadow:
+      0 1px 4px hsl(220 26% 38% / 0.1),
+      0 18px 46px -18px hsl(220 22% 36% / 0.17);
+    --card-secondary-bg: 220 12% 94%;
+    --card-secondary-border: 220 11% 84%;
 
-    --scrollbar-thumb: 220 12% 78%;
+    --scrollbar-thumb: 220 12% 70%;
 
-    --background: 42 22% 96%;
-    --foreground: 224 28% 14%;
+    --background: 34 18% 86%;
+    --foreground: 224 28% 13%;
 
-    --card: 40 35% 99%;
-    --card-foreground: 224 28% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 28% 13%;
 
-    --popover: 40 35% 99%;
-    --popover-foreground: 224 28% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 28% 13%;
 
-    --primary: 78 52% 36%;
+    --primary: 82 55% 34%;
     --primary-foreground: 224 43% 8%;
 
-    --secondary: 220 14% 93%;
-    --secondary-foreground: 224 28% 14%;
+    --secondary: 220 14% 90%;
+    --secondary-foreground: 224 28% 13%;
 
-    --muted: 220 14% 94%;
+    --muted: 220 12% 93%;
     /* Slightly darker muted text on warm light bg (readability) */
-    --muted-foreground: 220 12% 38%;
+    --muted-foreground: 220 12% 36%;
 
-    --accent: 78 38% 92%;
-    --accent-foreground: 78 45% 26%;
+    --accent: 82 38% 92%;
+    --accent-foreground: 82 48% 27%;
 
-    --destructive: 0 62% 46%;
+    --destructive: 0 62% 44%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 11% 86%;
-    --input: 220 11% 86%;
-    --ring: 78 52% 36%;
+    --border: 220 12% 78%;
+    --input: 220 12% 78%;
+    --ring: 82 55% 34%;
 
     --radius: 0.75rem;
 
     --font-heading: "Syne", sans-serif;
     --font-mono: "DM Mono", monospace;
 
-    --sidebar-background: 42 22% 96%;
-    --sidebar-foreground: 224 28% 14%;
-    --sidebar-primary: 78 52% 36%;
+    --sidebar-background: 34 18% 86%;
+    --sidebar-foreground: 224 28% 13%;
+    --sidebar-primary: 82 55% 34%;
     --sidebar-primary-foreground: 224 43% 8%;
-    --sidebar-accent: 220 14% 94%;
-    --sidebar-accent-foreground: 224 28% 14%;
-    --sidebar-border: 220 11% 86%;
-    --sidebar-ring: 78 52% 36%;
+    --sidebar-accent: 220 12% 93%;
+    --sidebar-accent-foreground: 224 28% 13%;
+    --sidebar-border: 220 12% 78%;
+    --sidebar-ring: 82 55% 34%;
   }
 
   .dark {
@@ -320,6 +323,11 @@
     box-shadow: var(--card-primary-shadow);
   }
 
+  html:not(.dark) .card-primary,
+  html:not(.dark) .glass-panel {
+    border-color: hsl(var(--card-primary-border) / 0.64);
+  }
+
   .card-primary-glow,
   .glass-panel-glow {
     pointer-events: none;
@@ -345,10 +353,114 @@
     background-color: hsl(var(--card-secondary-bg));
   }
 
+  html:not(.dark) .card-secondary {
+    border-color: hsl(var(--card-secondary-border) / 0.82);
+  }
+
   /* Settings: many stacked primaries — slightly calmer elevation in light mode */
   html:not(.dark) .settings-page .card-primary,
   html:not(.dark) .settings-page .glass-panel {
-    box-shadow: 0 1px 2px hsl(220 25% 50% / 0.04), 0 6px 20px -8px hsl(220 22% 45% / 0.07);
+    box-shadow: 0 1px 2px hsl(220 28% 40% / 0.06), 0 8px 24px -10px hsl(220 24% 38% / 0.1);
+    border-color: hsl(var(--card-primary-border) / 0.55);
+  }
+
+  /* Lower-priority groups: softer lift than Plan / Data / Account (light only) */
+  html:not(.dark) .settings-page .settings-section-muted.card-primary,
+  html:not(.dark) .settings-page .settings-section-muted.glass-panel {
+    box-shadow: 0 1px 2px hsl(220 28% 40% / 0.045), 0 6px 16px -8px hsl(220 24% 38% / 0.07);
     border-color: hsl(var(--card-primary-border) / 0.45);
+  }
+
+  html:not(.dark) .settings-page .settings-section-muted .card-primary-glow {
+    opacity: 0.42;
+    filter: blur(56px);
+  }
+
+  /* Calculator / budget lab — light mode input polish (scoped; dark unchanged) */
+  html:not(.dark) .input-stitch {
+    border-color: hsl(var(--stitch-border) / 0.92);
+    background-color: hsl(var(--stitch-pill) / 0.65);
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  html:not(.dark) .input-stitch:hover {
+    border-color: hsl(var(--stitch-border) / 0.98);
+    background-color: hsl(var(--stitch-pill) / 0.85);
+  }
+
+  html:not(.dark) .input-stitch:focus-visible {
+    border-color: hsl(var(--stitch-accent) / 0.42);
+    box-shadow: 0 0 0 3px hsl(var(--stitch-accent) / 0.14);
+    outline: none;
+  }
+
+  /* Holdings — list card: clearer lift vs warm canvas (light only) */
+  html:not(.dark) .holdings-position-card {
+    border-color: hsl(var(--card-primary-border) / 0.58);
+    background-color: hsl(var(--card-primary-bg));
+    box-shadow: var(--card-primary-shadow);
+  }
+
+  /* Holdings — modeled avg CTA: intentional block, related to dark lime (light only) */
+  html:not(.dark) .holdings-modeled-cta {
+    background: linear-gradient(168deg, hsl(82 52% 37%) 0%, hsl(82 46% 31%) 100%);
+    border: 1px solid hsl(82 42% 26% / 0.42);
+    color: hsl(224 43% 8%);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.28),
+      0 2px 8px hsl(82 32% 22% / 0.18);
+  }
+
+  html:not(.dark) .holdings-modeled-cta:hover {
+    background: linear-gradient(168deg, hsl(82 52% 35%) 0%, hsl(82 44% 29%) 100%);
+  }
+
+  /* Toggle rows: row vs track vs page (light only) */
+  html:not(.dark) .stitch-toggle-row {
+    background-color: hsl(220 14% 91%);
+    border-color: hsl(220 12% 76%) !important;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.55);
+  }
+
+  html:not(.dark) .stitch-toggle-row [role="switch"][data-state="unchecked"] {
+    background-color: hsl(220 14% 82%) !important;
+    border: 1px solid hsl(220 11% 72%);
+    box-shadow: inset 0 1px 2px hsl(220 22% 40% / 0.08);
+  }
+
+  html:not(.dark) .stitch-toggle-row-subtle {
+    background-color: hsl(220 13% 92%) !important;
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.42);
+  }
+
+  html:not(.dark) .stitch-toggle-row-subtle [role="switch"][data-state="unchecked"] {
+    background-color: hsl(220 14% 83%) !important;
+    border: 1px solid hsl(220 11% 73%);
+  }
+
+  /* Bottom nav: subtle dock depth (light only; dark glow unchanged) */
+  html:not(.dark) nav.bottom-tab-nav {
+    background-color: hsl(34 17% 83% / 0.96) !important;
+    border-top-color: hsl(220 12% 72%);
+    box-shadow:
+      0 -1px 0 hsl(220 14% 68% / 0.45),
+      0 -14px 36px -16px hsl(220 22% 38% / 0.14);
+  }
+}
+
+/* Subtle interactive feedback — colors + opacity only (no layout transforms) */
+@layer utilities {
+  .transition-interactive {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
+      filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

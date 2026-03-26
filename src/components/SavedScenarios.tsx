@@ -134,7 +134,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground transition-interactive hover:bg-stitch-pill"
                 onClick={exitCompareMode}
               >
                 <X className="h-3 w-3" />
@@ -144,7 +144,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-foreground transition-interactive hover:bg-stitch-pill"
                 onClick={() => setCompareMode(true)}
               >
                 <GitCompareArrows className="h-3 w-3 text-stitch-accent" />
@@ -154,7 +154,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-foreground"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 transition-interactive hover:bg-stitch-pill hover:text-foreground"
                 onClick={() => toast.info("Enable premium preview in Settings to compare scenarios side-by-side.")}
               >
                 <Lock className="h-3 w-3" />
@@ -176,10 +176,10 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-interactive active:opacity-90 ${
                 filter === f.key
-                  ? "bg-stitch-accent/10 border-stitch-accent/30 text-stitch-accent"
-                  : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-foreground"
+                  ? "border-stitch-accent/30 bg-stitch-accent/10 text-stitch-accent"
+                  : "border-stitch-border bg-stitch-pill/30 text-stitch-muted hover:bg-stitch-pill/60 hover:text-foreground"
               }`}
             >
               {f.icon}
@@ -191,7 +191,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
       {filteredScenarios.length === 0 ? (
         <div className="card-secondary border-dashed border-stitch-border/50 bg-stitch-pill/10 p-8 text-center space-y-2">
-          <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" />
+          <BookOpen className="mx-auto h-5 w-5 text-stitch-muted/50" aria-hidden />
           <p className="text-xs text-stitch-muted font-medium">No saved scenarios yet.</p>
           <p className="text-[11px] text-stitch-muted/50">
             Use the Calculator tab, then Save — or add a note when saving to label your plan.
@@ -214,7 +214,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 <div
                   key={s.id}
                   onClick={compareMode ? () => toggleSelect(s.id) : undefined}
-                  className={`group card-secondary bg-stitch-card/80 p-3.5 transition-all ${
+                  className={`group card-secondary bg-stitch-card/80 p-3.5 transition-interactive ${
                     compareMode ? "cursor-pointer" : ""
                   } ${
                     isSelected

@@ -59,10 +59,10 @@ export default function GoalLadder({ holding }: Props) {
         </h2>
         <p className="text-xs text-stitch-muted leading-relaxed">
           Add a market price from Overview or{" "}
-          <button
+            <button
             type="button"
             onClick={() => navigate("/update-prices")}
-            className="text-stitch-accent/90 underline underline-offset-2 hover:text-stitch-accent"
+            className="transition-interactive text-stitch-accent/90 underline underline-offset-2 hover:text-stitch-accent"
           >
             Update Prices
           </button>{" "}
@@ -75,7 +75,7 @@ export default function GoalLadder({ holding }: Props) {
   if (!underwater) {
     return (
       <>
-        <section className="flex items-center justify-between px-5 py-3.5 sm:px-6 bg-stitch-pill/10">
+        <section className="stitch-toggle-row-subtle flex items-center justify-between px-5 py-3.5 sm:px-6 bg-stitch-pill/10">
           <Label htmlFor="goal-ladder-fees" className="cursor-pointer text-[11px] text-stitch-muted">
             Include fees in ladder math
           </Label>
@@ -96,7 +96,7 @@ export default function GoalLadder({ holding }: Props) {
 
   return (
     <>
-      <section className="flex items-center justify-between px-5 py-3.5 sm:px-6 bg-stitch-pill/10">
+      <section className="stitch-toggle-row-subtle flex items-center justify-between px-5 py-3.5 sm:px-6 bg-stitch-pill/10">
         <Label htmlFor="goal-ladder-fees-active" className="cursor-pointer text-[11px] text-stitch-muted">
           Include fees in ladder math
         </Label>
@@ -118,7 +118,7 @@ export default function GoalLadder({ holding }: Props) {
         <div className="overflow-hidden rounded-xl bg-stitch-pill/15">
           <ul className="divide-y divide-stitch-border/20">
             {ladderRows.map(({ amount, newAvg, avgImprovement }) => (
-              <li key={amount} className="px-4 py-3.5 text-sm font-mono text-white/90 leading-snug">
+              <li key={amount} className="px-4 py-3.5 text-sm font-mono text-foreground/90 leading-snug">
                 Invest {cp}
                 {fmt(amount)} → Modeled avg {cp}
                 {fmt(newAvg)} · Avg change {cp}
@@ -137,7 +137,7 @@ export default function GoalLadder({ holding }: Props) {
             <p className="mb-3 text-[10px] text-stitch-muted/80 leading-relaxed">
               Picked from the rungs above by modeled improvement per dollar (filters tiny impact and oversized steps).
             </p>
-            <div className="space-y-1.5 text-sm font-mono text-white/90">
+            <div className="space-y-1.5 text-sm font-mono text-foreground/90">
               <p>
                 Deploy {cp}
                 {fmt(efficientStep.amount)}
