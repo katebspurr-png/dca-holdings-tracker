@@ -60,8 +60,10 @@ export default function CapitalOptimizer() {
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pb-8 pt-12 sm:px-6 md:px-8">
+        <h1 className="text-xl font-semibold tracking-tight text-white">Budget lab</h1>
         <p className="text-xs text-stitch-muted">
-          One heuristic mode runs today (see below). Not a globally optimal portfolio solver — illustrative only.
+          One heuristic mode runs today (see below). Illustrative budget split only — not an optimal or recommended
+          allocation.
         </p>
         {!optimizerUnlocked ? (
           <PremiumGate feature="optimizer" className="min-h-[280px]" />
@@ -69,9 +71,9 @@ export default function CapitalOptimizer() {
           <>
         <section className="space-y-4">
           <p className="text-sm leading-relaxed text-stitch-muted">
-            Enter a single budget. The model assigns $100 chunks to whichever underwater holding shows the highest modeled
-            average improvement per dollar at that moment, then repeats until the budget is used or no eligible holding
-            remains.
+            Enter a single budget. The model assigns $100 chunks using a fixed rule: at each step it picks the underwater
+            holding with the largest modeled average cost change per dollar spent, then repeats until the budget is used or
+            no eligible holding remains. For comparison only — not what you should do next.
           </p>
 
           <div className="grid grid-cols-2 gap-2">
@@ -94,7 +96,7 @@ export default function CapitalOptimizer() {
 
         <section className="rounded-2xl border border-stitch-border bg-stitch-pill/25 p-4">
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">
-            Optimization approach
+            Modeling approach
           </h3>
           <RadioGroup
             value={optimizerMode}
@@ -104,10 +106,10 @@ export default function CapitalOptimizer() {
             <div className="flex items-start gap-3">
               <RadioGroupItem value="greedy_improvement_per_dollar" id="opt-greedy" className="mt-0.5 border-stitch-border" />
               <Label htmlFor="opt-greedy" className="cursor-pointer text-left text-xs font-normal leading-snug text-stitch-muted">
-                <span className="font-medium text-white">Improvement per dollar (chunked greedy)</span>
+                <span className="font-medium text-white">Avg cost change per dollar (chunked greedy)</span>
                 <span className="mt-0.5 block text-[10px] text-stitch-muted/85">
-                  $100 chunks to the underwater holding with the highest modeled improvement-per-dollar at each step — current
-                  implementation.
+                  $100 chunks to the underwater holding with the largest modeled average cost change per dollar at each step
+                  — current implementation.
                 </span>
               </Label>
             </div>
@@ -237,7 +239,7 @@ export default function CapitalOptimizer() {
                 )}
                 <div className="border-t border-stitch-border bg-stitch-accent/5 px-4 py-3">
                   <p className="text-center text-[11px] text-stitch-muted">
-                    Heuristic simulation only — not financial advice or an optimal portfolio solution.
+                    Heuristic simulation only — not financial advice; not a recommended portfolio allocation.
                   </p>
                 </div>
               </div>
@@ -253,7 +255,7 @@ export default function CapitalOptimizer() {
           <div className="relative z-10">
             <h2 className="text-[17px] font-semibold text-white">Get early access</h2>
             <p className="mt-1 text-sm text-stitch-muted">
-              Tell us what you want next for optimizer-style tools and we will follow up.
+              Tell us what you want next for budget-allocation modeling and we will follow up.
             </p>
             <div className="mt-5">
               <WaitlistForm defaultFeature="optimizer" />

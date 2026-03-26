@@ -95,7 +95,7 @@ export default function ScenarioDetail() {
                 <Stat label="Buy Price" value={`$${Number(scenario.buy_price).toFixed(2)}`} />
               )}
               {scenario.recommended_target != null && (
-                <Stat label="Recommended Target" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />
+                <Stat label="Target avg (saved)" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />
               )}
               {scenario.budget_percent_used != null && (
                 <Stat label="Budget % Used" value={`${scenario.budget_percent_used}%`} />

@@ -181,7 +181,7 @@
     font-size: 1.35rem;
   }
 
-  /* ── Next Best Move glow card ── */
+  /* ── Example scenario card (Plan tab) ── */
   .card-glow {
     background: linear-gradient(135deg, hsl(160 40% 97%), hsl(160 30% 95%), hsl(210 30% 96%));
     border-color: hsl(160 60% 40% / 0.2);

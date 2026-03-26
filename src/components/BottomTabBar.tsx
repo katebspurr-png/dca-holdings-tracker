@@ -9,7 +9,7 @@ const TABS: {
   match: (p: string) => boolean;
 }[] = [
   { path: "/", label: "Portfolio", icon: Wallet, match: (p) => p === "/" || p.startsWith("/holdings/") },
-  { path: "/optimizer", label: "Optimizer", icon: Sparkles, match: (p) => p === "/optimizer" },
+  { path: "/optimizer", label: "Budget lab", icon: Sparkles, match: (p) => p === "/optimizer" },
   { path: "/progress", label: "Progress", icon: TrendingUp, match: (p) => p === "/progress" },
   { path: "/settings", label: "Settings", icon: Settings, match: (p) => p === "/settings" },
 ];

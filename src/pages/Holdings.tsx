@@ -17,8 +17,6 @@ import {
   MoreHorizontal,
   SlidersHorizontal,
   Gauge,
-  Zap,
-  ArrowDownRight,
   LayoutGrid,
   List,
 } from "lucide-react";
@@ -245,7 +243,7 @@ function HoldingPortfolioCard({
                 }}
                 className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
               >
-                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
+                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
               </button>
             </div>
           </div>
@@ -257,7 +255,7 @@ function HoldingPortfolioCard({
                 e.stopPropagation();
                 onStrategy();
               }}
-              aria-label="Strategy"
+              aria-label="Open Plan tab"
             >
               <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
             </button>
@@ -330,7 +328,7 @@ function HoldingPortfolioCard({
             e.stopPropagation();
             onStrategy();
           }}
-          aria-label="Strategy"
+          aria-label="Open Plan tab"
         >
           <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
         </button>
@@ -372,7 +370,7 @@ function HoldingPortfolioCard({
           Target Average:
           <br />
           <span className="text-[15px]">
-            {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Plan in Strategy"}
+            {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
           </span>
         </span>
         <ChevronRight className="h-4 w-4 shrink-0" />
@@ -395,7 +393,7 @@ function HoldingPortfolioCard({
             )}
           </>
         ) : (
-          <span className="text-stitch-muted-soft/80">Save a scenario on the Strategy tab</span>
+          <span className="text-stitch-muted-soft/80">Save a scenario on the Plan tab</span>
         )}
       </p>
 
@@ -883,8 +881,6 @@ export default function Holdings() {
               <Switch id="portfolio-sim-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
             </div>
 
-            <MostEfficientStep holdings={holdings} livePrices={livePrices} navigate={navigate} />
-
             <DcaOpportunities holdings={holdings} livePrices={livePrices} navigate={navigate} />
 
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-pill px-3 py-2.5">
@@ -1073,7 +1069,7 @@ export default function Holdings() {
   );
 }
 
-/* ── Strategy opportunities (portfolio rank) ───────────── */
+/* ── Per-holding scenario results (alphabetical — no cross-holding ranking) ───────── */
 function DcaOpportunities({
   holdings,
   livePrices,
@@ -1099,8 +1095,8 @@ function DcaOpportunities({
     });
   };
 
-  const scored = useMemo(() => {
-    const rows: { holding: Holding; price: number; step: DcaRow }[] = [];
+  const rows = useMemo(() => {
+    const out: { holding: Holding; price: number; step: DcaRow }[] = [];
     for (const h of holdings) {
       const price = livePrices[h.id];
       if (price == null || price <= 0 || price >= h.avg_cost) continue;
@@ -1111,23 +1107,16 @@ function DcaOpportunities({
         holdingFeeOpts(h, includeFees)
       );
       if (!step || step.avgImprovement <= 0) continue;
-      rows.push({ holding: h, price, step });
+      out.push({ holding: h, price, step });
     }
-    const maxEff = Math.max(...rows.map((r) => r.step.improvementPerDollar), 1e-12);
-    return rows
-      .map((r) => ({
-        ...r,
-        rankScore: Math.round((r.step.improvementPerDollar / maxEff) * 100),
-      }))
-      .sort((a, b) => b.rankScore - a.rankScore);
+    return out.sort((a, b) => a.holding.ticker.localeCompare(b.holding.ticker));
   }, [holdings, livePrices, includeFees]);
 
   if (holdings.length === 0) return null;
 
-  const hasRanked = scored.length > 0;
-  const top = scored[0];
-  const rest = scored.slice(1);
-  const visibleRest = showAll ? rest : rest.slice(0, 3);
+  const hasRows = rows.length > 0;
+  const COLLAPSE_COUNT = 6;
+  const visibleRows = showAll || rows.length <= COLLAPSE_COUNT ? rows : rows.slice(0, COLLAPSE_COUNT);
 
   return (
     <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
@@ -1140,7 +1129,7 @@ function DcaOpportunities({
         >
           <div className="flex items-center gap-2">
             <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
-            <h2 className="text-[17px] font-semibold text-white">Portfolio simulations (relative scores)</h2>
+            <h2 className="text-[17px] font-semibold text-white">Scenario results (per holding)</h2>
           </div>
           {sectionExpanded ? (
             <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
@@ -1151,8 +1140,8 @@ function DcaOpportunities({
 
         {!sectionExpanded && (
           <p className="text-[11px] leading-relaxed text-stitch-muted">
-            {hasRanked
-              ? `${scored.length} modeled ${scored.length === 1 ? "line" : "lines"} (not buy suggestions) — tap to expand`
+            {hasRows
+              ? `${rows.length} modeled ${rows.length === 1 ? "line" : "lines"} (illustrative only) — tap to expand`
               : "Tap header to expand"}
           </p>
         )}
@@ -1160,95 +1149,51 @@ function DcaOpportunities({
         {sectionExpanded && (
           <>
             <p className="mb-4 text-[10px] leading-relaxed text-stitch-muted">
-              0–100 scores compare each holding’s <strong className="font-medium text-stitch-muted">modeled</strong> ladder
-              step (improvement per dollar spent) to the strongest in this list only. Same ladder rules as your budget-step
-              simulator — not a recommendation to trade, and not the Insights tab’s fixed-$ test score.
+              One modeled ladder step per ticker (A–Z), using the same rules as each position’s budget-step simulator. Rows
+              are <strong className="font-medium text-stitch-muted">not</strong> ranked or prioritized across holdings —
+              for your review only, not a suggestion to trade.
             </p>
 
-            {!hasRanked ? (
+            {!hasRows ? (
               <div className="rounded-2xl border border-dashed border-stitch-border/60 bg-stitch-pill/20 p-6 text-center">
                 <p className="text-sm text-stitch-muted">
-                  Add prices below average to compare simulated ladder steps across positions.
+                  Add prices below average to see modeled ladder steps for each position.
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {top && top.rankScore > 0 && (() => {
-                  const h = top.holding;
-                  const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                      className="w-full rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4 text-left transition-colors hover:border-stitch-accent/40 hover:bg-stitch-pill/40"
-                    >
-                      <div className="mb-2 flex items-center gap-1.5">
-                        <Gauge className="h-3.5 w-3.5 text-stitch-accent" />
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">
-                          Top relative score (this list)
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[17px] font-bold tracking-tight text-white">{h.ticker}</span>
-                          <p className="mt-0.5 font-mono text-xs text-stitch-muted">
-                            Simulated {cp}
-                            {fmt(top.step.amount)} → avg {cp}
-                            {fmt(top.step.newAvg)} (−{cp}
-                            {fmt(top.step.avgImprovement)}/share)
-                          </p>
-                          <p className="mt-0.5 font-mono text-[10px] text-stitch-muted/70">
-                            Avg {cp}
-                            {fmt(h.avg_cost)} · Price {cp}
-                            {fmt(top.price)}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-[28px] font-bold leading-none text-stitch-accent">{top.rankScore}</span>
-                          <span className="text-[8px] uppercase tracking-wider text-stitch-muted/60">score</span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })()}
-
-                {rest.length > 0 && (
-                  <div className="space-y-0.5">
-                    {visibleRest.map(({ holding: h, price, rankScore, step }) => {
-                      const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
-                      if (!step) return null;
-                      return (
-                        <button
-                          key={h.id}
-                          type="button"
-                          onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                          className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
-                        >
-                          <span className="w-7 shrink-0 text-right text-sm font-bold tabular-nums text-stitch-accent/80">
-                            {rankScore}
-                          </span>
-                          <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
-                          <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
-                            {cp}
-                            {fmt(step.amount)} sim → −{cp}
-                            {fmt(step.avgImprovement)}/share
-                          </span>
-                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
-                        </button>
-                      );
-                    })}
-                    {rest.length > 3 && (
+                <div className="space-y-0.5">
+                  {visibleRows.map(({ holding: h, price, step }) => {
+                    const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
+                    if (!step) return null;
+                    return (
                       <button
+                        key={h.id}
                         type="button"
-                        onClick={() => setShowAll((v) => !v)}
-                        className="w-full py-1.5 text-center text-[11px] text-stitch-muted/60 transition-colors hover:text-stitch-muted"
+                        onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
+                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
                       >
-                        {showAll ? "Show less" : `Show all ${rest.length}`}
+                        <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
+                        <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
+                          {cp}
+                          {fmt(step.amount)} sim → avg {cp}
+                          {fmt(step.newAvg)} (−{cp}
+                          {fmt(step.avgImprovement)}/share)
+                        </span>
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
                       </button>
-                    )}
-                  </div>
-                )}
+                    );
+                  })}
+                  {rows.length > COLLAPSE_COUNT && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAll((v) => !v)}
+                      className="w-full py-1.5 text-center text-[11px] text-stitch-muted/60 transition-colors hover:text-stitch-muted"
+                    >
+                      {showAll ? "Show less" : `Show all ${rows.length}`}
+                    </button>
+                  )}
+                </div>
 
                 <p className="pt-1 text-center text-[9px] text-stitch-muted/50">
                   Illustrative simulations only — not financial advice.
@@ -1261,87 +1206,3 @@ function DcaOpportunities({
     </section>
   );
 }
-
-/* ── Most efficient step (portfolio) — same ladder rule ─── */
-function MostEfficientStep({
-  holdings,
-  livePrices,
-  navigate,
-}: {
-  holdings: Holding[];
-  livePrices: Record<string, number | null>;
-  navigate: (path: string) => void;
-}) {
-  const { includeFees } = useSimFees();
-
-  const best = useMemo(() => {
-    let top: { holding: Holding; price: number; step: DcaRow } | null = null;
-    let bestEff = -Infinity;
-
-    for (const h of holdings) {
-      const price = livePrices[h.id];
-      if (price == null || price <= 0 || price >= h.avg_cost) continue;
-      const step = selectMostEfficientLadderStep(
-        h.shares,
-        h.avg_cost,
-        price,
-        holdingFeeOpts(h, includeFees)
-      );
-      if (!step || step.avgImprovement <= 0) continue;
-      if (step.improvementPerDollar > bestEff) {
-        bestEff = step.improvementPerDollar;
-        top = { holding: h, price, step };
-      }
-    }
-    return top;
-  }, [holdings, livePrices, includeFees]);
-
-  if (!best) return null;
-
-  const h = best.holding;
-  const cp = currencyPrefix((h.exchange ?? "US") as "US" | "TSX");
-
-  return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
-      <div className="relative z-10">
-        <div className="mb-3 flex items-center gap-2">
-          <Zap className="h-4 w-4 shrink-0 text-stitch-accent" />
-          <h2 className="text-[17px] font-semibold text-white">Portfolio ladder highlight</h2>
-        </div>
-        <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
-          Which holding’s fixed budget-rung simulation currently shows the highest modeled improvement-per-dollar (same
-          rules as the budget-step simulator on each position). For comparison only — not an instruction to trade.
-        </p>
-        <button
-          type="button"
-          onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-          className="w-full rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-4 text-left transition-colors hover:border-stitch-accent/40 hover:bg-stitch-pill/40"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-[17px] font-bold tracking-tight text-white">{h.ticker}</span>
-              <p className="mt-1 font-mono text-sm text-stitch-muted">
-                Simulated deploy {cp}
-                {fmt(best.step.amount)} → avg {cp}
-                {fmt(best.step.newAvg)}
-              </p>
-              <p className="mt-0.5 flex items-center gap-1 font-mono text-sm font-medium text-stitch-accent">
-                <ArrowDownRight className="h-3.5 w-3.5 shrink-0" />
-                Avg moves by {cp}
-                {fmt(best.step.avgImprovement)}/share
-              </p>
-              <p className="mt-1.5 font-mono text-[10px] text-stitch-muted/60">
-                Current avg {cp}
-                {fmt(h.avg_cost)} · Price {cp}
-                {fmt(best.price)}
-              </p>
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
-          </div>
-        </button>
-      </div>
-    </section>
-  );
-}
-

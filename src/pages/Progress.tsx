@@ -16,8 +16,8 @@ export default function Progress() {
           <div className="relative z-10">
             <p className="text-sm leading-relaxed text-stitch-muted">
               This tab is only for portfolio-wide progress versus the average cost snapshot from when each holding was first
-              added. Your main portfolio screen focuses on prices, P/L, and strategy opportunities — open the menu (⋯) there
-              for What-If scenarios or this Progress view.
+              added. Your main portfolio screen focuses on prices, P/L, and per-holding scenario results — open the menu
+              (⋯) there for What-If scenarios or this Progress view.
             </p>
             <Button
               variant="outline"

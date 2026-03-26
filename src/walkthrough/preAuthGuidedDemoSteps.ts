@@ -25,8 +25,8 @@ export const PRE_AUTH_GUIDED_DEMO_STEPS: PreAuthGuidedDemoStep[] = [
   },
   {
     id: "optimizer",
-    title: "The Optimizer screen",
-    body: "The Optimizer tab lets you try different dollar amounts and fees on this same sample list. Think of it as a scratch pad for how the math might look—not a signal to trade or rebalance for real.",
+    title: "The Budget lab screen",
+    body: "The Budget lab tab lets you try different dollar amounts and fees on this same sample list. It’s a scratch pad for how the math might look — not a signal to trade or rebalance for real.",
   },
   {
     id: "progress",

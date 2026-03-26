@@ -121,7 +121,7 @@ export default function GoalLadder({ holding }: Props) {
             >
               Invest {cp}
               {fmt(amount)} → Avg becomes {cp}
-              {fmt(newAvg)} · Saves {cp}
+              {fmt(newAvg)} · Avg change {cp}
               {fmt(avgImprovement)}/share
             </li>
           ))}
@@ -132,7 +132,7 @@ export default function GoalLadder({ holding }: Props) {
         <div className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-5 font-mono text-sm">
           <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
             <Zap className="h-4 w-4" />
-            Highlighted rung (internal math)
+            Illustrative rung (same ladder math)
           </h3>
           <p className="mb-3 text-[10px] text-stitch-muted/80">
             One rung chosen by modeled improvement per dollar among the fixed amounts above, skipping tiny impact and very

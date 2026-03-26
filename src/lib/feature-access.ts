@@ -54,13 +54,16 @@ export const FEATURE_LABELS: Record<FeatureKey, { title: string; description: st
   },
   manual_price_updates: { title: "Manual Price Updates", description: "Refresh market prices" },
   position_insights: {
-    title: "Position math (Insights)",
-    description: "Modeled averages, fixed-size test scores, and what-if capital figures from your inputs",
+    title: "Position math",
+    description: "Modeled averages, buy impact from a fixed test buy, and hypothetical capital figures from your inputs",
   },
   basic_scenarios: { title: "Scenario Saving", description: "Save up to 5 scenarios per holding" },
   scenario_compare: { title: "Scenario Compare", description: "Side-by-side comparison of saved scenarios and their modeled outcomes" },
-  optimizer: { title: "Capital Optimizer", description: "Simulate how a fixed budget splits across positions and affects average cost (illustrative, not prescriptive)" },
-  opportunity_alerts: { title: "Opportunity Alerts", description: "Get notified when a holding drops below key price thresholds" },
+  optimizer: {
+    title: "Compare allocations",
+    description: "Model how a fixed budget splits across positions and affects average cost (illustrative only — not prescriptive)",
+  },
+  opportunity_alerts: { title: "Price threshold alerts", description: "Optional notices when a holding crosses a price you set (roadmap)" },
   auto_price_refresh: { title: "Auto Price Refresh", description: "Automatic market price updates without manual intervention" },
   advanced_goal_ladder: {
     title: "Custom budget rungs (roadmap)",

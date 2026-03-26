@@ -153,7 +153,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
     return (
       <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-1.5">
         <Lightbulb className="h-5 w-5 mx-auto text-stitch-muted/50" />
-        <p className="text-xs text-stitch-muted">Refresh market prices to unlock position math (Insights).</p>
+        <p className="text-xs text-stitch-muted">Refresh market prices to unlock the Math tab.</p>
       </div>
     );
   }
@@ -263,17 +263,17 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
         )}
       </div>
 
-      {/* Standardized test score (same fixed amount as documented in Insights) */}
+      {/* Buy impact index: fixed test buy → modeled average cost change */}
       <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3">
           <Gauge className="h-4 w-4 text-stitch-accent" />
-          <h3 className="text-sm font-semibold text-white">Fixed-size test score</h3>
+          <h3 className="text-sm font-semibold text-white">Buy impact (fixed test buy)</h3>
         </div>
         <p className="text-[10px] text-stitch-muted/80 mb-2 leading-relaxed">
-          0–100 from one fixed {cp}
-          {fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price: score = round(10,000 × modeled avg
-          improvement ÷ your current average), capped at 100. Different from the portfolio list’s relative 0–100. Uses the
-          same “include fees in simulations” setting as the budget-step simulator.
+          0–100 index from one fixed {cp}
+          {fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price (modeled average cost change vs your current
+          average, capped at 100). Not a score across holdings — only this position. Uses the same “include fees in
+          simulations” setting as the budget-step simulator.
         </p>
         <div className="flex items-baseline gap-3 mb-2">
           <span className={`text-4xl font-mono font-bold ${band.colorClass}`}>

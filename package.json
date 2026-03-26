@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:build": "npm run build && npx cap sync ios",
+    "cap:open": "npx cap open ios"
   },
   "dependencies": {
     "@capacitor/cli": "^8.1.0",

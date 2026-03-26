@@ -178,7 +178,7 @@ export default function Auth() {
           <span className="font-[family-name:var(--font-heading)] text-[1.75rem] font-extrabold tracking-tight sm:text-[2rem]">
             Position<span className="text-stitch-accent">Pilot</span>
           </span>
-          <div className="mt-1 text-[0.6rem] uppercase tracking-[0.14em] text-stitch-muted">Strategy Engine</div>
+          <div className="mt-1 text-[0.6rem] uppercase tracking-[0.14em] text-stitch-muted">Personal math & scenarios</div>
         </div>
         <p
           id="auth-demo-hint"

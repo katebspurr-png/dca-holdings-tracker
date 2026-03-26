@@ -148,7 +148,7 @@ export default function Settings() {
                   Included with Premium today
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {["Scenario Compare (side-by-side)", "Capital Optimizer", "Unlimited scenarios per holding"].map(
+                  {["Scenario comparison (side-by-side)", "Compare allocations (budget lab)", "Unlimited scenarios per holding"].map(
                     (f) => (
                       <div key={f} className="flex items-center gap-1.5 text-[11px] text-stitch-muted">
                         <Check className="h-3 w-3 shrink-0 text-stitch-accent" />
@@ -158,7 +158,7 @@ export default function Settings() {
                   )}
                 </div>
                 <p className="text-[10px] leading-relaxed text-stitch-muted/60">
-                  Roadmap (not in the app yet): opportunity alerts, auto price refresh, custom budget rungs / targets.
+                  Roadmap (not in the app yet): price threshold alerts, auto price refresh, custom budget rungs / targets.
                 </p>
               </div>
             )}
@@ -181,8 +181,8 @@ export default function Settings() {
           <div className="relative z-10 space-y-3">
             <h2 className={sectionTitle}>Legal</h2>
             <p className="text-[11px] leading-relaxed text-stitch-muted">
-              Starter documents live in <code className="rounded bg-stitch-pill px-1 text-[10px]">public/legal/</code> —
-              replace them with your final Privacy Policy and Terms before App Store review.
+              Privacy Policy and Terms of Use describe how the app handles your data and acceptable use. Have counsel
+              review and add your support contact and governing law where noted before launch.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button variant="outline" size="sm" className={outlineBtn} asChild>

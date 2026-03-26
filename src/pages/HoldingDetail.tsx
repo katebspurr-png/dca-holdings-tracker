@@ -46,7 +46,7 @@ type WorkspaceTab = "overview" | "strategy" | "calculator" | "history" | "insigh
 
 const WORKSPACE_TABS: { key: WorkspaceTab; label: string; icon: React.ElementType }[] = [
   { key: "overview", label: "Overview", icon: Eye },
-  { key: "strategy", label: "Strategy", icon: TargetIcon },
+  { key: "strategy", label: "Plan", icon: TargetIcon },
   { key: "calculator", label: "Calculator", icon: Calculator },
   { key: "history", label: "History", icon: History },
   { key: "insights", label: "Math", icon: Lightbulb },
@@ -597,14 +597,14 @@ export default function HoldingDetail() {
           </>
         )}
 
-        {/* ═══════════════ STRATEGY TAB ═══════════════ */}
+        {/* ═══════════════ PLAN TAB ═══════════════ */}
         {activeTab === "strategy" && (
           <>
-            {/* Next Best Move */}
+            {/* Example scenario — fixed $500 buy impact */}
             {isUnderwater && (
               <div className="rounded-lg border border-primary/30 bg-card p-6" style={{ boxShadow: "0 0 18px hsl(160 60% 52% / 0.08)" }}>
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-primary mb-4 flex items-center gap-2">
-                  <span>⚡</span> Next Best Move
+                  <span>⚡</span> Example scenario
                 </h2>
                 {(() => {
                   const { newAvg, improvement } = calcNewAvg(500);
@@ -622,18 +622,21 @@ export default function HoldingDetail() {
                           <p className="text-lg font-mono font-semibold text-primary">{cp}{newAvg.toFixed(2)}</p>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3">Improves avg by <span className="text-primary font-mono">{cp}{improvement.toFixed(2)}</span></p>
+                      <p className="text-xs text-muted-foreground mt-3">
+                        Average cost change: <span className="text-primary font-mono">{cp}{improvement.toFixed(2)}</span>{" "}
+                        / share (modeled)
+                      </p>
                     </div>
                   );
                 })()}
               </div>
             )}
 
-            {/* Goal Ladder */}
+            {/* Hypothetical buy amounts — buy impact ladder */}
             {isUnderwater && (
               <div className="rounded-lg border border-border bg-card p-6">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-                  Goal Ladder
+                  Buy impact (sample amounts)
                 </h2>
                 <div className="space-y-2">
                   {ladderAmounts.map((amt) => {
@@ -647,7 +650,7 @@ export default function HoldingDetail() {
                             <p className="text-sm font-mono font-semibold text-foreground">{cp}{newAvg.toFixed(2)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Saves</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Δ / share</p>
                             <p className="text-sm font-mono font-semibold text-primary">↓{cp}{improvement.toFixed(2)}</p>
                           </div>
                         </div>
@@ -658,7 +661,7 @@ export default function HoldingDetail() {
               </div>
             )}
 
-            {/* Recommended targets */}
+            {/* Budget-step simulator (preset rungs) */}
             <GoalLadder holding={holding} />
 
             {/* Saved scenarios */}

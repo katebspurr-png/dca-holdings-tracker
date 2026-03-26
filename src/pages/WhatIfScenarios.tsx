@@ -332,7 +332,8 @@ export default function WhatIfScenarios() {
   const toggleRow = (idx: number) => {
     setSelectedRows((prev) => {
       const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
       return next;
     });
   };
@@ -789,8 +790,6 @@ export default function WhatIfScenarios() {
                 </thead>
                 <tbody>
                   {holdings.map((h, hi) => {
-                    const reductions = scenarioResults.map((sr) => sr.rows[hi]?.reduction ?? 0);
-                    const maxReduction = Math.max(...reductions);
                     const cp = currencyPrefix(h.exchange ?? "US");
                     return (
                       <tr key={h.id} className="border-t border-stitch-border">
@@ -800,9 +799,8 @@ export default function WhatIfScenarios() {
                         </td>
                         {scenarioResults.map((sr, si) => {
                           const row = sr.rows[hi];
-                          const isBest = maxReduction > 0 && row && row.reduction === maxReduction;
                           return (
-                            <td key={si} className={`px-3 py-2 text-center font-mono ${isBest ? "text-stitch-accent font-semibold" : ""}`}>
+                            <td key={si} className="px-3 py-2 text-center font-mono">
                               {row && row.reduction > 0
                                 ? `${cp}${fmt(row.newAvg)} (−${row.reductionPct.toFixed(1)}%)`
                                 : "—"
@@ -816,11 +814,8 @@ export default function WhatIfScenarios() {
                   <tr className="border-t-2 border-stitch-border bg-stitch-pill/50">
                     <td className="px-3 py-2 font-semibold">Portfolio Impact</td>
                     {scenarioResults.map((sr, si) => {
-                      const reductions = scenarioResults.map((s) => s.avgReduction);
-                      const maxR = Math.max(...reductions);
-                      const isBest = maxR > 0 && sr.avgReduction === maxR;
                       return (
-                        <td key={si} className={`px-3 py-2 text-center font-mono ${isBest ? "text-stitch-accent font-semibold" : ""}`}>
+                        <td key={si} className="px-3 py-2 text-center font-mono">
                           {sr.totalAllocated > 0
                             ? `−$${fmt(sr.avgReduction)} avg`
                             : "—"
@@ -919,7 +914,6 @@ export default function WhatIfScenarios() {
             <div className="space-y-2">
               {savedComparisons.map((comp) => {
                 const results = computeSavedResults(comp);
-                const bestIdx = results.reduce((best, r, i) => (r.avgReduction > (results[best]?.avgReduction ?? 0) ? i : best), 0);
                 const date = new Date(comp.created_at);
                 return (
                   <div key={comp.id} className="rounded-lg border border-stitch-border bg-stitch-card p-4 space-y-3">
@@ -941,17 +935,13 @@ export default function WhatIfScenarios() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {results.map((sr, si) => {
-                        const isBest = results.length > 1 && si === bestIdx && sr.avgReduction > 0;
                         return (
                           <div
                             key={si}
-                            className={`rounded-md border p-3 text-sm space-y-1.5 ${
-                              isBest ? "border-stitch-accent bg-stitch-accent/10" : "border-stitch-border bg-stitch-pill/30"
-                            }`}
+                            className="rounded-md border border-stitch-border bg-stitch-pill/30 p-3 text-sm space-y-1.5"
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-xs">{sr.name}</span>
-                              {isBest && <Badge variant="default" className="text-[10px] px-1.5 py-0">Best</Badge>}
                             </div>
                             <p className="text-xs text-stitch-muted">
                               Allocated: <span className="font-mono">${fmt(sr.totalAllocated)}</span>

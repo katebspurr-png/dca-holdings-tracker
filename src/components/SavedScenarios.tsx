@@ -6,7 +6,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { getScenariosForHolding, removeScenario, type Scenario, type Exchange } from "@/lib/storage";
 import ScenarioCompare from "@/components/ScenarioCompare";
 import { toast } from "sonner";
@@ -43,11 +42,10 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allScenarios = getScenariosForHolding(holdingId);
 
   const filteredScenarios = useMemo(() => {
-    let sorted = [...allScenarios];
+    const sorted = [...allScenarios];
     switch (filter) {
       case "best_avg":
         sorted.sort((a, b) => a.new_avg_cost - b.new_avg_cost);
@@ -68,10 +66,6 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
     allScenarios.filter((s) => selectedIds.has(s.id)),
     [allScenarios, selectedIds]
   );
-
-  const bestId = allScenarios.length > 1
-    ? allScenarios.reduce((best, s) => s.new_avg_cost < best.new_avg_cost ? s : best, allScenarios[0]).id
-    : null;
 
   const handleDelete = () => {
     if (!deleting) return;
@@ -105,7 +99,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
   const filters: { key: FilterMode; label: string; icon: React.ReactNode }[] = [
     { key: "all", label: "All", icon: <SlidersHorizontal className="h-3 w-3" /> },
-    { key: "best_avg", label: "Lowest modeled avg", icon: <Award className="h-3 w-3" /> },
+    { key: "best_avg", label: "Lowest new avg", icon: <Award className="h-3 w-3" /> },
     { key: "lowest_spend", label: "Lowest Spend", icon: <DollarSign className="h-3 w-3" /> },
     { key: "most_recent", label: "Most Recent", icon: <Clock className="h-3 w-3" /> },
   ];
@@ -207,7 +201,6 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
         <>
           <div className="grid gap-2">
             {filteredScenarios.map((s) => {
-              const isBest = s.id === bestId;
               const avgDiff = currentAvg - s.new_avg_cost;
               const improves = avgDiff > 0.005;
               const worsens = avgDiff < -0.005;
@@ -226,9 +219,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                   } ${
                     isSelected
                       ? "border-stitch-accent/50 bg-stitch-accent/[0.06] ring-1 ring-stitch-accent/25"
-                      : isBest
-                        ? "border-stitch-accent/30 bg-stitch-accent/[0.04] hover:border-stitch-accent/30"
-                        : "border-stitch-border hover:border-stitch-accent/30"
+                      : "border-stitch-border hover:border-stitch-accent/30"
                   }`}
                 >
                   {/* Top line */}
@@ -244,12 +235,6 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                       <span className="text-[11px] font-semibold text-white/90 truncate" title={scenarioTitle}>
                         {scenarioTitle}
                       </span>
-                      {isBest && (
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 gap-0.5 bg-stitch-accent/10 text-stitch-accent border-0 shrink-0">
-                          <Award className="h-2.5 w-2.5" />
-                          Lowest modeled avg
-                        </Badge>
-                      )}
                     </div>
                     <span className="text-[10px] text-stitch-muted/50 tabular-nums shrink-0">
                       {new Date(s.created_at).toLocaleDateString()}
@@ -267,7 +252,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                     {savePerShare > 0.005 ? (
                       <>
                         {" "}
-                        · Saves {cp}
+                        · Avg change {cp}
                         {fmt(savePerShare)}/share
                       </>
                     ) : null}

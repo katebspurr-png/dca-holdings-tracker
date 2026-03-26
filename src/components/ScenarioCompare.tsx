@@ -76,17 +76,17 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 <div className="flex flex-wrap gap-1">
                   {isBestAvg && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-accent/10 px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <Award className="h-2 w-2" /> Lowest modeled avg
+                      <Award className="h-2 w-2" /> Lowest new avg (this selection)
                     </Badge>
                   )}
                   {isLowestSpend && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-pill px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <DollarSign className="h-2 w-2" /> Lowest total spend
+                      <DollarSign className="h-2 w-2" /> Lowest total spend (this selection)
                     </Badge>
                   )}
                   {isBestImprovement && improves && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-accent/10 px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <TrendingDown className="h-2 w-2" /> Largest modeled avg reduction
+                      <TrendingDown className="h-2 w-2" /> Largest avg change (this selection)
                     </Badge>
                   )}
                 </div>
@@ -138,9 +138,9 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 {/* Divider */}
                 <div className="border-t border-stitch-border/50" />
 
-                {/* Modeled efficiency */}
+                {/* Modeled avg change per dollar spent */}
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Modeled efficiency</p>
+                  <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Avg cost change / $1</p>
                   {efficiency > 0 ? (
                     <p className="text-xs font-mono font-semibold text-stitch-accent">
                       {(efficiency * 1000).toFixed(2)}¢ / $1

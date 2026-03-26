@@ -33,8 +33,8 @@ export const PRODUCT_TOUR_STEPS: ProductTourStep[] = [
   },
   {
     id: "strategyOptimizer",
-    title: "Strategy opportunities & Optimizer",
-    body: "On Portfolio, Strategy opportunities rank your holdings with the same normalized ladder math for everyone—useful for comparing modeled steps, not for picks. The Optimizer tab runs Capital Optimizer: an illustrative split of a hypothetical budget using fixed rules. The full Optimizer may require Premium on your plan.",
+    title: "Scenario results & Budget lab",
+    body: "On Portfolio, Scenario results (per holding) lists one modeled step per ticker in A–Z order — not ranked across positions. The Budget lab tab lets you compare how a hypothetical budget might split using fixed rules (illustrative only). Premium preview may unlock extra tools in Settings.",
   },
   {
     id: "whatIf",

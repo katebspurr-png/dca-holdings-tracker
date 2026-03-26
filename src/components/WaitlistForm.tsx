@@ -6,11 +6,11 @@ import { Sparkles, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const FEATURES = [
-  { id: "optimizer", label: "Capital Optimizer", description: "Model budget splits across positions and resulting average costs" },
-  { id: "scenario_compare", label: "Scenario Comparison", description: "Compare saved strategies side-by-side" },
-  { id: "alerts", label: "Opportunity Alerts", description: "Get notified when a position hits your DCA zone" },
+  { id: "optimizer", label: "Compare allocations", description: "Model budget splits across positions and resulting average costs" },
+  { id: "scenario_compare", label: "Scenario comparison", description: "Compare saved scenarios side-by-side" },
+  { id: "alerts", label: "Price threshold alerts", description: "Get notified when a price crosses a level you choose" },
   { id: "auto_price", label: "Auto Price Refresh", description: "Prices update automatically without manual refresh" },
-  { id: "portfolio_gameplan", label: "Portfolio Game Plan", description: "Step-by-step capital deployment across your whole portfolio" },
+  { id: "portfolio_gameplan", label: "Portfolio scenarios (roadmap)", description: "Step-by-step hypothetical deployment across holdings — illustrative only" },
 ];
 
 interface WaitlistFormProps {
