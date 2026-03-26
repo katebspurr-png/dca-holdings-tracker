@@ -125,12 +125,12 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       addScenario({
         holding_id: holding.id, ticker: holding.ticker, method: "price_target",
         input1_label: "Buy price", input1_value: marketPrice,
-        input2_label: "Target average cost", input2_value: target.target,
+        input2_label: "Scenario average cost", input2_value: target.target,
         include_fees: true, fee_amount: feeApplied, buy_price: marketPrice, shares_to_buy: target.shares,
         budget_invested: B, fee_applied: feeApplied, total_spend: totalSpend,
         new_total_shares: S + target.shares, new_avg_cost: target.newAvg,
         recommended_target: null, budget_percent_used: null,
-        notes: `Insight: Average rescue to ${cp}${fmt2(target.target)}`,
+        notes: `Insight: Modeled scenario avg ${cp}${fmt2(target.target)}`,
       });
       toast({ title: "Scenario saved" });
       onSaved();
@@ -140,10 +140,10 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   const handleCustomRescue = () => {
     setCustomError("");
     const t = parseFloat(customTarget);
-    if (isNaN(t) || t <= 0) { setCustomError("Enter a valid target price."); return; }
+    if (isNaN(t) || t <= 0) { setCustomError("Enter a valid scenario average."); return; }
     if (marketPrice == null) return;
-    if (t >= A) { setCustomError("Target must be below your current average."); return; }
-    if (t <= marketPrice) { setCustomError("Target must be above the current price."); return; }
+    if (t >= A) { setCustomError("Value must be below your current average."); return; }
+    if (t <= marketPrice) { setCustomError("Value must be above the current price."); return; }
     if (!customRescueResult) { setCustomError("Could not compute — check your inputs."); return; }
     saveRescueScenario({ target: t, ...customRescueResult });
     setCustomTarget("");
@@ -173,17 +173,18 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-1">
           <TrendingDown className="h-4 w-4 text-stitch-accent" />
-          <h3 className="text-sm font-semibold text-white">Target average — modeled capital</h3>
+          <h3 className="text-sm font-semibold text-white">Scenario averages — modeled capital</h3>
         </div>
         <p className="text-[11px] text-stitch-muted mb-4">
           Illustrative budgets if you bought at {cp}
-          {fmt2(marketPrice)}/share to reach the sample target averages below — you choose whether any target is relevant.
+          {fmt2(marketPrice)}/share for the sample scenario averages below — you choose whether any modeled average is
+          relevant.
         </p>
         {rescueTargets.length === 0 ? (
           <p className="text-xs text-stitch-muted/70">
             {marketPrice >= A
-              ? "Current price is at or above your average — these target-average estimates do not apply."
-              : "Unable to compute targets from current inputs."}
+              ? "Current price is at or above your average — these scenario-average estimates do not apply."
+              : "Unable to compute from current inputs."}
           </p>
         ) : (
           <div className="space-y-2.5">
@@ -192,7 +193,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                 <div className="flex items-baseline justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-stitch-muted uppercase tracking-wider">{["Sample A","Sample B","Sample C"][i]}</span>
-                    <span className="text-base font-bold font-mono">Target avg {cp}{fmt2(t.target)}</span>
+                    <span className="text-base font-bold font-mono">Scenario avg {cp}{fmt2(t.target)}</span>
                   </div>
                   <span className="text-sm font-mono font-semibold text-stitch-accent">
                     Modeled ~{cp}{fmt2(t.budget)}
@@ -217,10 +218,10 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
 
             {/* Custom target */}
             <div className="rounded-lg border border-dashed border-stitch-border/60 bg-stitch-pill/30 p-3.5">
-              <p className="text-[10px] text-stitch-muted uppercase tracking-wider mb-2">Your target average</p>
+              <p className="text-[10px] text-stitch-muted uppercase tracking-wider mb-2">Custom scenario average</p>
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Label className="text-[10px] text-stitch-muted">Target average ({cp})</Label>
+                  <Label className="text-[10px] text-stitch-muted">Scenario average ({cp})</Label>
                   <Input type="number" step="0.01" value={customTarget}
                     onChange={(e) => { setCustomTarget(e.target.value); setCustomError(""); }}
                     className="h-8 font-mono text-sm bg-stitch-pill" />
@@ -236,7 +237,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
               {customTarget && !customError && customRescueResult && (
                 <div className="mt-3 rounded-lg border border-stitch-border/60 bg-stitch-pill/50 p-3">
                   <div className="flex items-baseline justify-between mb-2">
-                    <span className="text-base font-bold font-mono">Target avg {cp}{fmt2(parseFloat(customTarget))}</span>
+                    <span className="text-base font-bold font-mono">Scenario avg {cp}{fmt2(parseFloat(customTarget))}</span>
                     <span className="text-sm font-mono font-semibold text-stitch-accent">
                       Modeled ~{cp}{fmt2(customRescueResult.budget)}
                     </span>
@@ -273,7 +274,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
           0–100 index from one fixed {cp}
           {fmt2(STANDARD_TEST_INVESTMENT)} simulated buy at the current price (modeled average cost change vs your current
           average, capped at 100). Not a score across holdings — only this position. Uses the same “include fees in
-          simulations” setting as the budget-step simulator.
+          simulations” setting as modeled buy levels.
         </p>
         <div className="flex items-baseline gap-3 mb-2">
           <span className={`text-4xl font-mono font-bold ${band.colorClass}`}>
@@ -325,7 +326,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
           </div>
           <div className="grid grid-cols-2 gap-4 mb-3">
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Your Avg Cost</p>
+              <p className="text-[9px] uppercase tracking-wider text-stitch-muted mb-0.5">Position avg cost</p>
               <p className="text-lg font-mono font-bold">{cp}{fmt2(A)}</p>
             </div>
             <div>

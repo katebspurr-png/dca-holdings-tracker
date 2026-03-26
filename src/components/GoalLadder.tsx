@@ -51,7 +51,7 @@ export default function GoalLadder({ holding }: Props) {
       <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm text-stitch-muted">
         <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
           <TrendingDown className="h-4 w-4" />
-          Budget-step simulator
+          Modeled buy levels
         </h2>
         <p>
           Add a current market price from the Overview tab or{" "}
@@ -74,7 +74,7 @@ export default function GoalLadder({ holding }: Props) {
         <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
           <h2 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
             <TrendingDown className="h-4 w-4" />
-            Budget-step simulator
+            Modeled buy levels
           </h2>
           <p className="text-stitch-muted">
             Current price is at or above your average — these fixed-rung simulations only apply when price is below
@@ -103,7 +103,7 @@ export default function GoalLadder({ holding }: Props) {
       <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
         <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
           <TrendingDown className="h-4 w-4" />
-          Budget-step simulator
+          Modeled buy levels
         </h2>
         <p className="mb-4 text-[11px] text-stitch-muted/90">
           Uses preset dollar amounts (not custom “goals” yet). Simulated buys at {cp}
@@ -120,7 +120,7 @@ export default function GoalLadder({ holding }: Props) {
               className="border-b border-stitch-border/40 pb-3 text-white/90 last:border-0 last:pb-0 leading-relaxed"
             >
               Invest {cp}
-              {fmt(amount)} → Avg becomes {cp}
+              {fmt(amount)} → Modeled avg {cp}
               {fmt(newAvg)} · Avg change {cp}
               {fmt(avgImprovement)}/share
             </li>
@@ -144,7 +144,7 @@ export default function GoalLadder({ holding }: Props) {
               {fmt(efficientStep.amount)}
             </p>
             <p>
-              Avg becomes {cp}
+              Modeled avg {cp}
               {fmt(efficientStep.newAvg)}
             </p>
             <p>

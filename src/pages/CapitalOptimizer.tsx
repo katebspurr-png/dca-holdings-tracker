@@ -128,7 +128,7 @@ export default function CapitalOptimizer() {
                 className="mt-0.5 border-stitch-border"
               />
               <Label htmlFor="opt-targets" className="text-left text-xs font-normal leading-snug text-stitch-muted">
-                <span className="font-medium text-white">Reach target averages first</span>
+                <span className="font-medium text-white">Modeled scenario averages first</span>
                 <span className="mt-0.5 block text-[10px]">Roadmap — not implemented.</span>
               </Label>
             </div>

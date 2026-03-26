@@ -87,12 +87,12 @@ type SortMode =
 const SORT_LABELS: Record<SortMode, string> = {
   az: "A → Z",
   za: "Z → A",
-  position: "Largest Position",
-  position_small: "Smallest Position",
-  loss: "Biggest Loss ($)",
-  gain: "Biggest Gain ($)",
-  loss_pct: "Biggest Loss %",
-  gain_pct: "Biggest Gain %",
+  position: "Position size (high to low)",
+  position_small: "Position size (low to high)",
+  loss: "P/L ($ low to high)",
+  gain: "P/L ($ high to low)",
+  loss_pct: "P/L % (low to high)",
+  gain_pct: "P/L % (high to low)",
 };
 
 function parseStoredSort(): SortMode {
@@ -244,7 +244,7 @@ function HoldingPortfolioCard({
                 }}
                 className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
               >
-                Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
+                Scenario avg: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
               </button>
             </div>
           </div>
@@ -352,7 +352,7 @@ function HoldingPortfolioCard({
       )}
 
       <div className="mb-3 flex items-center justify-between text-[13px] text-stitch-muted">
-        <span>Your Average:</span>
+        <span>Position average:</span>
         <span className="text-stitch-muted-soft">
           {cp}
           {fmt(h.avg_cost)}
@@ -368,7 +368,7 @@ function HoldingPortfolioCard({
         className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
       >
         <span className="leading-tight">
-          Target Average:
+          Modeled average:
           <br />
           <span className="text-[15px]">
             {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
@@ -378,7 +378,7 @@ function HoldingPortfolioCard({
       </button>
 
       <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
-        Buy to Reach Target:
+        Modeled buy scenario:
         <br />
         {scenario && scenario.buy_price != null ? (
           <>

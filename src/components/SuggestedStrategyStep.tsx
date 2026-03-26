@@ -121,7 +121,7 @@ function HoldingSuggestion({
       new_avg_cost: step.newAvg,
       recommended_target: null,
       budget_percent_used: 100,
-      notes: `Suggested step: Invest ${cp}${fmt(step.budget)}`,
+      notes: `Sample scenario: Invest ${cp}${fmt(step.budget)}`,
     });
     toast({ title: "Scenario saved" });
     onSaved?.();
@@ -185,7 +185,7 @@ function PortfolioSuggestion({
       new_avg_cost: step.newAvg,
       recommended_target: null,
       budget_percent_used: 100,
-      notes: `Suggested step: Invest ${cp}${fmt(step.budget)} in ${step.ticker}`,
+      notes: `Sample scenario: Invest ${cp}${fmt(step.budget)} in ${step.ticker}`,
     });
     toast({ title: "Scenario saved" });
   };
@@ -223,7 +223,7 @@ function StepCard({
     <div className="rounded-xl border-2 border-primary/30 bg-primary/[0.03] p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-3">
         <Zap className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Suggested Strategy Step</h3>
+        <h3 className="text-sm font-semibold">Illustrative scenario step</h3>
         {ticker && (
           <Badge variant="outline" className="text-[9px] px-1 h-4 ml-1 font-mono">{ticker}</Badge>
         )}
@@ -234,14 +234,14 @@ function StepCard({
           Invest {cp}{fmt(step.budget)}
         </p>
         <p className="text-lg font-mono font-bold text-foreground">
-          Avg becomes {cp}{fmt(step.newAvg)}
+          Modeled avg {cp}{fmt(step.newAvg)}
         </p>
       </div>
 
       {step.avgImprovement > 0 && (
         <p className="flex items-center gap-1 text-sm font-mono font-medium text-primary mb-1">
           <ArrowDownRight className="h-3.5 w-3.5" />
-          improves by {cp}{fmt(step.avgImprovement)}
+          avg moves by {cp}{fmt(step.avgImprovement)}
           <span className="text-muted-foreground/60 text-[11px] ml-1">
             ({(step.improvementPct * 100).toFixed(1)}%)
           </span>
@@ -253,7 +253,7 @@ function StepCard({
       </p>
 
       <p className="text-[10px] text-muted-foreground/50 mt-2 italic">
-        Based on impact and capital efficiency. For scenario planning only.
+        Based on modeled impact per dollar among fixed rungs. For scenario planning only.
       </p>
 
       <div className="flex gap-2 mt-3 pt-2.5 border-t border-primary/10">

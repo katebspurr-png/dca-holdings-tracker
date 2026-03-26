@@ -15,8 +15,8 @@ import { PremiumBadge } from "@/components/PremiumGate";
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
   price_budget: "Price + Budget",
-  price_target: "Price + Target Avg",
-  budget_target: "Budget + Target Avg",
+  price_target: "Price + Scenario avg",
+  budget_target: "Budget + Scenario avg",
 };
 
 const fmt = (n: number) =>

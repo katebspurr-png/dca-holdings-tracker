@@ -73,15 +73,15 @@ type Method = "price_shares" | "price_budget" | "price_target" | "budget_target"
 const METHOD_OPTIONS: { value: Method; label: string; desc: string }[] = [
   { value: "price_shares", label: "Price + Shares", desc: "Set buy price & share count" },
   { value: "price_budget", label: "Price + Budget", desc: "Set buy price and max budget" },
-  { value: "price_target", label: "Price + Target Avg", desc: "Target a specific average" },
-  { value: "budget_target", label: "Budget + Target Avg", desc: "Fixed budget, target avg" },
+  { value: "price_target", label: "Price + Scenario avg", desc: "Model a specific average cost" },
+  { value: "budget_target", label: "Budget + Scenario avg", desc: "Fixed budget toward a modeled average" },
 ];
 
 const FIELD_CONFIG: Record<Method, [{ key: string; label: string }, { key: string; label: string }]> = {
   price_shares: [{ key: "buyPrice", label: "Buy price" }, { key: "sharesToBuy", label: "Shares to buy" }],
   price_budget: [{ key: "buyPrice", label: "Buy price" }, { key: "budget", label: "Max budget (excl. fee)" }],
-  price_target: [{ key: "buyPrice", label: "Buy price" }, { key: "targetAvg", label: "Target average cost" }],
-  budget_target: [{ key: "budget", label: "Budget (excl. fee)" }, { key: "targetAvg", label: "Target average cost" }],
+  price_target: [{ key: "buyPrice", label: "Buy price" }, { key: "targetAvg", label: "Scenario average cost" }],
+  budget_target: [{ key: "budget", label: "Budget (excl. fee)" }, { key: "targetAvg", label: "Scenario average cost" }],
 };
 
 const SLIDER_STEPS = [25, 50, 75, 100];
@@ -123,8 +123,8 @@ function compute(
     case "price_target": {
       const p = i1, t = i2;
       if (p <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
-      if (p >= t) return { ok: false, error: "Cannot reach target when buy price is ≥ target", level: "error" };
+      if (t >= A) return { ok: false, error: "Scenario average is already at/above current average", level: "info" };
+      if (p >= t) return { ok: false, error: "Buy price must be below the scenario average for this model", level: "error" };
       if (feeType === "percent" && includeFees) {
         const r = feeValue / 100;
         const numB = S * (t - A);
@@ -150,7 +150,7 @@ function compute(
     case "budget_target": {
       const B = i1, t = i2;
       if (B <= 0 || t <= 0) return { ok: false, error: "Values must be positive", level: "error" };
-      if (t >= A) return { ok: false, error: "Target is already at/above current average", level: "info" };
+      if (t >= A) return { ok: false, error: "Scenario average is already at/above current average", level: "info" };
       const f = includeFees ? computeFee(feeType, feeValue, B) : 0;
       const den = S * (A - t) + B + f;
       if (den <= 0) return { ok: false, error: "Invalid inputs", level: "error" };
@@ -174,8 +174,8 @@ function getPresets(method: Method, field: 1 | 2): { label: string; value: strin
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
   price_budget: "Price + Budget",
-  price_target: "Price + Target Avg",
-  budget_target: "Budget + Target Avg",
+  price_target: "Price + Scenario avg",
+  budget_target: "Budget + Scenario avg",
 };
 
 // ── Main Component ──────────────────────────────────────────
@@ -622,12 +622,12 @@ export default function HoldingDetail() {
                       <p className="text-xs text-muted-foreground mb-3">Invest {cp}500 →</p>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current Avg</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Current avg</p>
                           <p className="text-lg font-mono font-semibold text-muted-foreground">{cp}{avgCost.toFixed(2)}</p>
                         </div>
                         <span className="text-primary text-xl">→</span>
                         <div className="text-right">
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Modeled avg</p>
                           <p className="text-lg font-mono font-semibold text-primary">{cp}{newAvg.toFixed(2)}</p>
                         </div>
                       </div>
@@ -655,7 +655,7 @@ export default function HoldingDetail() {
                         <span className="text-sm font-mono text-muted-foreground">Invest {cp}{amt.toLocaleString()}</span>
                         <div className="flex items-center gap-4 text-right">
                           <div>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">New Avg</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Modeled avg</p>
                             <p className="text-sm font-mono font-semibold text-foreground">{cp}{newAvg.toFixed(2)}</p>
                           </div>
                           <div>
@@ -678,7 +678,7 @@ export default function HoldingDetail() {
               <div className="flex items-end justify-between gap-2">
                 <div>
                   <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Saved Scenarios</h2>
-                  <p className="text-[11px] text-stitch-muted/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
+                  <p className="text-[11px] text-stitch-muted/70 mt-0.5">Previously saved calculator scenarios for {holding.ticker}.</p>
                 </div>
                 {scenarios.length > 0 && (
                   <span className="text-[10px] text-stitch-muted/50 tabular-nums">{scenarios.length} total</span>
@@ -797,13 +797,13 @@ export default function HoldingDetail() {
                 <div className={`rounded-xl border bg-stitch-card transition-all sticky top-28 ${isValid ? "border-stitch-accent/20" : "border-stitch-border opacity-50"}`}>
                   <div className="p-4 sm:p-5">
                     <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted mb-4">
-                      {isValid ? "Projected Outcome" : "Results"}
+                      {isValid ? "Modeled outcome" : "Results"}
                     </h2>
                     {isValid && r ? (
                       <div className="space-y-4">
                         <div className="text-center pb-3 border-b border-stitch-border">
                           <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-1">
-                            {isPriceBudget ? "Achievable Target" : "New Average Cost"}
+                            Resulting average
                           </p>
                           <p className="text-3xl font-mono font-bold text-stitch-accent leading-none">{cp}{fmt2(r.newAvg)}</p>
                           <div className="flex items-center justify-center gap-1.5 mt-2">
@@ -835,7 +835,7 @@ export default function HoldingDetail() {
                         <div className="flex flex-col gap-2 pt-2 border-t border-stitch-border">
                           {isPriceBudget && (
                             <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={handleUseAsTarget}>
-                              <TargetIcon className="mr-1.5 h-3.5 w-3.5" /> Use as target
+                              <TargetIcon className="mr-1.5 h-3.5 w-3.5" /> Use in calculator
                             </Button>
                           )}
                           <div className="flex gap-2">
@@ -857,7 +857,7 @@ export default function HoldingDetail() {
                     ) : (
                       <div className="text-center py-6">
                         <p className="text-xs text-stitch-muted">
-                          {hasInputs ? "Adjust inputs to see results." : "Enter values to see projected outcome."}
+                          {hasInputs ? "Adjust inputs to see results." : "Enter values to see modeled outcome."}
                         </p>
                       </div>
                     )}
@@ -873,7 +873,7 @@ export default function HoldingDetail() {
                 <div className="mx-auto max-w-5xl flex items-center justify-between px-4 py-2.5 gap-3">
                   <div className="flex items-center gap-4 min-w-0">
                     <div className="min-w-0">
-                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">New Avg</p>
+                      <p className="text-[10px] text-stitch-muted uppercase tracking-wider">Resulting avg</p>
                       <p className="text-sm font-mono font-bold text-stitch-accent">{cp}{fmt2(r.newAvg)}</p>
                     </div>
                     <div className="min-w-0">

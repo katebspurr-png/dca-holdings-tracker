@@ -7,8 +7,8 @@ import { type Scenario } from "@/lib/storage";
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
   price_budget: "Price + Budget",
-  price_target: "Price + Target Avg",
-  budget_target: "Budget + Target Avg",
+  price_target: "Price + Scenario avg",
+  budget_target: "Budget + Scenario avg",
 };
 
 const fmt = (n: number) =>
@@ -107,7 +107,7 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 <div className="space-y-2">
                   {/* Hero: New Avg */}
                   <div>
-                    <p className="text-[9px] uppercase tracking-wider text-stitch-muted">Projected Avg</p>
+                    <p className="text-[9px] uppercase tracking-wider text-stitch-muted">Modeled avg</p>
                     <p
                       className={`font-mono text-xl font-bold leading-tight ${isBestAvg ? "text-stitch-accent" : "text-white"}`}
                     >
