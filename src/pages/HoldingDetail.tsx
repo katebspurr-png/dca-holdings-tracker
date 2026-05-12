@@ -505,6 +505,7 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
+            aria-label="Go back"
             className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
             onClick={() => navigate("/")}
           >
@@ -796,7 +797,7 @@ export default function HoldingDetail() {
                           <p className="text-[10px] uppercase tracking-widest text-stitch-muted mb-1">
                             {isPriceBudget ? "Achievable Target" : "New Average Cost"}
                           </p>
-                          <p className="text-3xl font-mono font-bold text-stitch-accent leading-none">{cp}{fmt2(r.newAvg)}</p>
+                          <p className="text-3xl font-mono font-bold text-stitch-accent leading-none" aria-live="polite">{cp}{fmt2(r.newAvg)}</p>
                           <div className="flex items-center justify-center gap-1.5 mt-2">
                             <span className="text-[11px] text-stitch-muted font-mono">Current {cp}{fmt2(A)}</span>
                             <span className="text-[11px] mx-0.5">→</span>

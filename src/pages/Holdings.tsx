@@ -718,7 +718,7 @@ export default function Holdings() {
                   >
                     Delete ({selected.size})
                   </button>
-                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white" aria-label="Exit selection mode">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
