@@ -1,0 +1,3 @@
+## 2025-05-15 - Improving Accessibility and Tactile Feedback for Custom Navigation
+**Learning:** Custom interactive elements (like the bottom tab bar and floating action buttons) often lack standard focus and active states, making them less accessible for keyboard users and less satisfying for touch/click users. Using `focus-visible` with theme-appropriate rings and `active:scale-95` provides a modern, "native-app" feel while meeting a11y standards.
+**Action:** Always ensure custom buttons have `focus-visible:ring-2` (using the theme's accent color) and consider subtle scaling transitions for interactive feedback.
