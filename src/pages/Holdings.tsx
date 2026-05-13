@@ -737,7 +737,7 @@ export default function Holdings() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
                       aria-label="Portfolio menu"
                     >
                       <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
@@ -892,7 +892,7 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -906,7 +906,7 @@ export default function Holdings() {
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
