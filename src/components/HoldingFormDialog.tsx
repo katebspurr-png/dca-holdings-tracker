@@ -104,6 +104,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
                 required
+                autoFocus
                 className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
