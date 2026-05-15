@@ -100,6 +100,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <div className="flex gap-2">
               <Input
                 id="ticker"
+                autoFocus
                 placeholder={exchange === "TSX" ? "SHOP" : "AAPL"}
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
@@ -200,7 +201,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="submit"
               disabled={loading}
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent font-semibold text-black transition-transform hover:bg-stitch-accent/90 active:scale-95"
             >
               {initial ? "Save" : "Add"}
             </Button>
