@@ -1,0 +1,3 @@
+## 2025-03-24 - Interactive Tactile Feedback & Form UX
+**Learning:** Interactive elements should use 'active:scale-95' and 'transition' (specifically transition-transform for scaling) to provide tactile visual feedback. This enhances the perceived responsiveness of the app, especially on mobile. Additionally, applying 'autoFocus' to the primary input of a frequently opened dialog (like the Ticker field in HoldingFormDialog) significantly reduces friction in user workflows.
+**Action:** Always consider adding 'active:scale-95' to primary action buttons and ensuring the first logical input in a form is focused automatically.
