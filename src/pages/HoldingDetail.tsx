@@ -507,6 +507,7 @@ export default function HoldingDetail() {
             size="sm"
             className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
             onClick={() => navigate("/")}
+            aria-label="Back to Portfolio"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
