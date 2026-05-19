@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -100,6 +101,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <div className="flex gap-2">
               <Input
                 id="ticker"
+                autoFocus
                 placeholder={exchange === "TSX" ? "SHOP" : "AAPL"}
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
@@ -107,7 +109,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
-                <SelectTrigger className={`w-24 ${selectTriggerClass}`}>
+                <SelectTrigger className={`w-24 ${selectTriggerClass}`} aria-label="Select exchange">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={selectContentClass}>
@@ -200,9 +202,10 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="submit"
               disabled={loading}
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              aria-label={loading ? (initial ? "Saving changes..." : "Adding holding...") : (initial ? "Save changes" : "Add holding")}
+              className="min-w-[80px] bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
             >
-              {initial ? "Save" : "Add"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : initial ? "Save" : "Add"}
             </Button>
           </div>
         </form>
