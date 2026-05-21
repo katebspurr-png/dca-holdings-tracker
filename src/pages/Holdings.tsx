@@ -737,7 +737,7 @@ export default function Holdings() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 transition active:scale-95 focus:outline-none"
                       aria-label="Portfolio menu"
                     >
                       <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
@@ -993,7 +993,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition active:scale-95 hover:bg-[#3a3a3c]"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
