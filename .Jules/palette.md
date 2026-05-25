@@ -1,0 +1,3 @@
+## 2025-05-25 - Tactile Feedback and Transition Synchronization
+**Learning:** Adding tactile feedback via 'active:scale-95' (or 'active:scale-[0.98]' for larger elements) significantly improves the perceived responsiveness of the UI. Using the generic 'transition' utility in Tailwind instead of property-specific ones like 'transition-colors' is crucial when scaling is combined with other transitions (like background or box-shadow changes) to ensure all animations are perfectly synchronized.
+**Action:** Always use the 'transition' shorthand when implementing scaling micro-interactions alongside other state transitions to maintain a polished, high-quality feel.
