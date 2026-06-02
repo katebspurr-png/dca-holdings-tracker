@@ -1,0 +1,3 @@
+## 2025-05-14 - Tactile Feedback for Primary Interactions
+**Learning:** Adding subtle tactile feedback (`active:scale-95` or `active:scale-[0.98]`) to primary interactive elements like navigation tabs and portfolio cards significantly enhances the perceived responsiveness and quality of a mobile-first UI. Combining this with `aria-current="page"` ensures that the visual state is mirrored for assistive technologies.
+**Action:** Always consider adding tactile scale effects to custom interactive elements (buttons/cards that don't use the global Button component) and use `aria-current` for navigation markers.
