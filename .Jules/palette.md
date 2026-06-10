@@ -1,0 +1,3 @@
+## 2026-06-10 - Tactile Feedback and Navigation Accessibility
+**Learning:** Adding `active:scale` to interactive elements like navigation tabs and action buttons provides immediate tactile feedback that makes the app feel more responsive and high-quality. For larger card components, a subtler scale (e.g., `active:scale-[0.98]`) is preferred to maintain a professional feel compared to standard buttons (`active:scale-95`). Combining this with `aria-current` for navigation tabs ensures the UI is both delightful and accessible.
+**Action:** Use `active:scale-95` for buttons and `active:scale-[0.98]` for card-like interactive containers. Always pair scaling with a generic `transition` class to ensure all state changes (color, scale) are smooth.
