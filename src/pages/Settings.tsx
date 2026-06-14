@@ -238,13 +238,31 @@ export default function Settings() {
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div
+                className="flex cursor-pointer items-center gap-3 transition active:scale-95"
+                onClick={() => setDark(false)}
+              >
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
+                <Label
+                  htmlFor="dark-mode"
+                  className={`cursor-pointer text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Light
+                </Label>
               </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
+              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} aria-label="Toggle dark mode" />
+              <div
+                className="flex cursor-pointer items-center gap-3 transition active:scale-95"
+                onClick={() => setDark(true)}
+              >
+                <Label
+                  htmlFor="dark-mode"
+                  className={`cursor-pointer text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  Dark
+                </Label>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
               </div>
             </div>
