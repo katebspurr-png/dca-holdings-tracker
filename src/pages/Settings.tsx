@@ -238,15 +238,19 @@ export default function Settings() {
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <label htmlFor="dark-mode" className="flex cursor-pointer items-center gap-3">
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
-              </div>
+                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>
+                  Light
+                </span>
+              </label>
               <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
+              <label htmlFor="dark-mode" className="flex cursor-pointer items-center gap-3">
+                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>
+                  Dark
+                </span>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-              </div>
+              </label>
             </div>
           </div>
         </section>
