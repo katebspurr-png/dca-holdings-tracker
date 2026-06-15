@@ -1,0 +1,3 @@
+## 2026-06-15 - [Tactile Navigation & Action Feedback]
+**Learning:** High-traffic custom interactive elements (Bottom Tab Bar, FABs) that bypass core component libraries often miss default tactile feedback and focus states. Adding `active:scale-95` combined with `transition` (instead of `transition-colors`) provides a native-like responsiveness. Pair this with `focus-visible` ring offsets and `aria-current="page"` to ensure the "delight" doesn't come at the cost of accessibility.
+**Action:** Always audit custom navigation and floating actions for the `transition active:scale-95 focus-visible:ring-2` pattern to maintain a consistent, high-quality mobile feel.
