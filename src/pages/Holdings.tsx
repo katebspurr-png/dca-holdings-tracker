@@ -175,7 +175,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition active:scale-[0.98]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -299,7 +299,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition active:scale-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -364,7 +364,7 @@ function HoldingPortfolioCard({
           e.stopPropagation();
           onStrategy();
         }}
-        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black transition active:scale-95"
       >
         <span className="leading-tight">
           Target Average:
@@ -993,7 +993,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl outline-none transition hover:bg-[#3a3a3c] focus-visible:ring-2 focus-visible:ring-stitch-accent focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
@@ -1171,7 +1171,7 @@ function DcaOpportunities({
                         key={h.id}
                         type="button"
                         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
+                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition hover:bg-stitch-pill/30 active:scale-[0.98]"
                       >
                         <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
                         <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
