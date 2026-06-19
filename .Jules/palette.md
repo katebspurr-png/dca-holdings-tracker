@@ -1,0 +1,3 @@
+## 2025-05-14 - Tactile Feedback and Accessibility in Mobile Navigation
+**Learning:** Adding 'active:scale-95' combined with a generic 'transition' utility provides immediate, high-quality tactile feedback for touch-centric navigation and action buttons without impacting layout performance. Additionally, using 'aria-current' on active tabs is essential for screen reader users to understand their location in a bottom-tab-based navigation system.
+**Action:** Default to using 'active:scale-95' and 'transition' for all primary interactive elements (tabs, FABs, cards) to maintain a consistent 'premium' feel across the app.
