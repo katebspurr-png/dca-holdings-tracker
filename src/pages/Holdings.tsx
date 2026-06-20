@@ -175,7 +175,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md transition focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.98]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -299,7 +299,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md transition focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -993,7 +993,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition hover:bg-[#3a3a3c] focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
