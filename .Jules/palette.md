@@ -1,0 +1,3 @@
+## 2025-05-14 - [Tactile Feedback and Focus Accessibility]
+**Learning:** Custom interactive elements in this codebase (like the Add Stock FAB and Portfolio menu button) often have suppressed focus indicators (`focus:outline-none`) or lack them entirely, hindering keyboard accessibility. Additionally, using Tailwind's `transition-colors` utility prevents smooth scaling animations when combined with `active:scale-95`; the generic `transition` utility is required for composite animations.
+**Action:** Always verify focus-visible states for custom buttons and replace property-specific transitions (like `transition-colors`) with the generic `transition` utility when adding tactile feedback.
