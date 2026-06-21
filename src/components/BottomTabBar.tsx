@@ -8,10 +8,30 @@ const TABS: {
   icon: LucideIcon;
   match: (p: string) => boolean;
 }[] = [
-  { path: "/", label: "Portfolio", icon: Wallet, match: (p) => p === "/" || p.startsWith("/holdings/") },
-  { path: "/optimizer", label: "Budget lab", icon: Sparkles, match: (p) => p === "/optimizer" },
-  { path: "/progress", label: "Progress", icon: TrendingUp, match: (p) => p === "/progress" },
-  { path: "/settings", label: "Settings", icon: Settings, match: (p) => p === "/settings" },
+  {
+    path: "/",
+    label: "Portfolio",
+    icon: Wallet,
+    match: (p) => p === "/" || p.startsWith("/holdings/"),
+  },
+  {
+    path: "/optimizer",
+    label: "Budget lab",
+    icon: Sparkles,
+    match: (p) => p === "/optimizer",
+  },
+  {
+    path: "/progress",
+    label: "Progress",
+    icon: TrendingUp,
+    match: (p) => p === "/progress",
+  },
+  {
+    path: "/settings",
+    label: "Settings",
+    icon: Settings,
+    match: (p) => p === "/settings",
+  },
 ];
 
 export default function BottomTabBar() {
@@ -28,11 +48,15 @@ export default function BottomTabBar() {
           const active = tab.match(pathname);
           const Icon = tab.icon;
           return (
-            <li key={tab.path} className="flex h-full w-full flex-col items-center justify-center">
+            <li
+              key={tab.path}
+              className="flex h-full w-full flex-col items-center justify-center"
+            >
               <button
                 type="button"
+                aria-current={active ? "page" : undefined}
                 onClick={() => navigate(tab.path)}
-                className="flex h-full w-full flex-col items-center justify-center gap-1.5 transition-colors"
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 transition active:scale-95"
               >
                 <span
                   className={`h-[3px] w-[28px] shrink-0 rounded-[2px] transition-[background-color,box-shadow,opacity] ${
@@ -52,7 +76,9 @@ export default function BottomTabBar() {
                 />
                 <span
                   className={`text-[10px] font-mono uppercase tracking-wide ${
-                    active ? "font-medium text-stitch-accent" : "font-medium text-stitch-muted"
+                    active
+                      ? "font-medium text-stitch-accent"
+                      : "font-medium text-stitch-muted"
                   }`}
                 >
                   {tab.label}
