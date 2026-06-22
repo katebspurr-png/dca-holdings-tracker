@@ -1,0 +1,4 @@
+## 2025-05-14 - [Tactile Feedback and Accessible Focus Patterns]
+**Learning:** For this dark-themed "Stitch" interface, tactile feedback via scale transitions significantly improves the "physical" feel of the UI. Smaller buttons respond well to `active:scale-95`, while larger section headers/cards feel more natural with a subtler `active:scale-[0.99]`. Additionally, custom interactive elements often lack focus indicators; a consistent focus-visible ring using the accent color with a background-matched offset ensures accessibility without compromising the aesthetic.
+
+**Action:** Use `transition active:scale-95` for standard buttons and `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg outline-none` for custom interactive elements.
