@@ -175,7 +175,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition active:scale-[0.98]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -250,7 +250,7 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -299,7 +299,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition active:scale-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -323,7 +323,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
@@ -718,7 +718,12 @@ export default function Holdings() {
                   >
                     Delete ({selected.size})
                   </button>
-                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                  <button
+                    type="button"
+                    onClick={exitSelectMode}
+                    className="text-stitch-muted transition hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                    aria-label="Exit select mode"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -737,7 +742,7 @@ export default function Holdings() {
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill ring-0 focus:outline-none"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-pill transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                       aria-label="Portfolio menu"
                     >
                       <MoreHorizontal className="h-4 w-4 text-stitch-accent" />
@@ -993,7 +998,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition hover:bg-[#3a3a3c] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
