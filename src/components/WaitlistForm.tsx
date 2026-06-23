@@ -88,7 +88,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
               key={f.id}
               type="button"
               onClick={() => toggle(f.id)}
-              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition active:scale-[0.98] ${
                 selected.has(f.id)
                   ? "border-stitch-accent/40 bg-stitch-accent/10"
                   : "border-stitch-border bg-stitch-pill/30 hover:bg-stitch-pill/50"
@@ -124,7 +124,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
       <button
         type="button"
         onClick={() => setBetaTester(!betaTester)}
-        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition active:scale-[0.98] ${
           betaTester
             ? "border-stitch-accent/40 bg-stitch-accent/10"
             : "border-dashed border-stitch-border hover:bg-stitch-pill/30"
