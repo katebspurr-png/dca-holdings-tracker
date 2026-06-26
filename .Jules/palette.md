@@ -1,0 +1,3 @@
+## 2025-05-15 - Improving Tactile Feedback and Accessibility in Core Navigation
+**Learning:** Subtle tactile feedback (active:scale-95) in navigation elements like the BottomTabBar significantly improves perceived responsiveness and user confidence in mobile-first applications. Custom interactive elements that bypass the global design system (like the 'Add Stock' FAB) often lack default focus-visible indicators; these must be manually implemented to maintain accessibility standards.
+**Action:** Always include 'active:scale-95' with the generic 'transition' utility for primary navigation and FABs. Ensure 'focus-visible:ring-2' is applied to custom buttons to satisfy keyboard navigation requirements.
