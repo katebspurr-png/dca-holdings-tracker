@@ -1,0 +1,3 @@
+## 2025-05-15 - Tactile Feedback and Keyboard Accessibility for Custom Buttons
+**Learning:** Custom buttons and FABs that don't use standard component libraries often lack tactile feedback and focus indicators. Using `active:scale-95` with a generic `transition` class (to animate the transform) provides a responsive feel. For dark-themed "Stitch" UI, a focus ring using `ring-stitch-accent/50` with an offset against `stitch-bg` maintains high visibility and brand consistency.
+**Action:** Always check custom `button` and `a` tags for `active:scale` and `focus-visible` styles. Ensure `transition` is used instead of `transition-colors` if a transform is involved.

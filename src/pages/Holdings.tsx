@@ -892,7 +892,7 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -906,7 +906,7 @@ export default function Holdings() {
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -922,7 +922,7 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft transition hover:bg-stitch-pill hover:text-white active:scale-95"
                     >
                       <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
                       Sort
@@ -993,7 +993,7 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition hover:bg-[#3a3a3c] active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
