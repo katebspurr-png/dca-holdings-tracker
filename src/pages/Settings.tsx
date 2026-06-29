@@ -240,11 +240,21 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
+                <Label
+                  htmlFor="dark-mode"
+                  className={`cursor-pointer text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}
+                >
+                  Light
+                </Label>
               </div>
               <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
               <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
+                <Label
+                  htmlFor="dark-mode"
+                  className={`cursor-pointer text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}
+                >
+                  Dark
+                </Label>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
               </div>
             </div>
