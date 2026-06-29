@@ -1,0 +1,3 @@
+## 2025-05-20 - Theme toggle accessibility gap
+**Learning:** In the Settings page, the theme toggle labels ('Light' and 'Dark') were implemented as static `span` elements. This meant they were not programmatically associated with the `Switch` component, making it harder for screen readers to identify the purpose of the switch and reducing the clickable area for all users.
+**Action:** Always use semantic `Label` components with the `htmlFor` attribute to link text descriptions to form controls like switches, checkboxes, and inputs. This improves both accessibility (ARIA) and usability (larger hit targets).
