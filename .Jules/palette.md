@@ -1,0 +1,3 @@
+## 2025-05-20 - [Accessibility Conflict: Label htmlFor vs. Toggle State]
+**Learning:** Using a `Label` component with `htmlFor` associated with a toggle switch (like Radix Switch) while also attaching a manual `onClick` state setter to that label creates a logic conflict. The browser's default action for the label toggles the switch, which can counteract or double-toggle the state when combined with a manual `onClick` handler.
+**Action:** When making theme labels interactive, either use a semantic `button` without `htmlFor` or ensure the label's `onClick` doesn't conflict with the automatic toggle behavior of the associated input.
