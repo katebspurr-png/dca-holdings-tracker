@@ -1,0 +1,3 @@
+## 2025-06-27 - [Refining Playwright Verification for Mobile-First Components]
+**Learning:** Programmatic `.focus()` in Playwright does not always trigger `focus-visible` CSS styles in screenshots; physical keyboard interaction (e.g., `page.keyboard.press("Tab")`) or verifying the presence of the class is more reliable. Additionally, elements on long pages (like holdings lists) must be scrolled into the viewport to be correctly captured and interacted with by locators.
+**Action:** Use `page.keyboard.press("Tab")` and `page.evaluate("window.scrollTo(0, 800)")` in future verification scripts to ensure interactive states like focus rings and tactile feedback are accurately verified.

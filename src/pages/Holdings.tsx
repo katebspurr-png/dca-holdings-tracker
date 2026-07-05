@@ -250,7 +250,7 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -323,7 +323,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
@@ -989,11 +989,12 @@ export default function Holdings() {
           <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
             <button
               type="button"
+              aria-label="Add new stock"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition active:scale-95 hover:bg-[#3a3a3c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
