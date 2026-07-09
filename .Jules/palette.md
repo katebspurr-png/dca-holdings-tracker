@@ -1,0 +1,3 @@
+## 2025-06-27 - [Tactile Navigation & Theme Accessibility]
+**Learning:** Implementing 'aria-current="page"' on active navigation buttons is critical for screen reader users to identify their location in a mobile-first navigation bar. Converting theme labels from static text to semantic buttons improves hit targets and provides a more intuitive way to toggle state, especially when paired with tactile 'active:scale-95' feedback.
+**Action:** Use semantic buttons for all state-toggling text elements and ensure 'aria-current' is present on all persistent navigation components. Always pair 'active:scale-95' with 'transition' for smooth feedback.
