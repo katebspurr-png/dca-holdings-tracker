@@ -892,7 +892,7 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -906,7 +906,7 @@ export default function Holdings() {
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -993,7 +993,8 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              aria-label="Add new stock"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition active:scale-95 hover:bg-[#3a3a3c]"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
