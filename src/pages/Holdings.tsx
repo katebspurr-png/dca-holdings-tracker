@@ -250,7 +250,7 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none rounded-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -323,7 +323,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none rounded-sm"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
@@ -706,7 +706,11 @@ export default function Holdings() {
           <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
             {selectMode && (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stitch-border bg-stitch-card px-3 py-2 text-xs">
-                <button type="button" onClick={toggleSelectAll} className="text-stitch-muted-soft hover:text-white">
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="transition active:scale-95 text-stitch-muted-soft hover:text-white"
+                >
                   {selected.size === holdings.length ? "Deselect all" : "Select all"}
                 </button>
                 <div className="flex items-center gap-2">
@@ -714,11 +718,16 @@ export default function Holdings() {
                     type="button"
                     disabled={selected.size === 0}
                     onClick={() => setBulkDeleting(true)}
-                    className="font-medium text-stitch-danger disabled:opacity-40"
+                    className="transition active:scale-95 font-medium text-stitch-danger disabled:opacity-40"
                   >
                     Delete ({selected.size})
                   </button>
-                  <button type="button" onClick={exitSelectMode} className="text-stitch-muted hover:text-white">
+                  <button
+                    type="button"
+                    onClick={exitSelectMode}
+                    aria-label="Exit select mode"
+                    className="transition active:scale-95 text-stitch-muted hover:text-white"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -892,7 +901,7 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -906,7 +915,7 @@ export default function Holdings() {
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition active:scale-95",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
@@ -922,7 +931,7 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft transition active:scale-95 hover:bg-stitch-pill hover:text-white"
                     >
                       <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
                       Sort
@@ -993,7 +1002,8 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              aria-label="Add new stock"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition active:scale-95 hover:bg-[#3a3a3c] focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
             >
               <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
