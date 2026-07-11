@@ -1,0 +1,3 @@
+## 2025-06-27 - [Tactile Feedback & Theme Selection UX]
+**Learning:** Adding `active:scale-95` paired with a generic `transition` class provides immediate tactile delight, making the app feel more native. Converting secondary theme labels (Light/Dark) into semantic buttons improves hit areas and accessibility for both touch and keyboard users.
+**Action:** Always pair `active:scale-95` with `transition` (not just `transition-colors`) to ensure the scale animation is smooth. Use semantic `button` elements for interactive text labels that toggle app state to provide built-in focus indicators and ARIA support.
