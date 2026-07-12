@@ -238,15 +238,25 @@ export default function Settings() {
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Light mode"
+                onClick={() => setDark(false)}
+                className="flex items-center gap-3 rounded-xl p-2 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus:outline-none"
+              >
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
                 <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
-              </div>
+              </button>
               <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Dark mode"
+                onClick={() => setDark(true)}
+                className="flex items-center gap-3 rounded-xl p-2 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus:outline-none"
+              >
                 <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-              </div>
+              </button>
             </div>
           </div>
         </section>
