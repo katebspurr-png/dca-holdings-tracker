@@ -1,0 +1,3 @@
+## 2025-07-14 - Tactile Feedback and Navigation Accessibility
+**Learning:** For a mobile-first UI like PositionPilot, adding tactile feedback via `active:scale-95` paired with a generic `transition` class (replacing specific ones like `transition-colors`) provides a smooth, responsive feel. For accessibility, navigation buttons must include `aria-current="page"` when active to provide context for screen reader users.
+**Action:** Apply `transition active:scale-95` to all primary interactive buttons and `aria-current="page"` to active navigation links. Pair with `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none` for accessible focus states that match the design system.
