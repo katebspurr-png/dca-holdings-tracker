@@ -238,15 +238,27 @@ export default function Settings() {
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDark(false)}
+                className={`flex items-center gap-3 rounded-xl px-2 py-1.5 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus:outline-none ${!dark ? "text-white" : "text-stitch-muted"}`}
+                aria-label="Switch to light theme"
+              >
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
-              </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
+                <span className="text-sm font-medium">Light</span>
+              </button>
+
+              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} aria-label="Toggle dark theme" />
+
+              <button
+                type="button"
+                onClick={() => setDark(true)}
+                className={`flex items-center gap-3 rounded-xl px-2 py-1.5 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus:outline-none ${dark ? "text-white" : "text-stitch-muted"}`}
+                aria-label="Switch to dark theme"
+              >
+                <span className="text-sm font-medium">Dark</span>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-              </div>
+              </button>
             </div>
           </div>
         </section>
