@@ -1,0 +1,3 @@
+## 2025-06-27 - [Semantic Tab Bar ARIA and Focus Outline Styling]
+**Learning:** Pairing visual active states with `aria-current="page"` and applying clear focus rings (`focus-visible:ring-2`) matched with `active:scale-95` and general `transition` animations ensures the main navigation bar is accessible, tactile, and compliant with modern screen readers and keyboard navigation standards.
+**Action:** When designing key mobile-first navigation interfaces (like fixed tab bars), replace standard color-only transitions with custom focus visible rings, active scaling, and explicit aria-current indicators to satisfy both interactive visual delight and high accessibility compliance.
