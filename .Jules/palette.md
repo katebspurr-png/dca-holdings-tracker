@@ -1,0 +1,3 @@
+## 2026-07-18 - Mobile Navigation Tab Bar UX Polish
+**Learning:** In highly interactive mobile-first React applications, bottom navigation tab items must combine visual active states, keyboard accessible focus styles matching the design tokens (`focus-visible:ring-offset-stitch-bg`), semantic screen reader annotations (`aria-current="page"`), and tactile click scaling effects (`active:scale-95`) with standard `transition` utilities to provide a robust, responsive, and delightful user experience.
+**Action:** Always add semantic `aria-current={active ? "page" : undefined}` on navigation links, pair `active:scale-95` with `transition`, and use explicit themed focus visible styling offsets in custom nav bars.
