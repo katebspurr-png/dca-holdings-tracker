@@ -250,7 +250,7 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 p-1 rounded-lg transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
@@ -323,7 +323,7 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 p-1 rounded-lg transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
