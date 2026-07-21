@@ -79,6 +79,20 @@ const AppRoutes = () => {
   );
 };
 
+function AppTopChrome() {
+  const { session } = useAuth();
+  const { isDemoMode } = useDemoMode();
+  const { pathname } = useLocation();
+
+  const onAuthFlow =
+    pathname.startsWith("/auth") || pathname === "/demo" || pathname === "/demo-welcome";
+
+  if (onAuthFlow) return null;
+  if (!session && !isDemoMode) return null;
+
+  return <DemoModeBanner />;
+}
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -90,6 +104,7 @@ const App = () => {
             <DemoModeProvider>
               <ExperienceProvider>
                 <SimFeesProvider>
+                  <AppTopChrome />
                   <AppRoutes />
                   <AppEducationalDisclaimer />
                   <AppChrome />
@@ -117,7 +132,6 @@ function AppChrome() {
   return (
     <>
       <DemoModeWatermark />
-      <DemoModeBanner />
       <GuidedDemoCoach />
       <BottomTabBar />
     </>
