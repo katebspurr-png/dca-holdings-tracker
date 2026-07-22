@@ -1,0 +1,3 @@
+## 2026-03-26 - Autofocus Ticker Input in Holding Form Dialog
+**Learning:** When using Radix UI Dialogs (`DialogContent`), default focus behavior auto-focuses the first focusable element. However, we can reliably hijack and guarantee focus on the primary interactive input field (such as a Ticker Input) by using `onOpenAutoFocus` on `DialogContent` alongside a React `useRef`. This provides an immediate, frictionless typing experience for users.
+**Action:** Apply `onOpenAutoFocus` on Radix/Shadcn dialog containers and tie it to the primary form input's `ref` next time any multi-step or single-step form dialog is designed.
