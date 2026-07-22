@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,7 @@ type Props = {
 };
 
 export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initial, loading }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [ticker, setTicker] = useState("");
   const [exchange, setExchange] = useState<Exchange>("US");
   const [shares, setShares] = useState("");
@@ -86,7 +87,13 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-stitch-border bg-stitch-card text-white sm:max-w-md sm:rounded-[24px]">
+      <DialogContent
+        className="border-stitch-border bg-stitch-card text-white sm:max-w-md sm:rounded-[24px]"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-white">
             {initial ? "Edit Holding" : "Add Holding"}
@@ -99,6 +106,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             </Label>
             <div className="flex gap-2">
               <Input
+                ref={inputRef}
                 id="ticker"
                 placeholder={exchange === "TSX" ? "SHOP" : "AAPL"}
                 value={ticker}
