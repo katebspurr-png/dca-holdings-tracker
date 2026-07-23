@@ -1,0 +1,3 @@
+## 2025-07-23 - [Update Prices Accessibility & Tactile Feedback]
+**Learning:** Adding explicit screen-reader `aria-label` attributes to tabular text inputs (e.g., matching tickers on an update prices list) significantly improves screen-reader clarity by preventing generic announcements. Grouping focus-visible styles (`focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none`) with standard tactile button transitions (`active:scale-95 transition`) provides visual parity for keyboard navigability.
+**Action:** Always verify that tabular inputs have descriptive `aria-label` properties, and that custom interactive buttons support both focus visible rings and smooth scaling transitions.

@@ -1,9 +1,17 @@
 import { useState, useMemo, useCallback } from "react";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
-import { getHoldings, currencyPrefix, apiTicker, type Holding } from "@/lib/storage";
+import {
+  getHoldings,
+  currencyPrefix,
+  apiTicker,
+  type Holding,
+} from "@/lib/storage";
 import { getCachedQuote, type StockQuote } from "@/lib/stock-price";
 import { useToast } from "@/hooks/use-toast";
-import { useRefreshPrices, formatLastRefreshed } from "@/hooks/use-refresh-prices";
+import {
+  useRefreshPrices,
+  formatLastRefreshed,
+} from "@/hooks/use-refresh-prices";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Save, RefreshCw } from "lucide-react";
 
@@ -23,10 +31,16 @@ function writePriceCache(cache: Record<string, StockQuote>) {
 }
 
 const fmt = (n: number) =>
-  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const fmtPct = (n: number) =>
-  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 function getCachedPriceForHolding(h: Holding): number | null {
   const key = apiTicker(h.ticker, (h.exchange ?? "US") as any).toUpperCase();
@@ -45,7 +59,16 @@ function computeRow(h: Holding, priceStr: string) {
   const gainLoss = marketValue != null ? marketValue - costBasis : null;
   const gainLossPct =
     gainLoss != null && costBasis > 0 ? (gainLoss / costBasis) * 100 : null;
-  return { shares, avgCost, costBasis, priceVal, hasPrice, marketValue, gainLoss, gainLossPct };
+  return {
+    shares,
+    avgCost,
+    costBasis,
+    priceVal,
+    hasPrice,
+    marketValue,
+    gainLoss,
+    gainLossPct,
+  };
 }
 
 function glColor(val: number | null) {
@@ -91,12 +114,12 @@ export default function UpdatePrices() {
 
   const hasChanges = useMemo(
     () => holdings.some((h) => prices[h.id] !== initialPrices[h.id]),
-    [holdings, prices, initialPrices]
+    [holdings, prices, initialPrices],
   );
 
   const editedCount = useMemo(
     () => holdings.filter((h) => prices[h.id] !== initialPrices[h.id]).length,
-    [holdings, prices, initialPrices]
+    [holdings, prices, initialPrices],
   );
 
   /* ── Totals ──────────────────────────────────────────── */
@@ -115,7 +138,8 @@ export default function UpdatePrices() {
       }
     });
     const pnl = hasMV ? totalMV - totalCost : null;
-    const pnlPct = pnl != null && totalCost > 0 ? (pnl / totalCost) * 100 : null;
+    const pnlPct =
+      pnl != null && totalCost > 0 ? (pnl / totalCost) * 100 : null;
     return { totalMV: hasMV ? totalMV : null, pnl, pnlPct };
   }, [holdings, prices]);
 
@@ -125,7 +149,10 @@ export default function UpdatePrices() {
     holdings.forEach((h) => {
       const val = parseFloat(prices[h.id]);
       if (isNaN(val) || val <= 0) return;
-      const key = apiTicker(h.ticker, (h.exchange ?? "US") as any).toUpperCase();
+      const key = apiTicker(
+        h.ticker,
+        (h.exchange ?? "US") as any,
+      ).toUpperCase();
       const existing = cache[key];
       cache[key] = {
         ticker: key,
@@ -161,7 +188,8 @@ export default function UpdatePrices() {
       toast({ title: "Market prices refreshed" });
     } else if (result.success > 0) {
       toast({
-        title: "Some prices were refreshed, but a few tickers could not be updated",
+        title:
+          "Some prices were refreshed, but a few tickers could not be updated",
         description: `Failed: ${result.failed.join(", ")}`,
       });
     } else {
@@ -174,12 +202,13 @@ export default function UpdatePrices() {
     return (
       <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
         <main className="mx-auto max-w-md px-4 pb-12 pt-12 text-center sm:px-6 md:px-8">
-          <p className="text-sm text-stitch-muted">No holdings yet. Add a holding before updating prices.</p>
+          <p className="text-sm text-stitch-muted">
+            No holdings yet. Add a holding before updating prices.
+          </p>
         </main>
       </div>
     );
   }
-
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -194,9 +223,11 @@ export default function UpdatePrices() {
                 variant="outline"
                 onClick={handleRefreshAll}
                 disabled={refreshing}
-                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
               >
-                <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`}
+                />
                 {refreshing ? "Refreshing…" : "Refresh Prices"}
               </Button>
             </div>
@@ -214,7 +245,9 @@ export default function UpdatePrices() {
           <div className="flex items-baseline gap-5 text-right">
             {totals.totalMV != null && (
               <div>
-                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">Market Value</span>
+                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">
+                  Market Value
+                </span>
                 <span className="font-[family-name:var(--font-mono)] text-base font-semibold tabular-nums text-white">
                   ${fmt(totals.totalMV)}
                 </span>
@@ -222,14 +255,17 @@ export default function UpdatePrices() {
             )}
             {totals.pnl != null && (
               <div>
-                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">Unrealized P/L</span>
+                <span className="block text-[10px] uppercase tracking-wider text-stitch-muted">
+                  Unrealized P/L
+                </span>
                 <span
                   className={`text-base font-semibold font-[family-name:var(--font-mono)] tabular-nums ${glColor(totals.pnl)}`}
                 >
                   {totals.pnl >= 0 ? "+" : ""}${fmt(totals.pnl)}
                   {totals.pnlPct != null && (
                     <span className="text-xs font-normal ml-1.5 opacity-70">
-                      {totals.pnlPct >= 0 ? "+" : ""}{fmtPct(totals.pnlPct)}%
+                      {totals.pnlPct >= 0 ? "+" : ""}
+                      {fmtPct(totals.pnlPct)}%
                     </span>
                   )}
                 </span>
@@ -271,7 +307,8 @@ export default function UpdatePrices() {
                 </span>
                 {r.marketValue != null && (
                   <span className="text-[10px] text-stitch-muted/60 font-[family-name:var(--font-mono)] tabular-nums whitespace-nowrap">
-                    {cp}{fmt(r.marketValue)}
+                    {cp}
+                    {fmt(r.marketValue)}
                   </span>
                 )}
                 {isEdited && (
@@ -288,7 +325,8 @@ export default function UpdatePrices() {
 
               {/* Avg cost */}
               <span className="text-right text-[12px] text-stitch-muted font-[family-name:var(--font-mono)] tabular-nums">
-                {cp}{fmt(r.avgCost)}
+                {cp}
+                {fmt(r.avgCost)}
               </span>
 
               {/* Editable price */}
@@ -298,7 +336,8 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
+                  aria-label={`Current price for ${h.ticker}`}
+                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none py-1 px-2 transition placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -358,7 +397,8 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
+                  aria-label={`Current price for ${h.ticker} (mobile)`}
+                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none py-1 px-2 transition placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -367,13 +407,16 @@ export default function UpdatePrices() {
               {/* Secondary row */}
               <div className="flex items-center justify-between mt-1.5">
                 <span className="text-[11px] text-stitch-muted/70 font-[family-name:var(--font-mono)] tabular-nums">
-                  {r.shares.toFixed(4)} shares · avg {cp}{fmt(r.avgCost)}
+                  {r.shares.toFixed(4)} shares · avg {cp}
+                  {fmt(r.avgCost)}
                 </span>
                 <div className={`flex items-baseline gap-1.5 ${color}`}>
                   {r.gainLoss != null ? (
                     <>
                       <span className="text-[11px] font-medium font-[family-name:var(--font-mono)] tabular-nums">
-                        {r.gainLoss >= 0 ? "+" : ""}{cp}{fmt(r.gainLoss)}
+                        {r.gainLoss >= 0 ? "+" : ""}
+                        {cp}
+                        {fmt(r.gainLoss)}
                       </span>
                       <span className="text-[10px] font-[family-name:var(--font-mono)] tabular-nums opacity-70">
                         {r.gainLossPct != null
@@ -390,7 +433,8 @@ export default function UpdatePrices() {
               {/* Market value */}
               {r.marketValue != null && (
                 <div className="text-[10px] text-stitch-muted/50 mt-0.5 font-[family-name:var(--font-mono)] tabular-nums">
-                  MV {cp}{fmt(r.marketValue)}
+                  MV {cp}
+                  {fmt(r.marketValue)}
                 </div>
               )}
             </div>
@@ -411,7 +455,7 @@ export default function UpdatePrices() {
                   variant="ghost"
                   size="sm"
                   onClick={handleReset}
-                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 >
                   <RotateCcw className="mr-1 h-3 w-3" />
                   Reset
@@ -419,7 +463,7 @@ export default function UpdatePrices() {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 >
                   <Save className="mr-1 h-3 w-3" />
                   Save prices
