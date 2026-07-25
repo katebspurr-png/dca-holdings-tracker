@@ -580,8 +580,17 @@ export default function WhatIfScenarios() {
                     {scenarios.length > 1 && (
                       <span
                         role="button"
+                        tabIndex={0}
+                        aria-label={`Remove ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); removeScenarioTab(i); }}
-                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-white/15"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            removeScenarioTab(i);
+                          }
+                        }}
+                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent focus-visible:ring-offset-1"
                       >
                         ×
                       </span>
