@@ -531,12 +531,14 @@ export default function HoldingDetail() {
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
+          <div className="flex gap-0 -mb-px overflow-x-auto" role="tablist" aria-label="Holding detail workspace tabs">
             {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                role="tab"
+                aria-selected={activeTab === key}
                 onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition active:scale-95 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none rounded-t-md ${
                   activeTab === key
                     ? "border-stitch-accent text-stitch-accent"
                     : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
