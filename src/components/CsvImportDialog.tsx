@@ -358,17 +358,20 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
 
               <MappingSelect label="Exchange column (optional)" value={mapping.exchange} headers={["(none)", ...headers]} onChange={(v) => setMapping((m) => ({ ...m, exchange: v === "(none)" ? "" : v }))} />
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-white">
+              <div className="space-y-1.5" role="radiogroup" aria-label="Default exchange (used when no column present)">
+                <span className="text-sm font-medium text-white block">
                   Default exchange (used when no column present)
-                </label>
+                </span>
                 <div className="flex gap-3">
                   {(["US", "TSX"] as const).map((ex) => (
                     <button
                       key={ex}
                       type="button"
+                      role="radio"
+                      aria-checked={defaultExchange === ex}
+                      aria-label={`Set default exchange to ${ex}`}
                       onClick={() => setDefaultExchange(ex)}
-                      className={`flex-1 rounded-lg border py-2 font-mono text-sm font-semibold transition-colors ${
+                      className={`flex-1 rounded-lg border py-2 font-mono text-sm font-semibold transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none ${
                         defaultExchange === ex
                           ? "border-stitch-accent bg-stitch-accent/15 text-stitch-accent"
                           : "border-stitch-border text-stitch-muted hover:text-white"
