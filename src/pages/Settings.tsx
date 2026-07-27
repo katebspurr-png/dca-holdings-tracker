@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check, LogOut, BookOpen, ExternalLink } from "lucide-react";
 import { resetOnboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { resetAll, exportData, importData } from "@/lib/storage";
@@ -236,17 +235,42 @@ export default function Settings() {
         <section className={cardClass}>
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
           <div className="relative z-10 space-y-4">
-            <h2 className={sectionTitle}>Appearance</h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-                <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
-              </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
-                <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
-                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-              </div>
+            <h2 id="appearance-heading" className={sectionTitle}>Appearance</h2>
+            <div
+              role="radiogroup"
+              aria-labelledby="appearance-heading"
+              className="flex w-full gap-2 rounded-2xl bg-stitch-pill p-1"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!dark}
+                aria-label="Light mode"
+                onClick={() => setDark(false)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none ${
+                  !dark
+                    ? "bg-stitch-card text-stitch-accent shadow-sm"
+                    : "text-stitch-muted hover:text-white"
+                }`}
+              >
+                <Sun className="h-4 w-4" />
+                <span>Light</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={dark}
+                aria-label="Dark mode"
+                onClick={() => setDark(true)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none ${
+                  dark
+                    ? "bg-stitch-card text-stitch-accent shadow-sm"
+                    : "text-stitch-muted hover:text-white"
+                }`}
+              >
+                <Moon className="h-4 w-4" />
+                <span>Dark</span>
+              </button>
             </div>
           </div>
         </section>
