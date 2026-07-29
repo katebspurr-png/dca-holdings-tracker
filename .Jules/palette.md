@@ -1,0 +1,3 @@
+## 2026-06-08 - Bottom Tab Bar Tactile & A11y Polish
+**Learning:** A fixed main navigation bar (like BottomTabBar) requires explicit page indicators for assistive technologies via `aria-current="page"` alongside tactile micro-feedback (`active:scale-95`) to ensure a responsive, native-feeling, and accessible experience on mobile screens. Keyboard navigation is similarly dependent on clear visual focus rings that respect custom offset coloring.
+**Action:** Ensure all mobile tab and navigation components employ `aria-current="page"`, tactile scaling, and focus-visible offsets mapped to the app's dark-mode background colors.
