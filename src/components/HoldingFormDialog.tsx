@@ -104,10 +104,11 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 value={ticker}
                 onChange={(e) => setTicker(e.target.value)}
                 required
+                autoFocus
                 className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
-                <SelectTrigger className={`w-24 ${selectTriggerClass}`}>
+                <SelectTrigger aria-label="Select Exchange" className={`w-24 ${selectTriggerClass}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={selectContentClass}>
@@ -192,7 +193,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="button"
               variant="outline"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -200,7 +201,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="submit"
               disabled={loading}
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
             >
               {initial ? "Save" : "Add"}
             </Button>
