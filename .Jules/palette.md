@@ -1,0 +1,3 @@
+## 2026-07-30 - Scenario Tab Close Trigger Keyboard Accessibility
+**Learning:** Custom close buttons/triggers (like a `<span>` or nested icon button) inside Radix Tabs elements rendered as semantic `<button>` elements require explicit keyboard focus management, ARIA roles, and keydown event handlers. Native HTML interactive nesting rules can cause browser navigation loops and exclude mouse-only elements from assistive technology.
+**Action:** When creating inline removal triggers or tab close triggers, implement them with `span` elements, use `tabIndex={0}`, set `aria-label`, handle `Enter` and `Space` keydown events separately, stop event propagation, and apply focus-visible ring styles.
