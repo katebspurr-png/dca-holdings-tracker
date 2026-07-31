@@ -927,7 +927,7 @@ export default function WhatIfScenarios() {
                       </div>
                       <button
                         onClick={() => handleDeleteSaved(comp.id)}
-                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stitch-muted hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stitch-muted hover:text-destructive hover:bg-destructive/10 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                         aria-label="Delete scenario"
                       >
                         <X className="h-3.5 w-3.5" />
