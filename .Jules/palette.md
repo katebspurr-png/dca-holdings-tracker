@@ -1,0 +1,3 @@
+## 2026-07-31 - Universal Close Button Accessibility and Tactile Interactivity
+**Learning:** Dialog and Sheet close triggers are often standard, small rectangle buttons in library templates, which provide poor touch target sizes and non-intuitive visual cues on mobile. Enhancing close buttons with a fully rounded, padded target increases interaction success on small screens. Pairing `active:scale-95` with generalized transitions provides immediate physical delight, while explicit contextual ARIA labels (e.g. "Close dialog", "Close panel") rather than generic text or hidden tags significantly improve screen reader clarity.
+**Action:** Always refine standard Radix / shadcn Close buttons to use rounded-full targets, tactile scaling, and clear, context-specific ARIA labels.
