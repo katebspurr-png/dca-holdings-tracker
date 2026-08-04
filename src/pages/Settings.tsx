@@ -93,7 +93,7 @@ export default function Settings() {
     "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-stitch-muted";
   const outlineBtn =
-    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none";
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -131,7 +131,7 @@ export default function Settings() {
                 className={
                   plan === "premium"
                     ? `h-8 shrink-0 text-xs ${outlineBtn}`
-                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 }
                 onClick={togglePlan}
               >
@@ -223,7 +223,7 @@ export default function Settings() {
               ) : (
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                   onClick={() => navigate(getDemoEntryPath())}
                 >
                   Enter demo mode
@@ -242,7 +242,13 @@ export default function Settings() {
                 <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
                 <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
               </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
+              <Switch
+                id="dark-mode"
+                checked={dark}
+                onCheckedChange={setDark}
+                className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
+                aria-label="Toggle dark mode"
+              />
               <div className="flex items-center gap-3">
                 <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
                 <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
@@ -273,7 +279,12 @@ export default function Settings() {
                   ? "Resets the demo sandbox to the original sample dataset."
                   : "Removes all holdings and scenarios stored on this device for your account."}
               </p>
-              <Button onClick={handleReset} size="sm" variant="destructive">
+              <Button
+                onClick={handleReset}
+                size="sm"
+                variant="destructive"
+                className="transition active:scale-95 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
+              >
                 <RotateCcw className="mr-1.5 h-4 w-4" />
                 {isDemoMode ? "Reset demo sample" : "Clear portfolio"}
               </Button>
@@ -316,7 +327,7 @@ export default function Settings() {
                 </p>
                 <Button
                   size="sm"
-                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 transition active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                   onClick={() => navigate("/auth")}
                 >
                   Create account
