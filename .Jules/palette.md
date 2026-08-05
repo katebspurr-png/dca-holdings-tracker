@@ -1,0 +1,3 @@
+## 2025-02-12 - Button-Based Segmented Control and Main Navigation Accessibility
+**Learning:** Custom button-based segmented controls (like the default exchange selector) and custom bottom tab bars should always group controls into semantic roles (e.g. `role="radiogroup"` with `role="radio"` and `aria-checked`, or `aria-current="page"`) to ensure screen readers can announce states accurately, coupled with distinct focus-visible rings and active scaling transitions for premium tactile feedback.
+**Action:** Enhance segmented control elements with explicit ARIA roles, states, custom focus rings, and active scale animations on click.
