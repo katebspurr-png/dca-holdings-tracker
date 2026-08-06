@@ -1,0 +1,3 @@
+## 2026-08-06 - Accessible Tab Interfaces in Mobile Web Apps
+**Learning:** Standard navigation tab buttons that conditionally show pages can be made highly screen-reader friendly by wrapping the tablist in role="tablist", assigning role="tab" and aria-selected status to triggers, and wrapping tab targets in role="tabpanel" containers. Adding active:scale-95 coupled with focus-visible offset rings provides an optimal tactile and accessible keyboard navigation experience.
+**Action:** Always implement ARIA tab roles, focus rings, and active:scale-95 scaling feedback when designing segmented controls or tab panel structures to keep the UI delightful and standard-compliant.
