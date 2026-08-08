@@ -54,7 +54,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
               <button
                 type="button"
                 onClick={onSkip}
-                className="shrink-0 text-xs font-medium text-stitch-muted transition-colors hover:text-white"
+                className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-stitch-muted transition-all duration-150 active:scale-95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
               >
                 Skip
               </button>
@@ -62,18 +62,20 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 0 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="q1-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   How do you usually manage your investments?
                 </h2>
                 <p className="mt-2 text-xs text-stitch-muted">This only adjusts labels and tips—not advice.</p>
-                <ul className="mt-4 space-y-2">
+                <ul role="radiogroup" aria-labelledby="q1-title" className="mt-4 space-y-2">
                   {Q1_OPTIONS.map((o) => (
                     <li key={o.value}>
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={q1 === o.value}
                         onClick={() => setQ1(o.value)}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none",
                           q1 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -89,17 +91,19 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 1 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="q2-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   Have you used tools to model or simulate investments before?
                 </h2>
-                <ul className="mt-4 space-y-2">
+                <ul role="radiogroup" aria-labelledby="q2-title" className="mt-4 space-y-2">
                   {Q2_OPTIONS.map((o) => (
                     <li key={o.value}>
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={q2 === o.value}
                         onClick={() => setQ2(o.value)}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none",
                           q2 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -115,18 +119,20 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 2 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="q3-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   What are you hoping to do here?{" "}
                   <span className="text-sm font-normal text-stitch-muted">(optional)</span>
                 </h2>
-                <ul className="mt-4 space-y-2">
+                <ul role="radiogroup" aria-labelledby="q3-title" className="mt-4 space-y-2">
                   {Q3_OPTIONS.map((o) => (
                     <li key={o.value}>
                       <button
                         type="button"
+                        role="radio"
+                        aria-checked={q3 === o.value}
                         onClick={() => setQ3(o.value)}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none",
                           q3 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -145,7 +151,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                 type="button"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
                 className={cn(
-                  "flex items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white",
+                  "flex items-center gap-1 rounded-md px-1.5 py-0.5 text-sm text-stitch-muted transition-all duration-150 active:scale-95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none",
                   step === 0 ? "invisible" : "",
                 )}
               >
@@ -156,7 +162,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                 <Button
                   disabled={(step === 0 && q1 == null) || (step === 1 && q2 == null)}
                   onClick={() => setStep((s) => s + 1)}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  className="gap-2 bg-stitch-accent font-semibold text-black transition-all duration-150 active:scale-95 hover:bg-stitch-accent/90"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
@@ -165,7 +171,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                 <Button
                   onClick={finish}
                   disabled={q1 == null || q2 == null}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  className="gap-2 bg-stitch-accent font-semibold text-black transition-all duration-150 active:scale-95 hover:bg-stitch-accent/90"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
