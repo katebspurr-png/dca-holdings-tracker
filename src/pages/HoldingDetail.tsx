@@ -666,16 +666,6 @@ export default function HoldingDetail() {
 
             {/* Saved scenarios */}
             <div className="space-y-3">
-              <div className="flex items-end justify-between gap-2">
-                <div>
-                  <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Saved Scenarios</h2>
-                  <p className="text-[11px] text-stitch-muted/70 mt-0.5">Previously saved DCA plans for {holding.ticker}.</p>
-                </div>
-                {scenarios.length > 0 && (
-                  <span className="text-[10px] text-stitch-muted/50 tabular-nums">{scenarios.length} total</span>
-                )}
-              </div>
-
               <SavedScenarios
                 holdingId={holding.id}
                 exchange={exchange as any}

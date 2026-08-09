@@ -134,7 +134,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill active:scale-95 transition-all duration-100 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 onClick={exitCompareMode}
               >
                 <X className="h-3 w-3" />
@@ -144,7 +144,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill active:scale-95 transition-all duration-100 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 onClick={() => setCompareMode(true)}
               >
                 <GitCompareArrows className="h-3 w-3 text-stitch-accent" />
@@ -154,7 +154,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-white"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-white active:scale-95 transition-all duration-100 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                 onClick={() => toast.info("Enable premium preview in Settings to compare scenarios side-by-side.")}
               >
                 <Lock className="h-3 w-3" />
@@ -171,12 +171,13 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
       {/* Filter chips */}
       {allScenarios.length > 1 && !compareMode && (
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Filter scenarios">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+              aria-pressed={filter === f.key}
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-all duration-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none ${
                 filter === f.key
                   ? "bg-stitch-accent/10 border-stitch-accent/30 text-stitch-accent"
                   : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-white"
@@ -296,7 +297,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-white hover:bg-stitch-pill"
+                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-white hover:bg-stitch-pill active:scale-95 transition-all duration-100 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                         onClick={() => onUseScenario(s)}
                       >
                         <ArrowRight className="mr-1 h-2.5 w-2.5 text-stitch-accent" />
@@ -305,7 +306,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 px-2 text-[10px] text-stitch-muted hover:bg-stitch-pill/50 hover:text-destructive"
+                        className="h-6 px-2 text-[10px] text-stitch-muted hover:bg-stitch-pill/50 hover:text-destructive active:scale-95 transition-all duration-100 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg focus:outline-none"
                         onClick={() => setDeleting(s)}
                       >
                         <Trash2 className="mr-1 h-2.5 w-2.5" />
