@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getScenario } from "@/lib/storage";
+import { getScenario, getHolding, currencyPrefix } from "@/lib/storage";
 
 const METHOD_LABELS: Record<string, string> = {
   price_shares: "Price + Shares",
@@ -24,6 +24,16 @@ export default function ScenarioDetail() {
   const storageRevision = useStorageRevision();
 
   const scenario = useMemo(() => (id ? getScenario(id) : undefined), [id, storageRevision]);
+
+  const holding = useMemo(() => (scenario ? getHolding(scenario.holding_id) : undefined), [scenario]);
+
+  const cp = useMemo(() => {
+    if (holding) {
+      return currencyPrefix(holding.exchange);
+    }
+    // Simple heuristic fallback if the holding is missing/deleted, or fall back to "$"
+    return "$";
+  }, [holding]);
 
   if (!scenario) {
     return (
@@ -72,10 +82,10 @@ export default function ScenarioDetail() {
           <div className="relative z-10">
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Inputs</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <Stat label={scenario.input1_label} value={`$${Number(scenario.input1_value).toFixed(2)}`} />
-              <Stat label={scenario.input2_label} value={formatInputValue(scenario.input2_label, scenario.input2_value)} />
+              <Stat label={scenario.input1_label} value={`${cp}${Number(scenario.input1_value).toFixed(2)}`} />
+              <Stat label={scenario.input2_label} value={formatInputValue(scenario.input2_label, scenario.input2_value, cp)} />
               <Stat label="Include Fees" value={scenario.include_fees ? "Yes" : "No"} />
-              <Stat label="Fee Amount" value={`$${Number(scenario.fee_amount).toFixed(2)}`} />
+              <Stat label="Fee Amount" value={`${cp}${Number(scenario.fee_amount).toFixed(2)}`} />
             </div>
           </div>
         </section>
@@ -86,16 +96,16 @@ export default function ScenarioDetail() {
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Results</h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <Stat label="Shares to Buy" value={Number(scenario.shares_to_buy).toFixed(4)} />
-              <Stat label="Budget Invested" value={`$${Number(scenario.budget_invested).toFixed(2)}`} />
-              <Stat label="Fee Applied" value={`$${Number(scenario.fee_applied).toFixed(2)}`} />
-              <Stat label="Total Spend" value={`$${Number(scenario.total_spend).toFixed(2)}`} />
+              <Stat label="Budget Invested" value={`${cp}${Number(scenario.budget_invested).toFixed(2)}`} />
+              <Stat label="Fee Applied" value={`${cp}${Number(scenario.fee_applied).toFixed(2)}`} />
+              <Stat label="Total Spend" value={`${cp}${Number(scenario.total_spend).toFixed(2)}`} />
               <Stat label="New Total Shares" value={Number(scenario.new_total_shares).toFixed(4)} />
-              <Stat label="New Avg Cost" value={`$${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
+              <Stat label="New Avg Cost" value={`${cp}${Number(scenario.new_avg_cost).toFixed(2)}`} highlight />
               {scenario.buy_price !== null && (
-                <Stat label="Buy Price" value={`$${Number(scenario.buy_price).toFixed(2)}`} />
+                <Stat label="Buy Price" value={`${cp}${Number(scenario.buy_price).toFixed(2)}`} />
               )}
               {scenario.recommended_target != null && (
-                <Stat label="Target avg (saved)" value={`$${Number(scenario.recommended_target).toFixed(2)}`} highlight />
+                <Stat label="Target avg (saved)" value={`${cp}${Number(scenario.recommended_target).toFixed(2)}`} highlight />
               )}
               {scenario.budget_percent_used != null && (
                 <Stat label="Budget % Used" value={`${scenario.budget_percent_used}%`} />
@@ -117,10 +127,10 @@ export default function ScenarioDetail() {
   );
 }
 
-function formatInputValue(label: string, value: number) {
+function formatInputValue(label: string, value: number, cp: string) {
   const lower = label.toLowerCase();
   if (lower.includes("shares")) return Number(value).toFixed(4);
-  return `$${Number(value).toFixed(2)}`;
+  return `${cp}${Number(value).toFixed(2)}`;
 }
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
