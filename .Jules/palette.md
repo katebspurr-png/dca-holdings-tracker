@@ -1,0 +1,3 @@
+## 2026-03-26 - [Bottom Tab Bar Keyboard & Assistive Technology Enhancement]
+**Learning:** Standardizing focus outlines (like `focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`) matches existing design system tokens and ensures full screen-reader tab navigation clarity. Using `aria-current` on active navigation buttons represents semantic best practice for screen-reader users, and adding `active:scale-95 transition-all duration-150` micro-interactions provides rich tactile delight.
+**Action:** Always apply the standard focus ring parameters and active press micro-interactions to key app navigation elements and action buttons for maximum tactile responsiveness and keyboard accessibility.
