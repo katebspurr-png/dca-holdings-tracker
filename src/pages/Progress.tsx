@@ -3,6 +3,7 @@ import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgres
 import { getHoldings } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
+import { ArrowLeft } from "lucide-react";
 
 export default function Progress() {
   useStorageRevision();
@@ -22,10 +23,13 @@ export default function Progress() {
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded-xl"
               asChild
             >
-              <Link to="/">Back to portfolio</Link>
+              <Link to="/" aria-label="Back to portfolio" className="flex items-center gap-1.5">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to portfolio
+              </Link>
             </Button>
           </div>
         </section>
