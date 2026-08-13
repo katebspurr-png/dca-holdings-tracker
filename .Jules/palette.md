@@ -1,0 +1,3 @@
+## 2025-02-18 - Navigation Button Polishing and Tactility
+**Learning:** Secondary navigation elements (such as "Back" or "Cancel" buttons) benefit greatly from deliberate UX polish—specifically layout icons (e.g., `ArrowLeft`), responsive transitions, and tactile active states like `active:scale-95`. Coupled with robust accessibility outlines matching the theme (such as custom `focus-visible:ring` with offsets), they ensure both high discoverability and comfortable physical interactions for all users.
+**Action:** Always enrich simple routing links or back-navigation triggers with directional icons, clear `aria-label` attributes, smooth transition timing, active tactile scaling, and focus rings conforming to the design system.
