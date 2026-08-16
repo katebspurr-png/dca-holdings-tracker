@@ -58,7 +58,8 @@ export default function GoalLadder({ holding }: Props) {
           <button
             type="button"
             onClick={() => navigate("/update-prices")}
-            className="text-stitch-accent underline underline-offset-2 hover:opacity-90"
+            className="text-stitch-accent underline underline-offset-2 hover:opacity-90 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded-sm inline-block"
+            aria-label="Navigate to Update Prices page"
           >
             Update Prices
           </button>{" "}
