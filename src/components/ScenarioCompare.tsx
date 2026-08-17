@@ -156,7 +156,8 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    aria-label={`Use ${METHOD_LABELS[s.method] ?? s.method} scenario`}
+                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onUseScenario(s)}
                   >
                     <ArrowRight className="mr-1 h-2.5 w-2.5" />
@@ -164,7 +165,8 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   </Button>
                   <Button
                     size="sm"
-                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90"
+                    aria-label={`Apply ${METHOD_LABELS[s.method] ?? s.method} buy transaction`}
+                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90 transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onApplyBuy(s)}
                   >
                     <CheckCircle className="mr-1 h-2.5 w-2.5" />
