@@ -58,7 +58,7 @@ export default function GoalLadder({ holding }: Props) {
           <button
             type="button"
             onClick={() => navigate("/update-prices")}
-            className="text-stitch-accent underline underline-offset-2 hover:opacity-90"
+            className="inline-block rounded-sm text-stitch-accent underline underline-offset-2 hover:opacity-90 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           >
             Update Prices
           </button>{" "}
@@ -82,10 +82,15 @@ export default function GoalLadder({ holding }: Props) {
           </p>
         </div>
         <div className="flex items-center justify-between rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-4 py-3 font-mono text-sm">
-          <Label htmlFor="goal-ladder-fees" className="cursor-pointer text-[11px] text-stitch-muted">
+          <Label htmlFor="goal-ladder-fees" className="cursor-pointer text-[11px] text-stitch-muted select-none">
             Include fees in ladder math
           </Label>
-          <Switch id="goal-ladder-fees" checked={includeFees} onCheckedChange={setIncludeFees} />
+          <Switch
+            id="goal-ladder-fees"
+            checked={includeFees}
+            onCheckedChange={setIncludeFees}
+            className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+          />
         </div>
       </div>
     );
@@ -94,10 +99,15 @@ export default function GoalLadder({ holding }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 px-4 py-3 font-mono text-sm">
-        <Label htmlFor="goal-ladder-fees-active" className="cursor-pointer text-[11px] text-stitch-muted">
+        <Label htmlFor="goal-ladder-fees-active" className="cursor-pointer text-[11px] text-stitch-muted select-none">
           Include fees in ladder math
         </Label>
-        <Switch id="goal-ladder-fees-active" checked={includeFees} onCheckedChange={setIncludeFees} />
+        <Switch
+          id="goal-ladder-fees-active"
+          checked={includeFees}
+          onCheckedChange={setIncludeFees}
+          className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+        />
       </div>
 
       <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
@@ -113,16 +123,22 @@ export default function GoalLadder({ holding }: Props) {
           Rungs: {LADDER_INVESTMENT_STEPS.map((n) => `${cp}${n}`).join(" · ")} — modeled outcome if each full amount were
           deployed at the current price.
         </p>
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 gap-2.5">
           {ladderRows.map(({ amount, newAvg, avgImprovement }) => (
             <li
               key={amount}
-              className="border-b border-stitch-border/40 pb-3 text-white/90 last:border-0 last:pb-0 leading-relaxed"
+              className="flex items-center justify-between rounded-xl border border-stitch-border/40 bg-stitch-pill/20 px-3.5 py-2.5 text-xs text-white/90 transition-colors hover:bg-stitch-pill/40"
             >
-              Invest {cp}
-              {fmt(amount)} → Avg becomes {cp}
-              {fmt(newAvg)} · Avg change {cp}
-              {fmt(avgImprovement)}/share
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-stitch-accent/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-stitch-accent">
+                  +{cp}{fmt(amount)}
+                </span>
+                <span className="text-stitch-muted">New avg:</span>
+                <span className="font-mono font-bold text-white">{cp}{fmt(newAvg)}</span>
+              </div>
+              <span className="font-mono text-[11px] font-semibold text-stitch-accent">
+                −{cp}{fmt(avgImprovement)}/sh
+              </span>
             </li>
           ))}
         </ul>
