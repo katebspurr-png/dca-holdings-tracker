@@ -42,7 +42,7 @@ export default function PostWalkthroughConversionModal() {
         <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
           <Button
             type="button"
-            className="h-11 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+            className="h-11 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 active:scale-95 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={handleCreateAccount}
           >
             Create account
@@ -50,7 +50,7 @@ export default function PostWalkthroughConversionModal() {
           <Button
             type="button"
             variant="outline"
-            className="h-11 w-full border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            className="h-11 w-full border-stitch-border bg-stitch-pill text-stitch-muted-soft transition-all duration-150 active:scale-95 hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={handleKeepExploring}
           >
             Keep exploring demo
