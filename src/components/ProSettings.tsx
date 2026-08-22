@@ -36,7 +36,7 @@ export default function ProSettings({ onChanged }: Props) {
           size="sm"
           variant="ghost"
           aria-label="Settings"
-          className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+          className="text-stitch-muted transition-all duration-150 active:scale-95 hover:bg-stitch-pill/50 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
         >
           {pro ? <Crown className="h-4 w-4 text-yellow-500" /> : <Settings className="h-4 w-4" />}
         </Button>
@@ -74,7 +74,7 @@ export default function ProSettings({ onChanged }: Props) {
 
               <Button
                 onClick={handleUpgrade}
-                className="w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="w-full bg-stitch-accent font-semibold text-black transition-all duration-150 active:scale-95 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 size="sm"
               >
                 <Crown className="mr-1.5 h-4 w-4" />
@@ -84,7 +84,7 @@ export default function ProSettings({ onChanged }: Props) {
               <Button
                 onClick={handleRestore}
                 variant="outline"
-                className="w-full border-stitch-border bg-transparent text-white hover:bg-stitch-pill"
+                className="w-full border-stitch-border bg-transparent text-white transition-all duration-150 active:scale-95 hover:bg-stitch-pill focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 size="sm"
               >
                 <RotateCw className="mr-1.5 h-4 w-4" />
