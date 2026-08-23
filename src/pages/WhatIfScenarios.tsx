@@ -484,7 +484,7 @@ export default function WhatIfScenarios() {
           <Button
             variant="outline"
             size="sm"
-            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -519,24 +519,26 @@ export default function WhatIfScenarios() {
               <Button
                 size="sm"
                 variant={inputMode === "dollar" ? "default" : "outline"}
-                className={
+                className={`${
                   inputMode === "dollar"
                     ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
                     : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
+                } active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`}
                 onClick={() => setInputMode("dollar")}
+                aria-label="Set allocation input mode to dollars"
               >
                 <DollarSign className="h-3.5 w-3.5" />
               </Button>
               <Button
                 size="sm"
                 variant={inputMode === "percent" ? "default" : "outline"}
-                className={
+                className={`${
                   inputMode === "percent"
                     ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
                     : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
-                }
+                } active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`}
                 onClick={() => setInputMode("percent")}
+                aria-label="Set allocation input mode to percentage"
               >
                 <Percent className="h-3.5 w-3.5" />
               </Button>
@@ -591,7 +593,12 @@ export default function WhatIfScenarios() {
               </TabsList>
             </Tabs>
             {scenarios.length < MAX_SCENARIOS && (
-              <Button size="sm" variant="outline" onClick={addScenarioTab}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addScenarioTab}
+                className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              >
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 Add Scenario
               </Button>
@@ -600,20 +607,43 @@ export default function WhatIfScenarios() {
 
           {/* Quick-fill & Refresh All buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={splitEvenly} disabled={!budget}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={splitEvenly}
+              disabled={!budget}
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+            >
               <Scale className="mr-1.5 h-3.5 w-3.5" />
               Split Evenly
             </Button>
-            <Button size="sm" variant="outline" onClick={proportional} disabled={!budget}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={proportional}
+              disabled={!budget}
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+            >
               <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
               Proportional
             </Button>
-            <Button size="sm" variant="outline" onClick={clearAllocations}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={clearAllocations}
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+            >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Clear
             </Button>
             <div className="flex-1" />
-            <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={refreshAllPrices}
+              disabled={refreshingAll}
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+            >
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
               {refreshingAll ? "Fetching…" : "Refresh All Prices"}
             </Button>
@@ -841,7 +871,7 @@ export default function WhatIfScenarios() {
                 <Button
                   variant="outline"
                   onClick={() => setShowApplyDialog(true)}
-                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10"
+                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   <CheckSquare className="mr-1.5 h-4 w-4" />
                   Apply to Holdings
@@ -849,7 +879,11 @@ export default function WhatIfScenarios() {
               </>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!budget}>
+          <Button
+            onClick={handleSave}
+            disabled={!budget}
+            className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+          >
             <Save className="mr-1.5 h-4 w-4" />
             Save Comparison
           </Button>
