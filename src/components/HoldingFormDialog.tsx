@@ -107,7 +107,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
-                <SelectTrigger className={`w-24 ${selectTriggerClass}`}>
+                <SelectTrigger aria-label="Select exchange" className={`w-24 ${selectTriggerClass}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={selectContentClass}>
@@ -155,7 +155,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
           <div className="space-y-2">
             <Label className="text-stitch-muted">Trading fee type</Label>
             <Select value={feeType} onValueChange={(v) => setFeeType(v as FeeType)}>
-              <SelectTrigger className={`w-full ${selectTriggerClass}`}>
+              <SelectTrigger aria-label="Select fee type" className={`w-full ${selectTriggerClass}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={selectContentClass}>
@@ -192,7 +192,8 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="button"
               variant="outline"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              aria-label="Cancel holding editing"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -200,9 +201,19 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="submit"
               disabled={loading}
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              aria-label={initial ? "Save holding changes" : "Add new holding"}
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg disabled:opacity-50 disabled:pointer-events-none"
             >
-              {initial ? "Save" : "Add"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                  {initial ? "Saving..." : "Adding..."}
+                </span>
+              ) : initial ? (
+                "Save"
+              ) : (
+                "Add"
+              )}
             </Button>
           </div>
         </form>
