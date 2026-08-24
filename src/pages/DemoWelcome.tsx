@@ -55,7 +55,8 @@ export default function DemoWelcome() {
           <Button
             type="button"
             size="lg"
-            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90"
+            aria-label="Enter Demo"
+            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={() => goToDemo(false)}
           >
             Enter Demo
@@ -64,7 +65,8 @@ export default function DemoWelcome() {
             type="button"
             variant="ghost"
             size="lg"
-            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white"
+            aria-label="Skip walkthrough"
+            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={() => goToDemo(true)}
           >
             Skip walkthrough
