@@ -190,7 +190,7 @@ export default function Auth() {
           type="button"
           size="lg"
           aria-describedby="auth-demo-hint"
-          className="mt-5 h-12 w-full max-w-sm bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/20 hover:bg-stitch-accent/90"
+          className="mt-5 h-12 w-full max-w-sm bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/20 transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           onClick={() => navigate(getDemoEntryPath())}
         >
           Try Demo
@@ -198,7 +198,7 @@ export default function Auth() {
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className="mt-3 text-[13px] font-medium text-stitch-muted/90 underline-offset-4 transition-colors hover:text-white hover:underline"
+          className="mt-3 rounded text-[13px] font-medium text-stitch-muted/90 underline-offset-4 transition-all duration-150 hover:text-white hover:underline active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
         >
           Create account
         </button>
@@ -219,7 +219,7 @@ export default function Auth() {
             <Button
               type="button"
               variant="outline"
-              className="h-10 w-full border-stitch-border bg-stitch-pill font-medium text-white hover:bg-stitch-pill/80 hover:text-white"
+              className="h-10 w-full border-stitch-border bg-stitch-pill font-medium text-white transition-all duration-150 hover:bg-stitch-pill/80 hover:text-white active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={handleGoogle}
               disabled={googleLoading || loading || magicLoading}
             >
@@ -263,7 +263,7 @@ export default function Auth() {
             </div>
             <Button
               type="submit"
-              className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="h-10 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               disabled={loading}
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
@@ -272,7 +272,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setMode("login")}
-                className="font-medium text-stitch-accent hover:underline"
+                className="rounded font-medium text-stitch-accent transition-all duration-150 hover:underline active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 Back to sign in
               </button>
@@ -306,7 +306,7 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-xs font-medium text-stitch-accent hover:underline"
+                      className="rounded text-xs font-medium text-stitch-accent transition-all duration-150 hover:underline active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     >
                       Forgot password?
                     </button>
@@ -327,7 +327,7 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="h-10 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 disabled={loading || googleLoading || magicLoading}
               >
                 {loading ? (
@@ -344,7 +344,7 @@ export default function Auth() {
             <Button
               type="button"
               variant="ghost"
-              className="h-10 w-full text-stitch-muted hover:bg-stitch-pill hover:text-white"
+              className="h-10 w-full text-stitch-muted transition-all duration-150 hover:bg-stitch-pill hover:text-white active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={handleMagicLink}
               disabled={magicLoading || loading || googleLoading}
             >
@@ -367,7 +367,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="ml-1.5 font-medium text-stitch-accent hover:underline"
+                className="ml-1.5 rounded font-medium text-stitch-accent transition-all duration-150 hover:underline active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
