@@ -133,7 +133,7 @@ export default function AuthResetPassword() {
 
           <Button
             type="submit"
-            className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+            className="h-10 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             disabled={loading}
           >
             {loading ? (
@@ -148,7 +148,7 @@ export default function AuthResetPassword() {
         </form>
 
         <p className="text-center text-sm text-stitch-muted">
-          <Link to="/auth" className="font-medium text-stitch-accent hover:underline">
+          <Link to="/auth" className="rounded font-medium text-stitch-accent transition-all duration-150 hover:underline active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg">
             Back to sign in
           </Link>
         </p>
