@@ -505,7 +505,8 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            aria-label="Back to holdings"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -531,12 +532,17 @@ export default function HoldingDetail() {
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
+          <div className="flex gap-0 -mb-px overflow-x-auto" role="tablist" aria-label="Holding views navigation">
             {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                role="tab"
+                id={`tab-${key}`}
+                aria-selected={activeTab === key}
+                aria-controls={`tabpanel-${key}`}
+                aria-label={`${label} view`}
                 onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-all duration-150 active:scale-95 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded-t-sm ${
                   activeTab === key
                     ? "border-stitch-accent text-stitch-accent"
                     : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
@@ -553,7 +559,7 @@ export default function HoldingDetail() {
       <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-6">
         {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
         {activeTab === "overview" && (
-          <>
+          <div role="tabpanel" id="tabpanel-overview" aria-labelledby="tab-overview" className="space-y-6">
             <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Position Overview</h2>
@@ -594,12 +600,12 @@ export default function HoldingDetail() {
 
             {/* Cost Basis Progress */}
             <CostBasisProgress holding={holding} currencyPrefix={cp} />
-          </>
+          </div>
         )}
 
         {/* ═══════════════ PLAN TAB ═══════════════ */}
         {activeTab === "strategy" && (
-          <>
+          <div role="tabpanel" id="tabpanel-strategy" aria-labelledby="tab-strategy" className="space-y-6">
             {/* Example scenario — fixed $500 buy impact */}
             {isUnderwater && (
               <div className="rounded-lg border border-primary/30 bg-card p-6" style={{ boxShadow: "0 0 18px hsl(160 60% 52% / 0.08)" }}>
@@ -686,12 +692,12 @@ export default function HoldingDetail() {
                 onApplyBuy={handleApplyScenario}
               />
             </div>
-          </>
+          </div>
         )}
 
         {/* ═══════════════ CALCULATOR TAB ═══════════════ */}
         {activeTab === "calculator" && (
-          <>
+          <div role="tabpanel" id="tabpanel-calculator" aria-labelledby="tab-calculator" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
               {/* Left: Inputs */}
               <div className="lg:col-span-3 space-y-4">
@@ -883,12 +889,12 @@ export default function HoldingDetail() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* ═══════════════ HISTORY TAB ═══════════════ */}
         {activeTab === "history" && (
-          <div className="space-y-3">
+          <div role="tabpanel" id="tabpanel-history" aria-labelledby="tab-history" className="space-y-3">
             <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">History</h2>
             {user && historyLoading && (
               <p className="text-[10px] text-stitch-muted font-mono">Loading cloud history…</p>
@@ -956,13 +962,15 @@ export default function HoldingDetail() {
 
         {/* ═══════════════ INSIGHTS TAB ═══════════════ */}
         {activeTab === "insights" && (
-          <InsightsTab
-            holding={holding}
-            marketPrice={marketPrice}
-            cp={cp}
-            onUseInCalculator={openCalculatorPrefilled}
-            onSaved={() => setVersion((v) => v + 1)}
-          />
+          <div role="tabpanel" id="tabpanel-insights" aria-labelledby="tab-insights">
+            <InsightsTab
+              holding={holding}
+              marketPrice={marketPrice}
+              cp={cp}
+              onUseInCalculator={openCalculatorPrefilled}
+              onSaved={() => setVersion((v) => v + 1)}
+            />
+          </div>
         )}
       </main>
 
