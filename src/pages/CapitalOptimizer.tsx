@@ -155,7 +155,7 @@ export default function CapitalOptimizer() {
               </div>
               <Button
                 type="button"
-                className="shrink-0 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="shrink-0 bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 onClick={runModel}
                 disabled={optimizerMode !== "greedy_improvement_per_dollar"}
               >
@@ -177,7 +177,7 @@ export default function CapitalOptimizer() {
               first if results look empty.{" "}
               <button
                 type="button"
-                className="text-stitch-accent underline underline-offset-2"
+                className="rounded-sm text-stitch-accent underline underline-offset-2 transition-all duration-150 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 onClick={() => setTick((t) => t + 1)}
               >
                 Reload cache
