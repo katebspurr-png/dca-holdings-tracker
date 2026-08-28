@@ -65,6 +65,9 @@ export default function Onboarding({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-step-title"
       className={cn(
         "fixed inset-0 z-[100] flex items-end justify-center transition-opacity duration-300 sm:items-center",
         exiting ? "opacity-0" : "opacity-100",
@@ -83,10 +86,16 @@ export default function Onboarding({
 
           <div className="p-6">
             <div className="mb-4 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5">
-                {steps.map((_, i) => (
+              <div
+                className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5"
+                role="group"
+                aria-label="Product tour progress"
+              >
+                {steps.map((s, i) => (
                   <div
                     key={i}
+                    aria-label={`Step ${i + 1}: ${s.title}`}
+                    aria-current={i === step ? "step" : undefined}
                     className={`h-1.5 shrink-0 rounded-full transition-all duration-300 ${
                       i === step
                         ? "w-6 bg-stitch-accent"
@@ -100,7 +109,8 @@ export default function Onboarding({
               <button
                 type="button"
                 onClick={handleSkip}
-                className="shrink-0 text-xs font-medium text-stitch-muted transition-colors hover:text-white"
+                aria-label="Skip product tour walkthrough"
+                className="shrink-0 text-xs font-medium text-stitch-muted transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded px-1 active:scale-95 duration-150"
               >
                 Skip
               </button>
@@ -113,7 +123,7 @@ export default function Onboarding({
               <WalkthroughStepPreview id={current.id} className="mb-4" />
 
               <div className="space-y-3">
-                <h2 className="font-[family-name:var(--font-heading)] text-xl font-extrabold leading-tight tracking-tight text-white">
+                <h2 id="onboarding-step-title" className="font-[family-name:var(--font-heading)] text-xl font-extrabold leading-tight tracking-tight text-white">
                   {current.title}
                 </h2>
                 <p className="text-sm leading-relaxed text-stitch-muted">{current.body}</p>
@@ -130,7 +140,8 @@ export default function Onboarding({
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
-                className={`mt-2 flex shrink-0 items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white ${
+                aria-label="Go to previous step"
+                className={`mt-2 flex shrink-0 items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded px-2 py-1 active:scale-95 duration-150 ${
                   step === 0 ? "invisible" : ""
                 }`}
               >
@@ -142,7 +153,8 @@ export default function Onboarding({
                 <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 sm:max-w-[280px]">
                   <Button
                     onClick={() => finishAndClose()}
-                    className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                    aria-label="Start exploring PositionPilot"
+                    className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                   >
                     Start exploring
                     <ArrowRight className="h-4 w-4" />
@@ -152,7 +164,8 @@ export default function Onboarding({
                       type="button"
                       variant="outline"
                       onClick={() => finishAndClose(onSetUpPortfolio)}
-                      className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                      aria-label="Add your portfolio"
+                      className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     >
                       Add your portfolio
                     </Button>
@@ -162,7 +175,8 @@ export default function Onboarding({
                       type="button"
                       variant="outline"
                       onClick={() => finishAndClose(onTryDemo)}
-                      className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                      aria-label="Try demo portfolio"
+                      className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     >
                       Try demo
                     </Button>
@@ -171,7 +185,8 @@ export default function Onboarding({
               ) : (
                 <Button
                   onClick={handleNext}
-                  className="shrink-0 gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Go to next step"
+                  className="shrink-0 gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
