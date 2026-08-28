@@ -1,0 +1,3 @@
+## 2025-08-28 - Accessible Onboarding and Personalization Flow
+**Learning:** Full-screen onboarding overlays and modal wizard components require `role="dialog"`, `aria-modal="true"`, and clear step indicators (`aria-current="step"`) along with focus-visible rings and tactile press feedback to feel responsive and fully accessible to assistive technology.
+**Action:** Always wrap onboarding wizards with proper dialog semantics, include descriptive `aria-label` attributes on navigation actions, and apply `active:scale-95 transition-all duration-150` with `focus-visible:ring-2` focus rings to action buttons.
