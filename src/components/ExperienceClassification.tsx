@@ -54,7 +54,8 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
               <button
                 type="button"
                 onClick={onSkip}
-                className="shrink-0 text-xs font-medium text-stitch-muted transition-colors hover:text-white"
+                aria-label="Skip experience customization"
+                className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-stitch-muted transition-all active:scale-95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 Skip
               </button>
@@ -72,10 +73,11 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ1(o.value)}
+                        aria-pressed={q1 === o.value}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
                           q1 === o.value
-                            ? "border-stitch-accent bg-stitch-accent/10 text-white"
+                            ? "border-stitch-accent bg-stitch-accent/10 text-white font-medium"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
                         )}
                       >
@@ -98,10 +100,11 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ2(o.value)}
+                        aria-pressed={q2 === o.value}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
                           q2 === o.value
-                            ? "border-stitch-accent bg-stitch-accent/10 text-white"
+                            ? "border-stitch-accent bg-stitch-accent/10 text-white font-medium"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
                         )}
                       >
@@ -125,10 +128,11 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ3(o.value)}
+                        aria-pressed={q3 === o.value}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
                           q3 === o.value
-                            ? "border-stitch-accent bg-stitch-accent/10 text-white"
+                            ? "border-stitch-accent bg-stitch-accent/10 text-white font-medium"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
                         )}
                       >
@@ -144,8 +148,9 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
+                aria-label="Go to previous question"
                 className={cn(
-                  "flex items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white",
+                  "flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-stitch-muted transition-all active:scale-95 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
                   step === 0 ? "invisible" : "",
                 )}
               >
@@ -156,7 +161,8 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                 <Button
                   disabled={(step === 0 && q1 == null) || (step === 1 && q2 == null)}
                   onClick={() => setStep((s) => s + 1)}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Go to next question"
+                  className="gap-2 bg-stitch-accent font-semibold text-black transition-all active:scale-95 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   Next
                   <ArrowRight className="h-4 w-4" />
@@ -165,7 +171,8 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                 <Button
                   onClick={finish}
                   disabled={q1 == null || q2 == null}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Complete experience customization"
+                  className="gap-2 bg-stitch-accent font-semibold text-black transition-all active:scale-95 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
