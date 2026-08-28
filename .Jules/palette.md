@@ -1,0 +1,3 @@
+## 2025-05-18 - Experience Classification Accessibility and Tactile Interactions
+**Learning:** Interactive onboarding step options and modal controls in full-screen overlays like `ExperienceClassification` benefit greatly from explicit `aria-pressed` states and focus-visible ring offsets (`focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`) to maintain visibility over high-blur translucent backdrop panels (`bg-stitch-bg/95 backdrop-blur-md`).
+**Action:** When adding tactile micro-interactions (`active:scale-95`) and ARIA toggle attributes to overlay choices, pair them with dark background offset rings so focused options stay distinct against blurred backdrops.
