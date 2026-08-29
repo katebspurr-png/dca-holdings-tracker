@@ -176,7 +176,8 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+              aria-label={`Filter scenarios by ${f.label}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-all active:scale-95 duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
                 filter === f.key
                   ? "bg-stitch-accent/10 border-stitch-accent/30 text-stitch-accent"
                   : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-white"
@@ -191,7 +192,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
       {filteredScenarios.length === 0 ? (
         <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-2">
-          <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" />
+          <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" aria-hidden="true" />
           <p className="text-xs text-stitch-muted font-medium">No saved scenarios yet.</p>
           <p className="text-[11px] text-stitch-muted/50">
             Use the Calculator tab, then Save — or add a note when saving to label your plan.
