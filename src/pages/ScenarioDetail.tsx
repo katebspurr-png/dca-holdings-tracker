@@ -13,7 +13,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 const outlineBtn =
-  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg";
 
 const cardClass =
   "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
@@ -37,7 +37,13 @@ export default function ScenarioDetail() {
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
-          <Button variant="outline" size="sm" className={`w-fit ${outlineBtn}`} onClick={() => navigate("/scenarios")}>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`w-fit ${outlineBtn}`}
+            onClick={() => navigate("/scenarios")}
+            aria-label="Back to scenarios list"
+          >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Back to Scenarios
           </Button>
@@ -59,7 +65,8 @@ export default function ScenarioDetail() {
               <button
                 type="button"
                 onClick={() => navigate(`/holdings/${scenario.holding_id}?tab=calculator`)}
-                className="text-lg font-mono font-semibold text-stitch-accent underline underline-offset-2 hover:opacity-80"
+                className="rounded text-lg font-mono font-semibold text-stitch-accent underline underline-offset-2 hover:opacity-80 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                aria-label={`Open holding details for ${scenario.ticker}`}
               >
                 Open holding →
               </button>
