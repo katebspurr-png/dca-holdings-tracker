@@ -31,8 +31,10 @@ export default function BottomTabBar() {
             <li key={tab.path} className="flex h-full w-full flex-col items-center justify-center">
               <button
                 type="button"
+                aria-label={tab.label}
+                aria-current={active ? "page" : undefined}
                 onClick={() => navigate(tab.path)}
-                className="flex h-full w-full flex-col items-center justify-center gap-1.5 transition-colors"
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-lg transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 <span
                   className={`h-[3px] w-[28px] shrink-0 rounded-[2px] transition-[background-color,box-shadow,opacity] ${
