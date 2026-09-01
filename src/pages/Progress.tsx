@@ -22,7 +22,8 @@ export default function Progress() {
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              aria-label="Return to main portfolio overview"
               asChild
             >
               <Link to="/">Back to portfolio</Link>
