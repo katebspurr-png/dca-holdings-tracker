@@ -18,6 +18,7 @@ export default function GuidedDemoCoach() {
   const step = steps[guidedDemoStepIndex] ?? steps[0]!;
   const isLast = guidedDemoStepIndex >= steps.length - 1;
   const headerLabel = preAuthFlow ? "Walkthrough" : "Guided preview";
+  const skipLabel = preAuthFlow ? "Skip walkthrough" : "Skip guided preview";
 
   return (
     <div
@@ -25,7 +26,7 @@ export default function GuidedDemoCoach() {
       role="region"
       aria-label={preAuthFlow ? "Demo walkthrough" : "Guided preview"}
     >
-      <div className="rounded-2xl border border-stitch-border bg-stitch-card/95 p-4 shadow-2xl backdrop-blur-md">
+      <div className="rounded-2xl border border-stitch-border bg-stitch-card p-4 shadow-2xl backdrop-blur-md">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-stitch-accent">
@@ -37,8 +38,8 @@ export default function GuidedDemoCoach() {
           <button
             type="button"
             onClick={skipGuidedDemo}
-            className="shrink-0 rounded-lg p-1 text-stitch-muted transition-colors hover:bg-stitch-pill hover:text-white"
-            aria-label={preAuthFlow ? "Skip walkthrough" : "Skip guided preview"}
+            className="shrink-0 rounded-lg p-1 text-stitch-muted transition-all duration-150 hover:bg-stitch-pill hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+            aria-label={skipLabel}
           >
             <X className="h-4 w-4" />
           </button>
@@ -48,16 +49,18 @@ export default function GuidedDemoCoach() {
             type="button"
             variant="ghost"
             size="sm"
-            className="text-xs text-stitch-muted hover:text-white"
+            className="text-xs text-stitch-muted hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={skipGuidedDemo}
+            aria-label={skipLabel}
           >
             Skip
           </Button>
           <Button
             type="button"
             size="sm"
-            className="bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+            className="bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={advanceGuidedDemo}
+            aria-label={isLast ? (preAuthFlow ? "Finish walkthrough" : "Finish guided preview") : "Next step"}
           >
             {isLast ? "Done" : "Next"}
           </Button>
