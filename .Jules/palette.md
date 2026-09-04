@@ -1,0 +1,3 @@
+## 2025-09-04 - Insights Tab Progress Bar & Tactile Feedback Pattern
+**Learning:** Custom visual metric meters (like the 0-100 buy impact index) require explicit WAI-ARIA `progressbar` roles (`role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-label`) so screen reader users receive equal context. Inline scenario action buttons benefit from design system focus rings and tactile press feedback (`active:scale-95`).
+**Action:** Always pair custom visual meters with explicit WAI-ARIA progressbar attributes and ensure action buttons include design system focus rings and active press animations.
