@@ -156,16 +156,18 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onUseScenario(s)}
+                    aria-label={`Use scenario calculated by ${METHOD_LABELS[s.method] ?? s.method}`}
                   >
                     <ArrowRight className="mr-1 h-2.5 w-2.5" />
                     Use
                   </Button>
                   <Button
                     size="sm"
-                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90"
+                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onApplyBuy(s)}
+                    aria-label={`Apply buy from scenario calculated by ${METHOD_LABELS[s.method] ?? s.method}`}
                   >
                     <CheckCircle className="mr-1 h-2.5 w-2.5" />
                     Apply
