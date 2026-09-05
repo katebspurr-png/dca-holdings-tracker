@@ -1,0 +1,3 @@
+## 2025-02-17 - Holding Portfolio Cards Focus Ring & Contextual ARIA
+**Learning:** Interactive card containers (`role="button"`, `tabIndex={0}`) without design system focus-visible offset rings make keyboard navigation invisible on portfolio lists. Ticker-specific ARIA labels (`Edit {ticker} holding`) prevent duplicate ambiguous "Edit"/"Delete" button announcements on screen readers.
+**Action:** Always pair `role="button"` and `tabIndex={0}` on interactive cards with `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`, and pass item context (like ticker symbol) into child action ARIA labels.
