@@ -76,9 +76,17 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
       {improved ? (
         <>
           <div className="mb-3">
-            <div className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill">
+            <div
+              className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill"
+              role="progressbar"
+              aria-valuenow={Math.min(Math.round(pctVsInitial), 100)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Cost basis reduction percentage"
+              aria-valuetext={`${pctVsInitial.toFixed(1)}% lower average cost basis`}
+            >
               <div
-                className="h-full rounded-full bg-stitch-accent transition-all"
+                className="h-full rounded-full bg-stitch-accent transition-all duration-300"
                 style={{ width: `${Math.min(pctVsInitial, 100)}%` }}
               />
             </div>
