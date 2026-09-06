@@ -194,7 +194,8 @@ export default function UpdatePrices() {
                 variant="outline"
                 onClick={handleRefreshAll}
                 disabled={refreshing}
-                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                aria-label="Refresh market prices for all holdings"
+                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
                 {refreshing ? "Refreshing…" : "Refresh Prices"}
@@ -298,7 +299,8 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
+                  aria-label={`Market price for ${h.ticker}`}
+                  className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-2 focus:ring-stitch-accent/50 focus:ring-offset-1 focus:ring-offset-stitch-bg outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -358,7 +360,8 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
-                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
+                  aria-label={`Market price for ${h.ticker}`}
+                  className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-2 focus:ring-stitch-accent/50 focus:ring-offset-1 focus:ring-offset-stitch-bg outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
                 />
@@ -411,7 +414,8 @@ export default function UpdatePrices() {
                   variant="ghost"
                   size="sm"
                   onClick={handleReset}
-                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  aria-label="Reset edited market prices"
+                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   <RotateCcw className="mr-1 h-3 w-3" />
                   Reset
@@ -419,7 +423,8 @@ export default function UpdatePrices() {
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Save updated market prices"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   <Save className="mr-1 h-3 w-3" />
                   Save prices
