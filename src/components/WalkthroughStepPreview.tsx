@@ -13,8 +13,9 @@ export default function WalkthroughStepPreview({
 }) {
   return (
     <div
+      aria-hidden="true"
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-stitch-border/80 bg-stitch-pill/30 p-4",
+        "relative select-none overflow-hidden rounded-2xl border border-stitch-border/80 bg-stitch-pill/30 p-4",
         className,
       )}
     >
