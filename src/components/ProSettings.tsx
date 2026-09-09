@@ -35,16 +35,16 @@ export default function ProSettings({ onChanged }: Props) {
         <Button
           size="sm"
           variant="ghost"
-          aria-label="Settings"
-          className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+          aria-label={pro ? "Pro Plan settings" : "Free Plan settings"}
+          className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
         >
-          {pro ? <Crown className="h-4 w-4 text-yellow-500" /> : <Settings className="h-4 w-4" />}
+          {pro ? <Crown className="h-4 w-4 text-yellow-500" aria-hidden="true" /> : <Settings className="h-4 w-4" aria-hidden="true" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="border-stitch-border bg-stitch-card text-white sm:max-w-sm sm:rounded-[24px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-white">
-            {pro && <Crown className="h-5 w-5 text-stitch-accent" />}
+            {pro && <Crown className="h-5 w-5 text-stitch-accent" aria-hidden="true" />}
             {pro ? "Pro Plan" : "Free Plan"}
           </DialogTitle>
         </DialogHeader>
@@ -64,9 +64,17 @@ export default function ProSettings({ onChanged }: Props) {
                 <p className="mt-1 text-xs text-stitch-muted">
                   {remaining} of {FREE_LIMIT} price lookups remaining today
                 </p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-stitch-pill">
+                <div
+                  role="progressbar"
+                  aria-valuenow={remaining}
+                  aria-valuemin={0}
+                  aria-valuemax={FREE_LIMIT}
+                  aria-label="Price lookups remaining today"
+                  aria-valuetext={`${remaining} of ${FREE_LIMIT} price lookups remaining`}
+                  className="mt-2 h-1.5 overflow-hidden rounded-full bg-stitch-pill"
+                >
                   <div
-                    className="h-full rounded-full bg-stitch-accent transition-all"
+                    className="h-full rounded-full bg-stitch-accent transition-all duration-300"
                     style={{ width: `${(remaining / FREE_LIMIT) * 100}%` }}
                   />
                 </div>
@@ -74,20 +82,22 @@ export default function ProSettings({ onChanged }: Props) {
 
               <Button
                 onClick={handleUpgrade}
-                className="w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                aria-label="Upgrade to Pro plan for $3.99"
+                className="w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 size="sm"
               >
-                <Crown className="mr-1.5 h-4 w-4" />
+                <Crown className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Upgrade to Pro — $3.99
               </Button>
 
               <Button
                 onClick={handleRestore}
+                aria-label="Restore existing Pro purchase"
                 variant="outline"
-                className="w-full border-stitch-border bg-transparent text-white hover:bg-stitch-pill"
+                className="w-full border-stitch-border bg-transparent text-white hover:bg-stitch-pill active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 size="sm"
               >
-                <RotateCw className="mr-1.5 h-4 w-4" />
+                <RotateCw className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Restore Purchase
               </Button>
             </>
