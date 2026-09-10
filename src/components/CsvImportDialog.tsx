@@ -329,7 +329,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               <Button
                 onClick={() => fileRef.current?.click()}
                 variant="outline"
-                className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 Choose File
               </Button>
@@ -368,7 +368,8 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                       key={ex}
                       type="button"
                       onClick={() => setDefaultExchange(ex)}
-                      className={`flex-1 rounded-lg border py-2 font-mono text-sm font-semibold transition-colors ${
+                      aria-pressed={defaultExchange === ex}
+                      className={`flex-1 rounded-lg border py-2 font-mono text-sm font-semibold active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
                         defaultExchange === ex
                           ? "border-stitch-accent bg-stitch-accent/15 text-stitch-accent"
                           : "border-stitch-border text-stitch-muted hover:text-white"
@@ -383,7 +384,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   variant="ghost"
-                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                   onClick={() => {
                     reset();
                     setStep("pick");
@@ -393,7 +394,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                 </Button>
                 <Button
                   disabled={!mapping.ticker || !mapping.shares || !mapping.price}
-                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                   onClick={() => buildPreview(rawRows, mapping)}
                 >
                   Preview
@@ -447,7 +448,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button
                   variant="ghost"
-                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  className="text-stitch-muted hover:bg-stitch-pill/50 hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                   onClick={() => setStep("map")}
                 >
                   Back
@@ -455,7 +456,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                 <Button
                   onClick={startImport}
                   disabled={parsedRows.length === 0}
-                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   <Check className="mr-1.5 h-4 w-4" />
                   Import
@@ -488,7 +489,7 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
                     setConflicts((prev) => prev.map((item, idx) => (idx === i ? { ...item, resolution: v } : item)));
                   }}
                 >
-                  <SelectTrigger className="w-40 border-stitch-border bg-stitch-pill text-white">
+                  <SelectTrigger aria-label={`Resolution for ${c.ticker}`} className="w-40 border-stitch-border bg-stitch-pill text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="z-[60] border-stitch-border bg-stitch-card text-white">
@@ -501,13 +502,13 @@ export default function CsvImportDialog({ open, onOpenChange, onImported }: Prop
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel
-              className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill"
+              className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={() => setStep("preview")}
             >
               Back
             </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-stitch-accent text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               onClick={() => doImport(conflicts)}
             >
               Confirm Import
@@ -524,7 +525,7 @@ function MappingSelect({ label, value, headers, onChange }: { label: string; val
     <div className="space-y-1.5">
       <label className="text-sm font-medium text-white">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="border-stitch-border bg-stitch-pill text-white focus:ring-stitch-accent">
+        <SelectTrigger aria-label={label} className="border-stitch-border bg-stitch-pill text-white focus:ring-stitch-accent focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg">
           <SelectValue placeholder="Select column…" />
         </SelectTrigger>
         <SelectContent className="z-[60] border-stitch-border bg-stitch-card text-white">
