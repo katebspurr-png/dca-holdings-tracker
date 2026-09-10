@@ -1,0 +1,3 @@
+## 2025-05-20 - Custom Toggle Buttons & Avoid Redundant ARIA Labels
+**Learning:** In multi-step dialog flows (such as CSV import/mapping), custom toggle buttons (e.g. "US" / "TSX") need WAI-ARIA `aria-pressed` state attributes and focus-visible indicators. Avoid adding `aria-label` overrides to buttons with visible text labels, as overriding visible text violates WCAG 2.5.3 (Label in Name) and breaks speech-input navigation for voice control users.
+**Action:** Use `aria-pressed` on custom toggle controls and `aria-label` on SelectTriggers without visual `<label>` associations, but leave visible text buttons to derive accessible names from their child text nodes.
