@@ -422,8 +422,6 @@ export default function WhatIfScenarios() {
     });
   };
 
-
-
   // ── Save comparison ────────────────────────────────────────
 
   const handleSave = () => {
@@ -484,7 +482,8 @@ export default function WhatIfScenarios() {
           <Button
             variant="outline"
             size="sm"
-            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+            aria-label="Return to portfolio overview"
+            className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             onClick={() => navigate("/")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
@@ -503,15 +502,16 @@ export default function WhatIfScenarios() {
                 Total Budget to Allocate
               </Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" />
+                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stitch-muted" aria-hidden="true" />
                 <Input
                   id="total-budget"
                   type="number"
                   step="any"
                   placeholder="3000"
+                  aria-label="Total budget to allocate across holdings"
                   value={totalBudget}
                   onChange={(e) => setTotalBudget(e.target.value)}
-                  className="border-stitch-border bg-stitch-pill pl-9 font-mono text-lg text-white placeholder:text-stitch-muted/50"
+                  className="border-stitch-border bg-stitch-pill pl-9 font-mono text-lg text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 />
               </div>
             </div>
@@ -519,10 +519,12 @@ export default function WhatIfScenarios() {
               <Button
                 size="sm"
                 variant={inputMode === "dollar" ? "default" : "outline"}
+                aria-label="Switch input mode to dollar amount"
+                aria-pressed={inputMode === "dollar"}
                 className={
                   inputMode === "dollar"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 }
                 onClick={() => setInputMode("dollar")}
               >
@@ -531,10 +533,12 @@ export default function WhatIfScenarios() {
               <Button
                 size="sm"
                 variant={inputMode === "percent" ? "default" : "outline"}
+                aria-label="Switch input mode to percentage"
+                aria-pressed={inputMode === "percent"}
                 className={
                   inputMode === "percent"
-                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
-                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    ? "bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                    : "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 }
                 onClick={() => setInputMode("percent")}
               >
@@ -575,13 +579,26 @@ export default function WhatIfScenarios() {
             <Tabs value={String(activeTab)} onValueChange={(v) => setActiveTab(Number(v))} className="flex-1">
               <TabsList>
                 {scenarios.map((s, i) => (
-                  <TabsTrigger key={i} value={String(i)} className="gap-1.5">
+                  <TabsTrigger
+                    key={i}
+                    value={String(i)}
+                    className="gap-1.5 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                  >
                     {s.name}
                     {scenarios.length > 1 && (
                       <span
                         role="button"
+                        tabIndex={0}
+                        aria-label={`Remove ${s.name}`}
                         onClick={(e) => { e.stopPropagation(); removeScenarioTab(i); }}
-                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-white/15"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            removeScenarioTab(i);
+                          }
+                        }}
+                        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-xs hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:outline-none"
                       >
                         ×
                       </span>
@@ -591,7 +608,13 @@ export default function WhatIfScenarios() {
               </TabsList>
             </Tabs>
             {scenarios.length < MAX_SCENARIOS && (
-              <Button size="sm" variant="outline" onClick={addScenarioTab}>
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Add a new scenario comparison tab"
+                className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+                onClick={addScenarioTab}
+              >
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 Add Scenario
               </Button>
@@ -600,20 +623,47 @@ export default function WhatIfScenarios() {
 
           {/* Quick-fill & Refresh All buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant="outline" onClick={splitEvenly} disabled={!budget}>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Split total budget evenly across positions with valid buy prices"
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              onClick={splitEvenly}
+              disabled={!budget}
+            >
               <Scale className="mr-1.5 h-3.5 w-3.5" />
               Split Evenly
             </Button>
-            <Button size="sm" variant="outline" onClick={proportional} disabled={!budget}>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Allocate budget proportionally based on existing position market values"
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              onClick={proportional}
+              disabled={!budget}
+            >
               <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
               Proportional
             </Button>
-            <Button size="sm" variant="outline" onClick={clearAllocations}>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Clear all current allocation amounts"
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              onClick={clearAllocations}
+            >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Clear
             </Button>
             <div className="flex-1" />
-            <Button size="sm" variant="outline" onClick={refreshAllPrices} disabled={refreshingAll}>
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Refresh market prices for all portfolio holdings"
+              className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              onClick={refreshAllPrices}
+              disabled={refreshingAll}
+            >
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshingAll ? "animate-spin" : ""}`} />
               {refreshingAll ? "Fetching…" : "Refresh All Prices"}
             </Button>
@@ -628,7 +678,7 @@ export default function WhatIfScenarios() {
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={toggleAll}
-                      aria-label="Select all"
+                      aria-label="Select all trades in scenario"
                     />
                   </th>
                   <th className="px-3 py-2.5 text-left font-medium">Ticker</th>
@@ -663,7 +713,7 @@ export default function WhatIfScenarios() {
                           checked={isSelected}
                           onCheckedChange={() => toggleRow(ai)}
                           disabled={!isRowSelectable}
-                          aria-label={`Select ${alloc.ticker}`}
+                          aria-label={`Select ${alloc.ticker} for update`}
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -678,7 +728,8 @@ export default function WhatIfScenarios() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-5 px-1.5 text-[10px]"
+                              aria-label={`Fetch latest stock price for ${alloc.ticker}`}
+                              className="h-5 px-1.5 text-[10px] active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                               disabled={isFetching}
                               onClick={() => fetchPrice(alloc.ticker, alloc.exchange)}
                             >
@@ -695,7 +746,8 @@ export default function WhatIfScenarios() {
                           type="number"
                           step="any"
                           placeholder={livePrice ? `${livePrice.toFixed(2)}` : "Price"}
-                          className="w-24 ml-auto text-right font-mono h-8 text-sm"
+                          aria-label={`Buy price for ${alloc.ticker}`}
+                          className="w-24 ml-auto text-right font-mono h-8 text-sm focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                           value={alloc.buyPrice ?? ""}
                           onChange={(e) => {
                             const v = e.target.value === "" ? null : parseFloat(e.target.value);
@@ -713,7 +765,8 @@ export default function WhatIfScenarios() {
                             type="number"
                             step="any"
                             placeholder="0"
-                            className="w-24 ml-auto text-right font-mono h-8 text-sm"
+                            aria-label={`Allocation amount for ${alloc.ticker}`}
+                            className="w-24 ml-auto text-right font-mono h-8 text-sm focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                             value={inputMode === "dollar"
                               ? (alloc.allocated || "")
                               : (budget > 0 ? ((alloc.allocated / budget) * 100 || "") : "")
@@ -840,8 +893,9 @@ export default function WhatIfScenarios() {
                 </span>
                 <Button
                   variant="outline"
+                  aria-label="Apply selected trades to portfolio holdings"
                   onClick={() => setShowApplyDialog(true)}
-                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10"
+                  className="border-stitch-accent text-stitch-accent hover:bg-stitch-accent/10 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 >
                   <CheckSquare className="mr-1.5 h-4 w-4" />
                   Apply to Holdings
@@ -849,7 +903,12 @@ export default function WhatIfScenarios() {
               </>
             )}
           </div>
-          <Button onClick={handleSave} disabled={!budget}>
+          <Button
+            onClick={handleSave}
+            disabled={!budget}
+            aria-label="Save current scenario comparison"
+            className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+          >
             <Save className="mr-1.5 h-4 w-4" />
             Save Comparison
           </Button>
@@ -893,10 +952,19 @@ export default function WhatIfScenarios() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+              <AlertDialogCancel
+                aria-label="Cancel applying scenario changes"
+                className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              >
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction onClick={handleApplyConfirm}>Confirm & Update</AlertDialogAction>
+              <AlertDialogAction
+                aria-label="Confirm and update holdings with selected trades"
+                onClick={handleApplyConfirm}
+                className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              >
+                Confirm & Update
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -919,16 +987,17 @@ export default function WhatIfScenarios() {
                   <div key={comp.id} className="rounded-lg border border-stitch-border bg-stitch-card p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2 text-xs text-stitch-muted">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                         {date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         <span className="font-mono font-semibold text-white text-sm ml-2">
                           Budget: ${fmt(comp.totalBudget)}
                         </span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleDeleteSaved(comp.id)}
-                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stitch-muted hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        aria-label="Delete scenario"
+                        className="inline-flex h-5 w-5 items-center justify-center rounded text-stitch-muted hover:text-destructive hover:bg-destructive/10 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:outline-none"
+                        aria-label="Delete saved scenario comparison"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
