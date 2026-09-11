@@ -21,12 +21,17 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
     list.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+    <section
+      aria-labelledby="portfolio-strategy-title"
+      className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg"
+    >
       <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
       <div className="relative z-10">
         <div className="mb-3 flex items-center gap-2">
-          <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" />
-          <h2 className="text-[17px] font-semibold text-white">Progress vs initial snapshot</h2>
+          <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden="true" />
+          <h2 id="portfolio-strategy-title" className="text-[17px] font-semibold text-white">
+            Progress vs initial snapshot
+          </h2>
         </div>
         <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
           Same metrics as the Progress tab: current average cost versus the value when each position was first tracked here
@@ -43,10 +48,18 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-stitch-muted">Avg reduction / share</p>
             <div className="mt-2 space-y-2">
               {usImproved.length > 0 && (
-                <p className="text-lg font-bold text-stitch-accent">US ${fmt(avgPerShare(usImproved))}</p>
+                <p className="text-lg font-bold text-stitch-accent">
+                  <span className="sr-only">US dollar average reduction per share: ${fmt(avgPerShare(usImproved))}</span>
+                  <span aria-hidden="true">US ${fmt(avgPerShare(usImproved))}</span>
+                </p>
               )}
               {cadImproved.length > 0 && (
-                <p className="text-lg font-bold text-stitch-accent">CAD C${fmt(avgPerShare(cadImproved))}</p>
+                <p className="text-lg font-bold text-stitch-accent">
+                  <span className="sr-only">
+                    Canadian dollar average reduction per share: C${fmt(avgPerShare(cadImproved))}
+                  </span>
+                  <span aria-hidden="true">CAD C${fmt(avgPerShare(cadImproved))}</span>
+                </p>
               )}
             </div>
           </div>
@@ -58,12 +71,18 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
             <div className="mt-2 space-y-1.5">
               {usImproved.length > 0 && (
                 <p className="font-mono text-sm font-semibold text-stitch-accent">
-                  US ${fmt(totalBasisReduction(usImproved))}
+                  <span className="sr-only">
+                    US dollar total cost basis reduction: ${fmt(totalBasisReduction(usImproved))}
+                  </span>
+                  <span aria-hidden="true">US ${fmt(totalBasisReduction(usImproved))}</span>
                 </p>
               )}
               {cadImproved.length > 0 && (
                 <p className="font-mono text-sm font-semibold text-stitch-accent">
-                  CAD C${fmt(totalBasisReduction(cadImproved))}
+                  <span className="sr-only">
+                    Canadian dollar total cost basis reduction: C${fmt(totalBasisReduction(cadImproved))}
+                  </span>
+                  <span aria-hidden="true">CAD C${fmt(totalBasisReduction(cadImproved))}</span>
                 </p>
               )}
             </div>
