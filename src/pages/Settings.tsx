@@ -93,7 +93,9 @@ export default function Settings() {
     "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-stitch-muted";
   const outlineBtn =
-    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg";
+  const accentBtn =
+    "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg";
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -105,7 +107,7 @@ export default function Settings() {
             <h2 className={sectionTitle}>Plan</h2>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <Crown className={`h-5 w-5 shrink-0 ${plan === "premium" ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Crown className={`h-5 w-5 shrink-0 ${plan === "premium" ? "text-stitch-accent" : "text-stitch-muted"}`} aria-hidden="true" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white">
                     {plan === "premium" ? "Premium" : "Free"}
@@ -131,7 +133,7 @@ export default function Settings() {
                 className={
                   plan === "premium"
                     ? `h-8 shrink-0 text-xs ${outlineBtn}`
-                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                    : accentBtn
                 }
                 onClick={togglePlan}
               >
@@ -151,7 +153,7 @@ export default function Settings() {
                   {["Scenario comparison (side-by-side)", "Compare allocations (budget lab)", "Unlimited scenarios per holding"].map(
                     (f) => (
                       <div key={f} className="flex items-center gap-1.5 text-[11px] text-stitch-muted">
-                        <Check className="h-3 w-3 shrink-0 text-stitch-accent" />
+                        <Check className="h-3 w-3 shrink-0 text-stitch-accent" aria-hidden="true" />
                         {f}
                       </div>
                     )
@@ -187,13 +189,13 @@ export default function Settings() {
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button variant="outline" size="sm" className={outlineBtn} asChild>
                 <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                   Privacy Policy
                 </a>
               </Button>
               <Button variant="outline" size="sm" className={outlineBtn} asChild>
                 <a href="/legal/terms.html" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                   Terms of Use
                 </a>
               </Button>
@@ -223,7 +225,7 @@ export default function Settings() {
               ) : (
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className={accentBtn}
                   onClick={() => navigate(getDemoEntryPath())}
                 >
                   Enter demo mode
@@ -239,13 +241,19 @@ export default function Settings() {
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} aria-hidden="true" />
                 <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
               </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
+              <Switch
+                id="dark-mode"
+                checked={dark}
+                onCheckedChange={setDark}
+                aria-label="Toggle dark mode theme"
+                className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
+              />
               <div className="flex items-center gap-3">
                 <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
-                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -258,14 +266,14 @@ export default function Settings() {
             <h2 className={sectionTitle}>Data</h2>
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleExport} size="sm" variant="outline" className={outlineBtn}>
-                <Download className="mr-1.5 h-4 w-4" />
+                <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Export Data
               </Button>
               <Button onClick={() => fileRef.current?.click()} size="sm" variant="outline" className={outlineBtn}>
-                <Upload className="mr-1.5 h-4 w-4" />
+                <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Import Data
               </Button>
-              <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+              <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} aria-label="Import data backup file" />
             </div>
             <div className="border-t border-stitch-border pt-4">
               <p className="mb-2 text-[10px] leading-relaxed text-stitch-muted/80">
@@ -273,8 +281,8 @@ export default function Settings() {
                   ? "Resets the demo sandbox to the original sample dataset."
                   : "Removes all holdings and scenarios stored on this device for your account."}
               </p>
-              <Button onClick={handleReset} size="sm" variant="destructive">
-                <RotateCcw className="mr-1.5 h-4 w-4" />
+              <Button onClick={handleReset} size="sm" variant="destructive" className="transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg">
+                <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {isDemoMode ? "Reset demo sample" : "Clear portfolio"}
               </Button>
             </div>
@@ -304,7 +312,7 @@ export default function Settings() {
                   <p className="mt-0.5 truncate text-xs text-stitch-muted">{user.email}</p>
                 </div>
                 <Button size="sm" variant="outline" className={`h-8 shrink-0 text-xs ${outlineBtn}`} onClick={handleSignOut}>
-                  <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                  <LogOut className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                   Sign Out
                 </Button>
               </div>
@@ -316,7 +324,7 @@ export default function Settings() {
                 </p>
                 <Button
                   size="sm"
-                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-9 bg-stitch-accent text-xs font-semibold text-black transition-all duration-150 active:scale-95 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                   onClick={() => navigate("/auth")}
                 >
                   Create account
@@ -348,7 +356,7 @@ export default function Settings() {
                   window.location.href = "/";
                 }}
               >
-                <BookOpen className="h-3.5 w-3.5" />
+                <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
                 Replay tour
               </Button>
             </div>
