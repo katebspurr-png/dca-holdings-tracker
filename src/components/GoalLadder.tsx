@@ -50,7 +50,7 @@ export default function GoalLadder({ holding }: Props) {
     return (
       <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm text-stitch-muted">
         <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
-          <TrendingDown className="h-4 w-4" />
+          <TrendingDown className="h-4 w-4" aria-hidden="true" />
           Budget-step simulator
         </h2>
         <p>
@@ -73,7 +73,7 @@ export default function GoalLadder({ holding }: Props) {
       <div className="space-y-5">
         <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
           <h2 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
-            <TrendingDown className="h-4 w-4" />
+            <TrendingDown className="h-4 w-4" aria-hidden="true" />
             Budget-step simulator
           </h2>
           <p className="text-stitch-muted">
@@ -102,7 +102,7 @@ export default function GoalLadder({ holding }: Props) {
 
       <div className="rounded-2xl border border-stitch-accent/25 bg-stitch-pill/40 p-5 font-mono text-sm">
         <h2 className="mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
-          <TrendingDown className="h-4 w-4" />
+          <TrendingDown className="h-4 w-4" aria-hidden="true" />
           Budget-step simulator
         </h2>
         <p className="mb-4 text-[11px] text-stitch-muted/90">
@@ -131,7 +131,7 @@ export default function GoalLadder({ holding }: Props) {
       {efficientStep && (
         <div className="rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 p-5 font-mono text-sm">
           <h3 className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stitch-accent">
-            <Zap className="h-4 w-4" />
+            <Zap className="h-4 w-4" aria-hidden="true" />
             Illustrative rung (same ladder math)
           </h3>
           <p className="mb-3 text-[10px] text-stitch-muted/80">
