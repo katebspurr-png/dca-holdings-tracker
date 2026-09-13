@@ -87,7 +87,7 @@ export default function CapitalOptimizer() {
                 key={label}
                 className="flex items-center gap-2.5 rounded-2xl border border-stitch-border/60 bg-stitch-pill/30 px-3.5 py-3"
               >
-                <Icon className="h-4 w-4 shrink-0 text-stitch-accent" />
+                <Icon className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden="true" />
                 <span className="text-xs font-medium text-white">{label}</span>
               </div>
             ))}
@@ -155,7 +155,7 @@ export default function CapitalOptimizer() {
               </div>
               <Button
                 type="button"
-                className="shrink-0 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="shrink-0 bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 onClick={runModel}
                 disabled={optimizerMode !== "greedy_improvement_per_dollar"}
               >
@@ -177,7 +177,7 @@ export default function CapitalOptimizer() {
               first if results look empty.{" "}
               <button
                 type="button"
-                className="text-stitch-accent underline underline-offset-2"
+                className="rounded text-stitch-accent underline underline-offset-2 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                 onClick={() => setTick((t) => t + 1)}
               >
                 Reload cache
