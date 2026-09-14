@@ -39,10 +39,22 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-stitch-bg/95 backdrop-blur-md transition-opacity duration-300 sm:items-center">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="experience-title"
+      className="fixed inset-0 z-[110] flex items-end justify-center bg-stitch-bg/95 backdrop-blur-md transition-opacity duration-300 sm:items-center"
+    >
       <div className="relative mx-auto mb-24 w-full max-w-lg px-4 sm:mb-0">
         <div className="overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card shadow-2xl">
-          <div className="h-1 bg-stitch-pill">
+          <div
+            className="h-1 bg-stitch-pill"
+            role="progressbar"
+            aria-valuenow={step + 1}
+            aria-valuemin={1}
+            aria-valuemax={3}
+            aria-label="Personalization step progress"
+          >
             <div
               className="h-full bg-stitch-accent transition-all duration-300 ease-out"
               style={{ width: `${((step + 1) / 3) * 100}%` }}
@@ -54,7 +66,8 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
               <button
                 type="button"
                 onClick={onSkip}
-                className="shrink-0 text-xs font-medium text-stitch-muted transition-colors hover:text-white"
+                aria-label="Skip personalization setup"
+                className="shrink-0 rounded-md text-xs font-medium text-stitch-muted transition-all hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               >
                 Skip
               </button>
@@ -62,7 +75,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 0 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="experience-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   How do you usually manage your investments?
                 </h2>
                 <p className="mt-2 text-xs text-stitch-muted">This only adjusts labels and tips—not advice.</p>
@@ -72,8 +85,10 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ1(o.value)}
+                        aria-pressed={q1 === o.value}
+                        aria-label={`Select option: ${o.label}`}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                           q1 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -89,7 +104,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 1 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="experience-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   Have you used tools to model or simulate investments before?
                 </h2>
                 <ul className="mt-4 space-y-2">
@@ -98,8 +113,10 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ2(o.value)}
+                        aria-pressed={q2 === o.value}
+                        aria-label={`Select option: ${o.label}`}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                           q2 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -115,7 +132,7 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
 
             {step === 2 && (
               <div className="animate-in fade-in-0 duration-200">
-                <h2 className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
+                <h2 id="experience-title" className="font-[family-name:var(--font-heading)] text-lg font-extrabold text-white">
                   What are you hoping to do here?{" "}
                   <span className="text-sm font-normal text-stitch-muted">(optional)</span>
                 </h2>
@@ -125,8 +142,10 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
                       <button
                         type="button"
                         onClick={() => setQ3(o.value)}
+                        aria-pressed={q3 === o.value}
+                        aria-label={`Select option: ${o.label}`}
                         className={cn(
-                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-colors",
+                          "w-full rounded-2xl border px-4 py-3 text-left text-sm transition-all active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                           q3 === o.value
                             ? "border-stitch-accent bg-stitch-accent/10 text-white"
                             : "border-stitch-border bg-stitch-pill/40 text-stitch-muted hover:border-stitch-border hover:text-white",
@@ -144,31 +163,35 @@ export default function ExperienceClassification({ onComplete, onSkip }: Props) 
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.max(0, s - 1))}
+                aria-label="Go to previous step"
+                aria-hidden={step === 0 ? "true" : undefined}
                 className={cn(
-                  "flex items-center gap-1 text-sm text-stitch-muted transition-colors hover:text-white",
+                  "flex items-center gap-1 rounded-md text-sm text-stitch-muted transition-all hover:text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                   step === 0 ? "invisible" : "",
                 )}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 Back
               </button>
               {step < 2 ? (
                 <Button
                   disabled={(step === 0 && q1 == null) || (step === 1 && q2 == null)}
                   onClick={() => setStep((s) => s + 1)}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Go to next step"
+                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card transition-all"
                 >
                   Next
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
               ) : (
                 <Button
                   onClick={finish}
                   disabled={q1 == null || q2 == null}
-                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                  aria-label="Complete personalization and continue"
+                  className="gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card transition-all"
                 >
                   Continue
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
               )}
             </div>
