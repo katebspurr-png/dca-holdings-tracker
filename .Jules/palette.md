@@ -1,0 +1,3 @@
+## 2025-05-15 - Demo Welcome Accessibility & Tactile Feedback
+**Learning:** Landing and entry onboarding views like `DemoWelcome` often lack semantic landmarks (`<main>`) and explicit action descriptions on button elements, which can hinder screen reader navigation and keyboard focus visibility. Adding `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`, tactile `active:scale-95 transition-all duration-150` scaling, and explicit `aria-label` attributes significantly improves accessibility and touch interactivity.
+**Action:** Always wrap full-page onboarding/entry views in `<main>` landmarks and apply offset focus rings and active scale feedback to CTA buttons.
