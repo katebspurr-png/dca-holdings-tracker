@@ -23,7 +23,7 @@ export default function DemoWelcome() {
   };
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-stitch-bg px-5 pb-8 pt-[max(1.5rem,env(safe-area-inset-top))] font-sans text-white antialiased sm:justify-center sm:py-10">
+    <main className="relative flex min-h-dvh flex-col bg-stitch-bg px-5 pb-8 pt-[max(1.5rem,env(safe-area-inset-top))] font-sans text-white antialiased sm:justify-center sm:py-10">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col sm:flex-none">
         <div className="mb-2 text-center">
           <span className="font-[family-name:var(--font-heading)] text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-stitch-accent">
@@ -42,7 +42,7 @@ export default function DemoWelcome() {
             <li key={line} className="flex gap-3 text-left text-sm leading-snug text-stitch-muted-soft">
               <span
                 className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-stitch-accent/15 text-stitch-accent"
-                aria-hidden
+                aria-hidden="true"
               >
                 <Check className="h-3 w-3 stroke-[3]" />
               </span>
@@ -55,7 +55,8 @@ export default function DemoWelcome() {
           <Button
             type="button"
             size="lg"
-            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90"
+            aria-label="Enter interactive demo mode"
+            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => goToDemo(false)}
           >
             Enter Demo
@@ -64,13 +65,14 @@ export default function DemoWelcome() {
             type="button"
             variant="ghost"
             size="lg"
-            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white"
+            aria-label="Skip demo walkthrough and explore sample portfolio directly"
+            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => goToDemo(true)}
           >
             Skip walkthrough
           </Button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
