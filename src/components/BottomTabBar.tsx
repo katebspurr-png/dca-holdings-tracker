@@ -32,7 +32,9 @@ export default function BottomTabBar() {
               <button
                 type="button"
                 onClick={() => navigate(tab.path)}
-                className="flex h-full w-full flex-col items-center justify-center gap-1.5 transition-colors"
+                aria-current={active ? "page" : undefined}
+                aria-label={tab.label}
+                className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-lg transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
               >
                 <span
                   className={`h-[3px] w-[28px] shrink-0 rounded-[2px] transition-[background-color,box-shadow,opacity] ${
@@ -40,7 +42,7 @@ export default function BottomTabBar() {
                       ? "bg-stitch-accent shadow-[0_0_8px_rgba(196,251,53,0.5)]"
                       : "bg-transparent opacity-0"
                   }`}
-                  aria-hidden
+                  aria-hidden="true"
                 />
                 <Icon
                   className={`h-6 w-6 transition-[color,filter] ${
@@ -49,6 +51,7 @@ export default function BottomTabBar() {
                       : "text-stitch-muted"
                   }`}
                   strokeWidth={active ? 2.25 : 2}
+                  aria-hidden="true"
                 />
                 <span
                   className={`text-[10px] font-mono uppercase tracking-wide ${
