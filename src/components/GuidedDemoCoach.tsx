@@ -37,10 +37,10 @@ export default function GuidedDemoCoach() {
           <button
             type="button"
             onClick={skipGuidedDemo}
-            className="shrink-0 rounded-lg p-1 text-stitch-muted transition-colors hover:bg-stitch-pill hover:text-white"
+            className="shrink-0 rounded-lg p-1 text-stitch-muted transition-all hover:bg-stitch-pill hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 duration-150"
             aria-label={preAuthFlow ? "Skip walkthrough" : "Skip guided preview"}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
@@ -48,16 +48,18 @@ export default function GuidedDemoCoach() {
             type="button"
             variant="ghost"
             size="sm"
-            className="text-xs text-stitch-muted hover:text-white"
+            className="text-xs text-stitch-muted hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={skipGuidedDemo}
+            aria-label={preAuthFlow ? "Skip walkthrough" : "Skip guided preview"}
           >
             Skip
           </Button>
           <Button
             type="button"
             size="sm"
-            className="bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+            className="bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={advanceGuidedDemo}
+            aria-label={isLast ? "Complete guided walkthrough" : "Go to next step"}
           >
             {isLast ? "Done" : "Next"}
           </Button>
