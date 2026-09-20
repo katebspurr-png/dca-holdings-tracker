@@ -25,7 +25,7 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
       <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
       <div className="relative z-10">
         <div className="mb-3 flex items-center gap-2">
-          <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" />
+          <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden="true" />
           <h2 className="text-[17px] font-semibold text-white">Progress vs initial snapshot</h2>
         </div>
         <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
