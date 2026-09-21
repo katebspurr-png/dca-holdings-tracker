@@ -87,8 +87,9 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
             <button
               key={f.id}
               type="button"
+              aria-pressed={selected.has(f.id)}
               onClick={() => toggle(f.id)}
-              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
                 selected.has(f.id)
                   ? "border-stitch-accent/40 bg-stitch-accent/10"
                   : "border-stitch-border bg-stitch-pill/30 hover:bg-stitch-pill/50"
@@ -100,7 +101,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
                 }`}
               >
                 {selected.has(f.id) && (
-                  <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden>
+                  <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden="true">
                     <path
                       d="M1 4l3 3 5-6"
                       stroke="currentColor"
@@ -123,8 +124,9 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
 
       <button
         type="button"
+        aria-pressed={betaTester}
         onClick={() => setBetaTester(!betaTester)}
-        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
           betaTester
             ? "border-stitch-accent/40 bg-stitch-accent/10"
             : "border-dashed border-stitch-border hover:bg-stitch-pill/30"
@@ -136,7 +138,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
           }`}
         >
           {betaTester && (
-            <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden>
+            <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden="true">
               <path
                 d="M1 4l3 3 5-6"
                 stroke="currentColor"
@@ -155,15 +157,15 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
       </button>
 
       <Button
-        className="w-full gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+        className="w-full gap-2 bg-stitch-accent font-semibold text-black transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg hover:bg-stitch-accent/90"
         onClick={handleSubmit}
         disabled={loading || selected.size === 0}
       >
         {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
         ) : (
           <>
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
             Join the Waitlist
           </>
         )}
