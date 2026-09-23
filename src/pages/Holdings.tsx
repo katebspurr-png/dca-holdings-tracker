@@ -174,17 +174,18 @@ function HoldingPortfolioCard({
         tabIndex={0}
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
+        aria-label={`Holding position for ${h.ticker}`}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.99]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
         {selectMode && (
           <div className="absolute right-2 top-2">
             {isSelected ? (
-              <CheckSquare className="h-5 w-5 text-stitch-accent" />
+              <CheckSquare className="h-5 w-5 text-stitch-accent" aria-hidden="true" />
             ) : (
-              <Square className="h-5 w-5 text-stitch-muted/50" />
+              <Square className="h-5 w-5 text-stitch-muted/50" aria-hidden="true" />
             )}
           </div>
         )}
@@ -230,7 +231,8 @@ function HoldingPortfolioCard({
                     onFetchPrice();
                   }}
                   disabled={fetchingTickers.has(h.ticker)}
-                  className="mt-1 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+                  aria-label={`Get market price for ${h.ticker}`}
+                  className="mt-1 text-left text-[11px] font-medium text-stitch-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                 >
                   {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
                 </button>
@@ -241,7 +243,8 @@ function HoldingPortfolioCard({
                   e.stopPropagation();
                   onStrategy();
                 }}
-                className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline"
+                aria-label={`Open Plan tab for ${h.ticker}`}
+                className="mt-1 block max-w-full truncate text-left text-[11px] font-semibold text-stitch-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
               >
                 Target: {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
               </button>
@@ -250,40 +253,42 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 rounded-lg p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
               }}
-              aria-label="Open Plan tab"
+              aria-label={`Open Plan strategy for ${h.ticker}`}
             >
-              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} aria-hidden="true" />
             </button>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" aria-hidden="true" />
           </div>
         </div>
         {!selectMode && (
-          <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+          <div className="mt-2 flex gap-3 border-t border-stitch-border/50 pt-2">
             <button
               type="button"
-              className="text-[11px] text-stitch-muted hover:text-white"
+              aria-label={`Edit position for ${h.ticker}`}
+              className="rounded-md text-[11px] text-stitch-muted hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
             >
-              <Pencil className="mr-1 inline h-3 w-3" />
+              <Pencil className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Edit
             </button>
             <button
               type="button"
-              className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+              aria-label={`Delete position for ${h.ticker}`}
+              className="rounded-md text-[11px] text-stitch-danger/90 hover:text-stitch-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
-              <Trash2 className="mr-1 inline h-3 w-3" />
+              <Trash2 className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Delete
             </button>
           </div>
@@ -298,17 +303,18 @@ function HoldingPortfolioCard({
       tabIndex={0}
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
+      aria-label={`Holding position for ${h.ticker}`}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.98]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
       {selectMode && (
         <div className="absolute right-2 top-2">
           {isSelected ? (
-            <CheckSquare className="h-5 w-5 text-stitch-accent" />
+            <CheckSquare className="h-5 w-5 text-stitch-accent" aria-hidden="true" />
           ) : (
-            <Square className="h-5 w-5 text-stitch-muted/50" />
+            <Square className="h-5 w-5 text-stitch-muted/50" aria-hidden="true" />
           )}
         </div>
       )}
@@ -323,14 +329,14 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 rounded-lg p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
           }}
-          aria-label="Open Plan tab"
+          aria-label={`Open Plan strategy for ${h.ticker}`}
         >
-          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} aria-hidden="true" />
         </button>
       </div>
 
@@ -344,7 +350,8 @@ function HoldingPortfolioCard({
             onFetchPrice();
           }}
           disabled={fetchingTickers.has(h.ticker)}
-          className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline"
+          aria-label={`Get market price for ${h.ticker}`}
+          className="mb-2 text-left text-[11px] font-medium text-stitch-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
         >
           {fetchingTickers.has(h.ticker) ? "Loading…" : "Get price"}
         </button>
@@ -364,7 +371,8 @@ function HoldingPortfolioCard({
           e.stopPropagation();
           onStrategy();
         }}
-        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+        aria-label={`Target Average for ${h.ticker}: ${scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}`}
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
       >
         <span className="leading-tight">
           Target Average:
@@ -373,7 +381,7 @@ function HoldingPortfolioCard({
             {scenario ? `${cp}${fmt(scenario.new_avg_cost)}` : "Open Plan tab"}
           </span>
         </span>
-        <ChevronRight className="h-4 w-4 shrink-0" />
+        <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
       </button>
 
       <p className="flex-1 text-[12px] leading-tight text-stitch-muted">
@@ -398,27 +406,29 @@ function HoldingPortfolioCard({
       </p>
 
       {!selectMode && (
-        <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
+        <div className="mt-2 flex gap-3 border-t border-stitch-border/50 pt-2">
           <button
             type="button"
-            className="text-[11px] text-stitch-muted hover:text-white"
+            aria-label={`Edit position for ${h.ticker}`}
+            className="rounded-md text-[11px] text-stitch-muted hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
           >
-            <Pencil className="mr-1 inline h-3 w-3" />
+            <Pencil className="mr-1 inline h-3 w-3" aria-hidden="true" />
             Edit
           </button>
           <button
             type="button"
-            className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+            aria-label={`Delete position for ${h.ticker}`}
+            className="rounded-md text-[11px] text-stitch-danger/90 hover:text-stitch-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
           >
-            <Trash2 className="mr-1 inline h-3 w-3" />
+            <Trash2 className="mr-1 inline h-3 w-3" aria-hidden="true" />
             Delete
           </button>
         </div>
@@ -993,9 +1003,10 @@ export default function Holdings() {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              aria-label="Add new stock position"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-all duration-150 hover:bg-[#3a3a3c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95"
             >
-              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} aria-hidden="true" />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
             </button>
           </div>
