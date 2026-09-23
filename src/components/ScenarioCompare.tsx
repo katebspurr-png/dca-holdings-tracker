@@ -40,7 +40,7 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
       {/* Header */}
       <div className="border-b border-stitch-border bg-stitch-accent/[0.06] px-4 py-3">
         <h3 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-accent flex items-center gap-1.5">
-          <Zap className="h-3.5 w-3.5" />
+          <Zap className="h-3.5 w-3.5" aria-hidden="true" />
           Scenario Comparison
         </h3>
       </div>
@@ -76,17 +76,17 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                 <div className="flex flex-wrap gap-1">
                   {isBestAvg && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-accent/10 px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <Award className="h-2 w-2" /> Lowest new avg (this selection)
+                      <Award className="h-2 w-2" aria-hidden="true" /> Lowest new avg (this selection)
                     </Badge>
                   )}
                   {isLowestSpend && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-pill px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <DollarSign className="h-2 w-2" /> Lowest total spend (this selection)
+                      <DollarSign className="h-2 w-2" aria-hidden="true" /> Lowest total spend (this selection)
                     </Badge>
                   )}
                   {isBestImprovement && improves && (
                     <Badge variant="secondary" className="h-4 gap-0.5 border-0 bg-stitch-accent/10 px-1.5 py-0 text-[8px] text-stitch-accent">
-                      <TrendingDown className="h-2 w-2" /> Largest avg change (this selection)
+                      <TrendingDown className="h-2 w-2" aria-hidden="true" /> Largest avg change (this selection)
                     </Badge>
                   )}
                 </div>
@@ -116,12 +116,12 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                     </p>
                     {improves ? (
                       <span className="text-[10px] font-medium text-stitch-accent flex items-center gap-0.5 mt-0.5">
-                        <TrendingDown className="h-2.5 w-2.5" />
+                        <TrendingDown className="h-2.5 w-2.5" aria-hidden="true" />
                         −{cp}{fmt(Math.abs(avgDiff))}/share
                       </span>
                     ) : worsens ? (
                       <span className="text-[10px] font-medium text-destructive flex items-center gap-0.5 mt-0.5">
-                        <TrendingUp className="h-2.5 w-2.5" />
+                        <TrendingUp className="h-2.5 w-2.5" aria-hidden="true" />
                         +{cp}{fmt(Math.abs(avgDiff))}/share
                       </span>
                     ) : null}
@@ -156,18 +156,20 @@ export default function ScenarioCompare({ scenarios, currentAvg, cp, onUseScenar
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                    className="h-6 flex-1 border-stitch-border bg-stitch-pill px-2 text-[10px] text-stitch-muted-soft hover:bg-stitch-card hover:text-white active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onUseScenario(s)}
+                    aria-label={`Use parameters from ${METHOD_LABELS[s.method] ?? s.method} scenario`}
                   >
-                    <ArrowRight className="mr-1 h-2.5 w-2.5" />
+                    <ArrowRight className="mr-1 h-2.5 w-2.5" aria-hidden="true" />
                     Use
                   </Button>
                   <Button
                     size="sm"
-                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90"
+                    className="h-6 flex-1 bg-stitch-accent px-2 text-[10px] font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
                     onClick={() => onApplyBuy(s)}
+                    aria-label={`Apply buy order for ${METHOD_LABELS[s.method] ?? s.method} scenario`}
                   >
-                    <CheckCircle className="mr-1 h-2.5 w-2.5" />
+                    <CheckCircle className="mr-1 h-2.5 w-2.5" aria-hidden="true" />
                     Apply
                   </Button>
                 </div>
