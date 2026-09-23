@@ -1,0 +1,3 @@
+## 2025-09-23 - Holdings Card Action Controls Accessibility and Focus Ring Consistency
+**Learning:** Portfolio card items that function as interactive buttons require explicit focus-visible ring styles (`focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`), tactile press scaling, context-specific `aria-label` attributes on nested edit/delete action triggers to avoid vague "Edit" or "Delete" screen reader announcements, and `aria-hidden="true"` on decorative icon SVGs.
+**Action:** Always wrap card action icon buttons with explicit, contextual `aria-label`s incorporating ticker symbols, apply focus offset ring classes, and attach `aria-hidden="true"` to interior Lucide icons.
