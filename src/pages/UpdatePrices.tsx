@@ -29,7 +29,7 @@ const fmtPct = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function getCachedPriceForHolding(h: Holding): number | null {
-  const key = apiTicker(h.ticker, (h.exchange ?? "US") as any).toUpperCase();
+  const key = apiTicker(h.ticker, (h.exchange ?? "US") as storage.Exchange).toUpperCase();
   const q = getCachedQuote(key);
   return q ? q.price : null;
 }
@@ -125,7 +125,7 @@ export default function UpdatePrices() {
     holdings.forEach((h) => {
       const val = parseFloat(prices[h.id]);
       if (isNaN(val) || val <= 0) return;
-      const key = apiTicker(h.ticker, (h.exchange ?? "US") as any).toUpperCase();
+      const key = apiTicker(h.ticker, (h.exchange ?? "US") as storage.Exchange).toUpperCase();
       const existing = cache[key];
       cache[key] = {
         ticker: key,
@@ -194,9 +194,9 @@ export default function UpdatePrices() {
                 variant="outline"
                 onClick={handleRefreshAll}
                 disabled={refreshing}
-                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+                className="h-8 gap-1.5 border-stitch-border bg-stitch-pill text-xs text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
               >
-                <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+                <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} aria-hidden="true" />
                 {refreshing ? "Refreshing…" : "Refresh Prices"}
               </Button>
             </div>
@@ -252,7 +252,7 @@ export default function UpdatePrices() {
         </div>
 
         {holdings.map((h) => {
-          const cp = currencyPrefix((h.exchange ?? "US") as any);
+          const cp = currencyPrefix((h.exchange ?? "US") as storage.Exchange);
           const r = computeRow(h, prices[h.id]);
           const isEdited = prices[h.id] !== initialPrices[h.id];
           const color = glColor(r.gainLoss);
@@ -298,6 +298,7 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
+                  aria-label={`Current price for ${h.ticker}`}
                   className="w-full text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
@@ -329,7 +330,7 @@ export default function UpdatePrices() {
       {/* ── Mobile cards ──────────────────────────────────── */}
       <div className="mx-auto max-w-[1080px] px-4 md:hidden space-y-px">
         {holdings.map((h) => {
-          const cp = currencyPrefix((h.exchange ?? "US") as any);
+          const cp = currencyPrefix((h.exchange ?? "US") as storage.Exchange);
           const r = computeRow(h, prices[h.id]);
           const isEdited = prices[h.id] !== initialPrices[h.id];
           const color = glColor(r.gainLoss);
@@ -358,6 +359,7 @@ export default function UpdatePrices() {
                   step="any"
                   min="0"
                   placeholder="0.00"
+                  aria-label={`Current price for ${h.ticker}`}
                   className="w-28 text-right text-[13px] font-medium font-[family-name:var(--font-mono)] tabular-nums bg-stitch-pill/50 rounded-md border border-stitch-border/60 focus:border-stitch-accent focus:bg-stitch-pill focus:ring-1 focus:ring-stitch-accent/30 outline-none py-1 px-2 transition-all placeholder:text-stitch-muted/40"
                   value={prices[h.id] || ""}
                   onChange={(e) => setPrice(h.id, e.target.value)}
@@ -411,17 +413,17 @@ export default function UpdatePrices() {
                   variant="ghost"
                   size="sm"
                   onClick={handleReset}
-                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white"
+                  className="h-8 text-xs text-stitch-muted hover:bg-stitch-pill/50 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
                 >
-                  <RotateCcw className="mr-1 h-3 w-3" />
+                  <RotateCcw className="mr-1 h-3 w-3" aria-hidden="true" />
                   Reset
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleSave}
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
                 >
-                  <Save className="mr-1 h-3 w-3" />
+                  <Save className="mr-1 h-3 w-3" aria-hidden="true" />
                   Save prices
                 </Button>
               </div>
