@@ -14,7 +14,7 @@ type Mode = "login" | "signup" | "forgot";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -159,7 +159,7 @@ export default function Auth() {
   };
 
   const fieldClass =
-    "h-10 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent";
+    "h-10 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card";
 
   const title =
     mode === "forgot" ? "Reset password" : mode === "login" ? "Welcome back" : "Create your account";
@@ -171,7 +171,7 @@ export default function Auth() {
         : "Start managing your positions smarter.";
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center bg-stitch-bg px-5 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] font-sans text-white antialiased sm:justify-center sm:py-8">
+    <main className="relative flex min-h-dvh flex-col items-center bg-stitch-bg px-5 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] font-sans text-white antialiased sm:justify-center sm:py-8">
       {/* Above-the-fold: explore-first — demo is the dominant action */}
       <div className="w-full max-w-sm shrink-0 text-center">
         <div className="leading-none">
@@ -190,7 +190,7 @@ export default function Auth() {
           type="button"
           size="lg"
           aria-describedby="auth-demo-hint"
-          className="mt-5 h-12 w-full max-w-sm bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/20 hover:bg-stitch-accent/90"
+          className="mt-5 h-12 w-full max-w-sm bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/20 transition-all duration-150 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.98]"
           onClick={() => navigate(getDemoEntryPath())}
         >
           Try Demo
@@ -198,7 +198,7 @@ export default function Auth() {
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className="mt-3 text-[13px] font-medium text-stitch-muted/90 underline-offset-4 transition-colors hover:text-white hover:underline"
+          className="mt-3 inline-block rounded-sm text-[13px] font-medium text-stitch-muted/90 underline-offset-4 transition-all duration-150 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95"
         >
           Create account
         </button>
@@ -219,12 +219,12 @@ export default function Auth() {
             <Button
               type="button"
               variant="outline"
-              className="h-10 w-full border-stitch-border bg-stitch-pill font-medium text-white hover:bg-stitch-pill/80 hover:text-white"
+              className="h-10 w-full border-stitch-border bg-stitch-pill font-medium text-white transition-all duration-150 hover:bg-stitch-pill/80 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
               onClick={handleGoogle}
               disabled={googleLoading || loading || magicLoading}
             >
               {googleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <>
                   <GoogleIcon className="mr-2 h-4 w-4" />
@@ -263,16 +263,16 @@ export default function Auth() {
             </div>
             <Button
               type="submit"
-              className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="h-10 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
               disabled={loading}
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Send reset link"}
             </Button>
             <p className="text-center text-sm text-stitch-muted">
               <button
                 type="button"
                 onClick={() => setMode("login")}
-                className="font-medium text-stitch-accent hover:underline"
+                className="rounded-sm font-medium text-stitch-accent transition-all duration-150 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95"
               >
                 Back to sign in
               </button>
@@ -306,7 +306,7 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-xs font-medium text-stitch-accent hover:underline"
+                      className="rounded-sm text-xs font-medium text-stitch-accent transition-all duration-150 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95"
                     >
                       Forgot password?
                     </button>
@@ -327,15 +327,15 @@ export default function Auth() {
 
               <Button
                 type="submit"
-                className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+                className="h-10 w-full bg-stitch-accent font-semibold text-black transition-all duration-150 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
                 disabled={loading || googleLoading || magicLoading}
               >
                 {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <>
                     {mode === "login" ? "Sign In" : "Create Account"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                   </>
                 )}
               </Button>
@@ -344,15 +344,15 @@ export default function Auth() {
             <Button
               type="button"
               variant="ghost"
-              className="h-10 w-full text-stitch-muted hover:bg-stitch-pill hover:text-white"
+              className="h-10 w-full text-stitch-muted transition-all duration-150 hover:bg-stitch-pill hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
               onClick={handleMagicLink}
               disabled={magicLoading || loading || googleLoading}
             >
               {magicLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <>
-                  <Mail className="mr-2 h-4 w-4 text-stitch-accent" />
+                  <Mail className="mr-2 h-4 w-4 text-stitch-accent" aria-hidden="true" />
                   Email me a magic link
                 </>
               )}
@@ -367,7 +367,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="ml-1.5 font-medium text-stitch-accent hover:underline"
+                className="ml-1.5 rounded-sm font-medium text-stitch-accent transition-all duration-150 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-card active:scale-95"
               >
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
@@ -379,6 +379,6 @@ export default function Auth() {
       <p className="mt-5 max-w-xs text-center text-[11px] text-stitch-muted/50">
         Not financial advice. Always do your own research before investing.
       </p>
-    </div>
+    </main>
   );
 }
