@@ -30,11 +30,21 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
   const pctVsInitial = Math.min((Math.abs(delta) / initial) * 100, 999);
   const dollarEffect = Math.abs(delta) * shares;
 
+  const progressValue = Math.min(pctVsInitial, 100);
+
   return (
-    <div className="rounded-2xl border border-stitch-border bg-stitch-card p-4 sm:p-5 shadow-md">
+    <section
+      aria-labelledby="cost-basis-heading"
+      className="rounded-2xl border border-stitch-border bg-stitch-card p-4 sm:p-5 shadow-md"
+    >
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Cost Basis Progress</h2>
+          <h2
+            id="cost-basis-heading"
+            className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted"
+          >
+            Cost Basis Progress
+          </h2>
           <p className="mt-1 text-[9px] text-stitch-muted/80">
             Compared to the average when this position was first tracked.
           </p>
@@ -76,10 +86,17 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
       {improved ? (
         <>
           <div className="mb-3">
-            <div className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill">
+            <div
+              role="progressbar"
+              aria-label="Cost basis reduction percentage"
+              aria-valuenow={Number(progressValue.toFixed(1))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill"
+            >
               <div
                 className="h-full rounded-full bg-stitch-accent transition-all"
-                style={{ width: `${Math.min(pctVsInitial, 100)}%` }}
+                style={{ width: `${progressValue}%` }}
               />
             </div>
             <div className="mt-1 flex justify-between">
@@ -116,6 +133,6 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
