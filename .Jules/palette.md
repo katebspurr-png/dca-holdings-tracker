@@ -1,0 +1,3 @@
+## 2025-05-18 - First-run Walkthrough Dialog Accessibility
+**Learning:** Full-screen walkthrough overlay dialogs in this app need explicit `role="dialog"`, `aria-modal="true"`, and `aria-labelledby` referencing the dynamic step header (`id="onboarding-step-title"`), while purely visual progress bars and step dots must be marked `aria-hidden="true"` to prevent screen reader noise, pairing with a dedicated `role="status"` element for screen reader announcements.
+**Action:** Always link dialog containers to their active step title heading and mark visual dot/progress bars `aria-hidden="true"` when adding or refactoring modal walkthrough steps.
