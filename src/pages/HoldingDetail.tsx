@@ -505,10 +505,11 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            aria-label="Back to holdings"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => navigate("/")}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <h1 className="text-lg font-bold tracking-tight truncate">
@@ -522,43 +523,54 @@ export default function HoldingDetail() {
           </div>
           {canUndo && (
             <Button
-              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive"
-              disabled={undoing} onClick={() => setShowUndoConfirm(true)}
+              variant="ghost"
+              size="sm"
+              aria-label="Undo last buy"
+              className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
+              disabled={undoing}
+              onClick={() => setShowUndoConfirm(true)}
             >
-              <Undo2 className="mr-1 h-3 w-3" /> Undo
+              <Undo2 className="mr-1 h-3 w-3" aria-hidden="true" /> Undo
             </Button>
           )}
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
-            {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === key
-                    ? "border-stitch-accent text-stitch-accent"
-                    : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            ))}
+          <div role="tablist" aria-label="Holding workspace tabs" className="flex gap-0 -mb-px overflow-x-auto">
+            {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => {
+              const isActive = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`workspace-tabpanel-${key}`}
+                  id={`workspace-tab-${key}`}
+                  onClick={() => switchTab(key)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-all whitespace-nowrap active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg rounded-t ${
+                    isActive
+                      ? "border-stitch-accent text-stitch-accent font-semibold"
+                      : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-6">
+      <main id={`workspace-tabpanel-${activeTab}`} role="tabpanel" aria-labelledby={`workspace-tab-${activeTab}`} className="mx-auto max-w-5xl px-4 sm:px-6 py-6 space-y-6">
         {/* ═══════════════ OVERVIEW TAB ═══════════════ */}
         {activeTab === "overview" && (
           <>
             <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Position Overview</h2>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white" onClick={() => setEditOpen(true)}>
-                  <Pencil className="mr-1 h-3 w-3" /> Edit
+                <Button variant="ghost" size="sm" aria-label={`Edit ${holding.ticker} position details`} className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150" onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-1 h-3 w-3" aria-hidden="true" /> Edit
                 </Button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
