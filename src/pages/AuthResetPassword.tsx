@@ -70,19 +70,19 @@ export default function AuthResetPassword() {
   };
 
   const fieldClass =
-    "h-10 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent";
+    "h-10 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card";
 
   if (!canReset) {
     return (
-      <div className="flex min-h-[max(884px,100dvh)] flex-col items-center justify-center bg-stitch-bg px-6">
-        <Loader2 className="h-8 w-8 animate-spin text-stitch-accent" />
+      <main className="flex min-h-[max(884px,100dvh)] flex-col items-center justify-center bg-stitch-bg px-6">
+        <Loader2 className="h-8 w-8 animate-spin text-stitch-accent" aria-hidden="true" />
         <p className="mt-4 text-sm text-stitch-muted">Verifying reset link…</p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="relative flex min-h-[max(884px,100dvh)] flex-col items-center justify-center bg-stitch-bg px-6 font-sans text-white antialiased">
+    <main className="relative flex min-h-[max(884px,100dvh)] flex-col items-center justify-center bg-stitch-bg px-6 font-sans text-white antialiased">
       <div className="mb-10 text-center">
         <div className="leading-none">
           <span className="font-[family-name:var(--font-heading)] text-[2rem] font-extrabold tracking-tight">
@@ -133,26 +133,29 @@ export default function AuthResetPassword() {
 
           <Button
             type="submit"
-            className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+            className="h-10 w-full bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
             disabled={loading}
           >
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               <>
                 Update password
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </>
             )}
           </Button>
         </form>
 
         <p className="text-center text-sm text-stitch-muted">
-          <Link to="/auth" className="font-medium text-stitch-accent hover:underline">
+          <Link
+            to="/auth"
+            className="rounded font-medium text-stitch-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:opacity-80 transition-opacity"
+          >
             Back to sign in
           </Link>
         </p>
       </div>
-    </div>
+    </main>
   );
 }
