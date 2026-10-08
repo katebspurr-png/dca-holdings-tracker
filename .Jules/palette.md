@@ -1,0 +1,3 @@
+## 2025-05-20 - Premium Gate Accessibility & Focus Ring Offset
+**Learning:** In feature gate components like `PremiumGate`, decorative icon SVGs (`Lock`, `Crown`) and locked children containers require explicit `aria-hidden="true"` to prevent screen reader noise. Feature action buttons on dark card containers need explicit offset background utility classes (`focus-visible:ring-offset-stitch-card`) for keyboard focus ring visibility.
+**Action:** Always add explicit `aria-hidden="true"` to Lucide SVG icons and pair focus rings with card-specific offset background utility classes on gated component CTA buttons.
