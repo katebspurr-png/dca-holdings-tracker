@@ -42,7 +42,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
     }
     setLoading(true);
     try {
-      const { error } = await (supabase as any).from("waitlist").upsert({
+      const { error } = await (supabase as unknown as { from: (table: string) => { upsert: (data: Record<string, unknown>, options?: { onConflict: string }) => Promise<{ error: Error | null }> } }).from("waitlist").upsert({
         user_id: user?.id,
         email: user?.email,
         features: Array.from(selected),
@@ -63,7 +63,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
     return (
       <div className="flex flex-col items-center justify-center space-y-3 py-8 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stitch-accent/15">
-          <CheckCircle className="h-6 w-6 text-stitch-accent" />
+          <CheckCircle className="h-6 w-6 text-stitch-accent" aria-hidden="true" />
         </div>
         <div>
           <p className="font-semibold text-white">You're on the list!</p>
@@ -87,8 +87,10 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
             <button
               key={f.id}
               type="button"
+              role="checkbox"
+              aria-checked={selected.has(f.id)}
               onClick={() => toggle(f.id)}
-              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+              className={`flex w-full items-start gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card ${
                 selected.has(f.id)
                   ? "border-stitch-accent/40 bg-stitch-accent/10"
                   : "border-stitch-border bg-stitch-pill/30 hover:bg-stitch-pill/50"
@@ -100,7 +102,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
                 }`}
               >
                 {selected.has(f.id) && (
-                  <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden>
+                  <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden="true">
                     <path
                       d="M1 4l3 3 5-6"
                       stroke="currentColor"
@@ -123,8 +125,10 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
 
       <button
         type="button"
+        role="checkbox"
+        aria-checked={betaTester}
         onClick={() => setBetaTester(!betaTester)}
-        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${
+        className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card ${
           betaTester
             ? "border-stitch-accent/40 bg-stitch-accent/10"
             : "border-dashed border-stitch-border hover:bg-stitch-pill/30"
@@ -136,7 +140,7 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
           }`}
         >
           {betaTester && (
-            <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden>
+            <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-black" aria-hidden="true">
               <path
                 d="M1 4l3 3 5-6"
                 stroke="currentColor"
@@ -155,15 +159,15 @@ export default function WaitlistForm({ defaultFeature }: WaitlistFormProps) {
       </button>
 
       <Button
-        className="w-full gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+        className="w-full gap-2 bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
         onClick={handleSubmit}
         disabled={loading || selected.size === 0}
       >
         {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
         ) : (
           <>
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
             Join the Waitlist
           </>
         )}

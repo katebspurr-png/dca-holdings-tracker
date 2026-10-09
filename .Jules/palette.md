@@ -1,0 +1,3 @@
+## 2025-05-18 - Custom Checkbox Card ARIA Semantics and Tactile Micro-Interactions
+**Learning:** Custom selection cards rendered as `<button>` elements (such as feature waitlist items) lack default checkbox semantics for screen readers and missing standard focus indicator rings in Stitch dark themes.
+**Action:** Always add `role="checkbox"` and `aria-checked={boolean}` to interactive card selection buttons, pair with design system focus visible rings (`focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card`), tactile press feedback (`active:scale-[0.99] transition-all duration-150`), and `aria-hidden="true"` on inline indicator SVGs.
