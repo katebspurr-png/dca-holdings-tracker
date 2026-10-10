@@ -101,7 +101,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       ...feeOpts,
       testAmount: STANDARD_TEST_INVESTMENT,
     });
-  }, [S, A, marketPrice, feeOpts.includeFees, feeOpts.feeType, feeOpts.feeValue]);
+  }, [S, A, marketPrice, feeOpts]);
 
   const startTodayDiff = useMemo(() => {
     if (marketPrice == null || A <= 0) return null;
@@ -152,7 +152,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
   if (marketPrice == null) {
     return (
       <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-1.5">
-        <Lightbulb className="h-5 w-5 mx-auto text-stitch-muted/50" />
+        <Lightbulb className="h-5 w-5 mx-auto text-stitch-muted/50" aria-hidden="true" />
         <p className="text-xs text-stitch-muted">Refresh market prices to unlock the Math tab.</p>
       </div>
     );
@@ -172,7 +172,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       {/* Modeled capital to reach example target averages */}
       <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-1">
-          <TrendingDown className="h-4 w-4 text-stitch-accent" />
+          <TrendingDown className="h-4 w-4 text-stitch-accent" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-white">Target average — modeled capital</h3>
         </div>
         <p className="text-[11px] text-stitch-muted mb-4">
@@ -203,13 +203,23 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                   <span>New avg: {cp}{fmt2(t.newAvg)}</span>
                 </div>
                 <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
-                    onClick={() => onUseInCalculator("price_target", String(marketPrice), String(t.target))}>
-                    <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Use target average ${cp}${fmt2(t.target)} in calculator`}
+                    className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
+                    onClick={() => onUseInCalculator("price_target", String(marketPrice), String(t.target))}
+                  >
+                    <ArrowRight className="mr-1 h-2.5 w-2.5" aria-hidden="true" /> Use in calculator
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
-                    onClick={() => saveRescueScenario(t)}>
-                    <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Save scenario for target average ${cp}${fmt2(t.target)}`}
+                    className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
+                    onClick={() => saveRescueScenario(t)}
+                  >
+                    <Save className="mr-1 h-2.5 w-2.5" aria-hidden="true" /> Save scenario
                   </Button>
                 </div>
               </div>
@@ -220,14 +230,19 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
               <p className="text-[10px] text-stitch-muted uppercase tracking-wider mb-2">Your target average</p>
               <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <Label className="text-[10px] text-stitch-muted">Target average ({cp})</Label>
-                  <Input type="number" step="0.01" value={customTarget}
+                  <Label htmlFor="custom-target-input" className="text-[10px] text-stitch-muted">Target average ({cp})</Label>
+                  <Input
+                    id="custom-target-input"
+                    type="number"
+                    step="0.01"
+                    value={customTarget}
                     onChange={(e) => { setCustomTarget(e.target.value); setCustomError(""); }}
-                    className="h-8 font-mono text-sm bg-stitch-pill" />
+                    className="h-8 font-mono text-sm bg-stitch-pill focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
+                  />
                 </div>
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                   onClick={handleCustomRescue}
                 >
                   Calculate
@@ -246,13 +261,23 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
                     <span>New avg: {cp}{fmt2(customRescueResult.newAvg)}</span>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-stitch-border/30">
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
-                      onClick={() => onUseInCalculator("price_target", String(marketPrice), customTarget)}>
-                      <ArrowRight className="mr-1 h-2.5 w-2.5" /> Use in calculator
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Use custom target average ${cp}${fmt2(parseFloat(customTarget))} in calculator`}
+                      className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
+                      onClick={() => onUseInCalculator("price_target", String(marketPrice), customTarget)}
+                    >
+                      <ArrowRight className="mr-1 h-2.5 w-2.5" aria-hidden="true" /> Use in calculator
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white"
-                      onClick={handleCustomRescue}>
-                      <Save className="mr-1 h-2.5 w-2.5" /> Save scenario
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Save custom target average scenario for ${cp}${fmt2(parseFloat(customTarget))}`}
+                      className="h-6 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
+                      onClick={handleCustomRescue}
+                    >
+                      <Save className="mr-1 h-2.5 w-2.5" aria-hidden="true" /> Save scenario
                     </Button>
                   </div>
                 </div>
@@ -266,7 +291,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       {/* Buy impact index: fixed test buy → modeled average cost change */}
       <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Gauge className="h-4 w-4 text-stitch-accent" />
+          <Gauge className="h-4 w-4 text-stitch-accent" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-white">Buy impact (fixed test buy)</h3>
         </div>
         <p className="text-[10px] text-stitch-muted/80 mb-2 leading-relaxed">
@@ -320,7 +345,7 @@ export default function InsightsTab({ holding, marketPrice, cp, onUseInCalculato
       {startTodayDiff != null && (
         <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
-            <Users className="h-4 w-4 text-stitch-accent" />
+            <Users className="h-4 w-4 text-stitch-accent" aria-hidden="true" />
             <h3 className="text-sm font-semibold text-white">Average vs current price</h3>
           </div>
           <div className="grid grid-cols-2 gap-4 mb-3">
