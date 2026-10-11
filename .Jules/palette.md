@@ -1,0 +1,3 @@
+## 2025-05-18 - Floating Action Button Accessibility and Focus Ring Design Token
+**Learning:** Floating action buttons and card-level interactive controls in this dark-themed design system require design-token-aligned focus offset rings (`focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg`) and active scale state feedback (`active:scale-95 transition-all duration-150`) alongside explicit `aria-label` attributes to maintain screen reader accessibility and touch responsiveness.
+**Action:** Always pair `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2` and `active:scale-95` on primary floating action buttons and interactive layout controls in `stitch-*` themed pages.

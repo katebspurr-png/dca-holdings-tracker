@@ -175,7 +175,7 @@ function HoldingPortfolioCard({
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.99]",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -266,24 +266,24 @@ function HoldingPortfolioCard({
           <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
             <button
               type="button"
-              className="text-[11px] text-stitch-muted hover:text-white"
+              className="rounded text-[11px] text-stitch-muted hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stitch-accent/50"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
             >
-              <Pencil className="mr-1 inline h-3 w-3" />
+              <Pencil className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Edit
             </button>
             <button
               type="button"
-              className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+              className="rounded text-[11px] text-stitch-danger/90 hover:text-stitch-danger focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-stitch-danger/50"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
-              <Trash2 className="mr-1 inline h-3 w-3" />
+              <Trash2 className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Delete
             </button>
           </div>
@@ -299,7 +299,7 @@ function HoldingPortfolioCard({
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-[0.99]",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -364,7 +364,7 @@ function HoldingPortfolioCard({
           e.stopPropagation();
           onStrategy();
         }}
-        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black"
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-stitch-accent px-3 py-2 text-left text-[13px] font-semibold text-black transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95"
       >
         <span className="leading-tight">
           Target Average:
@@ -892,28 +892,28 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 active:scale-95",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
                     )}
                     onClick={() => handleLayoutChange("grid")}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 active:scale-95",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
                     )}
                     onClick={() => handleLayoutChange("list")}
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
                 <DropdownMenu>
@@ -989,13 +989,14 @@ export default function Holdings() {
           <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
             <button
               type="button"
+              aria-label="Add new stock position"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-all duration-150 hover:bg-[#3a3a3c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95"
             >
-              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} aria-hidden="true" />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
             </button>
           </div>
@@ -1171,7 +1172,7 @@ function DcaOpportunities({
                         key={h.id}
                         type="button"
                         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
+                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-all duration-150 hover:bg-stitch-pill/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.98]"
                       >
                         <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
                         <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
@@ -1180,7 +1181,7 @@ function DcaOpportunities({
                           {fmt(step.newAvg)} (−{cp}
                           {fmt(step.avgImprovement)}/share)
                         </span>
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" aria-hidden="true" />
                       </button>
                     );
                   })}
