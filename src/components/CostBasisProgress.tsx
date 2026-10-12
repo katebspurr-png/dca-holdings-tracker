@@ -31,10 +31,18 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
   const dollarEffect = Math.abs(delta) * shares;
 
   return (
-    <div className="rounded-2xl border border-stitch-border bg-stitch-card p-4 sm:p-5 shadow-md">
+    <section
+      aria-labelledby="cost-basis-progress-heading"
+      className="rounded-2xl border border-stitch-border bg-stitch-card p-4 sm:p-5 shadow-md"
+    >
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Cost Basis Progress</h2>
+          <h2
+            id="cost-basis-progress-heading"
+            className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted"
+          >
+            Cost Basis Progress
+          </h2>
           <p className="mt-1 text-[9px] text-stitch-muted/80">
             Compared to the average when this position was first tracked.
           </p>
@@ -76,7 +84,15 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
       {improved ? (
         <>
           <div className="mb-3">
-            <div className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill">
+            <div
+              role="progressbar"
+              aria-valuenow={Number(pctVsInitial.toFixed(1))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Cost basis reduction progress"
+              aria-valuetext={`${pctVsInitial.toFixed(1)}% lower average`}
+              className="flex h-2 gap-1 overflow-hidden rounded-full bg-stitch-pill"
+            >
               <div
                 className="h-full rounded-full bg-stitch-accent transition-all"
                 style={{ width: `${Math.min(pctVsInitial, 100)}%` }}
@@ -116,6 +132,6 @@ export default function CostBasisProgress({ holding, currencyPrefix: cp }: Props
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
