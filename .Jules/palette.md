@@ -1,0 +1,3 @@
+## 2025-05-20 - Accessible Progress Indicators in Custom Metric Cards
+**Learning:** Custom metric reduction bars (such as cost basis or portfolio strategy progress indicators) implemented via `div` width styles lack screen reader semantics unless explicitly declared with `role="progressbar"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and an informative `aria-label`.
+**Action:** When adding or updating visual progress bars in custom components, always wrap them in a `<section aria-labelledby="...">` landmark and assign standard `role="progressbar"` attributes so assistive technologies can accurately announce progress percentages and context.
