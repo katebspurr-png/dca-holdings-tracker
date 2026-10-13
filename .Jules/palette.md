@@ -1,0 +1,3 @@
+## 2025-10-13 - Tabular Price Inputs & Floating Status Bar Accessibility
+**Learning:** Input controls embedded inside table rows or grid cells lack implicit HTML `<label>` elements. Screen reader users navigating by form controls need explicit `aria-label={`Current price for ${h.ticker}`}` on each tabular input. Additionally, floating action bars that appear contextually upon editing should use `role="status"` and `aria-live="polite"` so state changes are announced immediately.
+**Action:** Always provide ticker-specific `aria-label` attributes for tabular form fields and include `role="status"` on floating edit confirmation bars.
