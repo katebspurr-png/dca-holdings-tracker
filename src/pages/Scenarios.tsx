@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useStorageRevision } from "@/hooks/use-storage-revision";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -20,7 +20,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 const outlineBtn =
-  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150";
 
 export default function Scenarios() {
   const navigate = useNavigate();
@@ -43,8 +43,14 @@ export default function Scenarios() {
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="outline" size="sm" className={outlineBtn} onClick={() => navigate("/")}>
-              <ArrowLeft className="mr-1 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Back to portfolio overview"
+              className={outlineBtn}
+              onClick={() => navigate("/")}
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
               Portfolio
             </Button>
             <h1 className="sr-only">Saved Scenarios</h1>
@@ -56,12 +62,16 @@ export default function Scenarios() {
         <div className="flex flex-wrap gap-3">
           <Input
             placeholder="Filter by ticker…"
+            aria-label="Filter scenarios by ticker"
             value={tickerFilter}
             onChange={(e) => setTickerFilter(e.target.value)}
-            className="w-48 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50"
+            className="w-48 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           />
           <Select value={methodFilter} onValueChange={setMethodFilter}>
-            <SelectTrigger className={`w-52 ${outlineBtn}`}>
+            <SelectTrigger
+              aria-label="Filter scenarios by calculation method"
+              className={`w-52 ${outlineBtn}`}
+            >
               <SelectValue placeholder="All methods" />
             </SelectTrigger>
             <SelectContent className="z-50 border-stitch-border bg-stitch-card text-white">
@@ -94,28 +104,41 @@ export default function Scenarios() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((s) => (
-                    <TableRow
-                      key={s.id}
-                      className="cursor-pointer border-stitch-border hover:bg-stitch-pill/30"
-                      onClick={() => navigate(`/scenarios/${s.id}`)}
-                    >
-                      <TableCell className="whitespace-nowrap text-sm text-stitch-muted">
-                        {new Date(s.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="font-mono font-semibold text-white">{s.ticker}</TableCell>
-                      <TableCell className="text-sm text-stitch-muted-soft">
-                        {METHOD_LABELS[s.method] ?? s.method}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
-                      <TableCell className="text-right font-mono font-semibold text-stitch-accent">
-                        ${Number(s.new_avg_cost).toFixed(2)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filtered.map((s) => {
+                    const formattedDate = new Date(s.created_at).toLocaleDateString();
+                    const methodLabel = METHOD_LABELS[s.method] ?? s.method;
+                    return (
+                      <TableRow
+                        key={s.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`View scenario details for ${s.ticker} (${methodLabel}, created ${formattedDate})`}
+                        className="cursor-pointer border-stitch-border hover:bg-stitch-pill/30 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none"
+                        onClick={() => navigate(`/scenarios/${s.id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigate(`/scenarios/${s.id}`);
+                          }
+                        }}
+                      >
+                        <TableCell className="whitespace-nowrap text-sm text-stitch-muted">
+                          {formattedDate}
+                        </TableCell>
+                        <TableCell className="font-mono font-semibold text-white">{s.ticker}</TableCell>
+                        <TableCell className="text-sm text-stitch-muted-soft">
+                          {methodLabel}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">${Number(s.budget_invested).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">${Number(s.fee_applied).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">${Number(s.total_spend).toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-mono">{Number(s.shares_to_buy).toFixed(4)}</TableCell>
+                        <TableCell className="text-right font-mono font-semibold text-stitch-accent">
+                          ${Number(s.new_avg_cost).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
