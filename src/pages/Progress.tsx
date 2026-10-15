@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
 import { getHoldings } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,13 @@ export default function Progress() {
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="mt-4 inline-flex items-center gap-1.5 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
               asChild
             >
-              <Link to="/">Back to portfolio</Link>
+              <Link to="/">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <span>Back to portfolio</span>
+              </Link>
             </Button>
           </div>
         </section>
