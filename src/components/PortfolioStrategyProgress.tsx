@@ -21,12 +21,17 @@ export function PortfolioStrategyProgress({ holdings }: Props) {
     list.reduce((sum, h) => sum + (h.initial_avg_cost - h.avg_cost) * h.shares, 0);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+    <section
+      aria-labelledby="portfolio-strategy-progress-heading"
+      className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg"
+    >
       <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
       <div className="relative z-10">
         <div className="mb-3 flex items-center gap-2">
-          <TrendingDown className="h-4 w-4 shrink-0 text-stitch-accent" />
-          <h2 className="text-[17px] font-semibold text-white">Progress vs initial snapshot</h2>
+          <TrendingDown aria-hidden="true" className="h-4 w-4 shrink-0 text-stitch-accent" />
+          <h2 id="portfolio-strategy-progress-heading" className="text-[17px] font-semibold text-white">
+            Progress vs initial snapshot
+          </h2>
         </div>
         <p className="mb-3 text-[10px] leading-relaxed text-stitch-muted">
           Same metrics as the Progress tab: current average cost versus the value when each position was first tracked here
