@@ -93,7 +93,9 @@ export default function Settings() {
     "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-stitch-muted";
   const outlineBtn =
-    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+    "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150";
+  const primaryBtn =
+    "bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150";
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
@@ -105,7 +107,7 @@ export default function Settings() {
             <h2 className={sectionTitle}>Plan</h2>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <Crown className={`h-5 w-5 shrink-0 ${plan === "premium" ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Crown aria-hidden="true" className={`h-5 w-5 shrink-0 ${plan === "premium" ? "text-stitch-accent" : "text-stitch-muted"}`} />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white">
                     {plan === "premium" ? "Premium" : "Free"}
@@ -131,7 +133,7 @@ export default function Settings() {
                 className={
                   plan === "premium"
                     ? `h-8 shrink-0 text-xs ${outlineBtn}`
-                    : "h-8 shrink-0 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                    : `h-8 shrink-0 ${primaryBtn}`
                 }
                 onClick={togglePlan}
               >
@@ -151,7 +153,7 @@ export default function Settings() {
                   {["Scenario comparison (side-by-side)", "Compare allocations (budget lab)", "Unlimited scenarios per holding"].map(
                     (f) => (
                       <div key={f} className="flex items-center gap-1.5 text-[11px] text-stitch-muted">
-                        <Check className="h-3 w-3 shrink-0 text-stitch-accent" />
+                        <Check aria-hidden="true" className="h-3 w-3 shrink-0 text-stitch-accent" />
                         {f}
                       </div>
                     )
@@ -187,13 +189,13 @@ export default function Settings() {
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button variant="outline" size="sm" className={outlineBtn} asChild>
                 <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
                   Privacy Policy
                 </a>
               </Button>
               <Button variant="outline" size="sm" className={outlineBtn} asChild>
                 <a href="/legal/terms.html" target="_blank" rel="noopener noreferrer" className="gap-1.5">
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
                   Terms of Use
                 </a>
               </Button>
@@ -223,7 +225,7 @@ export default function Settings() {
               ) : (
                 <Button
                   size="sm"
-                  className="h-8 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className={`h-8 ${primaryBtn}`}
                   onClick={() => navigate(getDemoEntryPath())}
                 >
                   Enter demo mode
@@ -239,13 +241,13 @@ export default function Settings() {
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Sun aria-hidden="true" className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
                 <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
               </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
+              <Switch id="dark-mode" aria-label="Dark mode" checked={dark} onCheckedChange={setDark} />
               <div className="flex items-center gap-3">
                 <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
-                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+                <Moon aria-hidden="true" className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
               </div>
             </div>
           </div>
@@ -258,11 +260,11 @@ export default function Settings() {
             <h2 className={sectionTitle}>Data</h2>
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleExport} size="sm" variant="outline" className={outlineBtn}>
-                <Download className="mr-1.5 h-4 w-4" />
+                <Download aria-hidden="true" className="mr-1.5 h-4 w-4" />
                 Export Data
               </Button>
               <Button onClick={() => fileRef.current?.click()} size="sm" variant="outline" className={outlineBtn}>
-                <Upload className="mr-1.5 h-4 w-4" />
+                <Upload aria-hidden="true" className="mr-1.5 h-4 w-4" />
                 Import Data
               </Button>
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
@@ -273,8 +275,8 @@ export default function Settings() {
                   ? "Resets the demo sandbox to the original sample dataset."
                   : "Removes all holdings and scenarios stored on this device for your account."}
               </p>
-              <Button onClick={handleReset} size="sm" variant="destructive">
-                <RotateCcw className="mr-1.5 h-4 w-4" />
+              <Button onClick={handleReset} size="sm" variant="destructive" className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150">
+                <RotateCcw aria-hidden="true" className="mr-1.5 h-4 w-4" />
                 {isDemoMode ? "Reset demo sample" : "Clear portfolio"}
               </Button>
             </div>
@@ -304,7 +306,7 @@ export default function Settings() {
                   <p className="mt-0.5 truncate text-xs text-stitch-muted">{user.email}</p>
                 </div>
                 <Button size="sm" variant="outline" className={`h-8 shrink-0 text-xs ${outlineBtn}`} onClick={handleSignOut}>
-                  <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                  <LogOut aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />
                   Sign Out
                 </Button>
               </div>
@@ -316,7 +318,7 @@ export default function Settings() {
                 </p>
                 <Button
                   size="sm"
-                  className="h-9 bg-stitch-accent text-xs font-semibold text-black hover:bg-stitch-accent/90"
+                  className={`h-9 ${primaryBtn}`}
                   onClick={() => navigate("/auth")}
                 >
                   Create account
@@ -348,7 +350,7 @@ export default function Settings() {
                   window.location.href = "/";
                 }}
               >
-                <BookOpen className="h-3.5 w-3.5" />
+                <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
                 Replay tour
               </Button>
             </div>
