@@ -198,12 +198,12 @@ export default function HoldingDetail() {
     tabParam && ["overview", "strategy", "calculator", "history", "insights"].includes(tabParam) ? tabParam : "strategy"
   );
 
-  const switchTab = (tab: WorkspaceTab) => {
+  const switchTab = useCallback((tab: WorkspaceTab) => {
     setActiveTab(tab);
     const newParams = new URLSearchParams(searchParams);
     newParams.set("tab", tab);
     setSearchParams(newParams, { replace: true });
-  };
+  }, [searchParams, setSearchParams]);
 
   // ── Calculator state ────────────────────────────────────────
   const [calcMethod, setCalcMethod] = useState<Method>(() => {
@@ -464,7 +464,7 @@ export default function HoldingDetail() {
     setVal2(v2);
     setBudgetPercent(100);
     switchTab("calculator");
-  }, []);
+  }, [switchTab]);
 
   if (!holding) {
     return (
@@ -505,10 +505,11 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            aria-label="Back to holdings list"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => navigate("/")}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <h1 className="text-lg font-bold tracking-tight truncate">
@@ -522,27 +523,29 @@ export default function HoldingDetail() {
           </div>
           {canUndo && (
             <Button
-              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive"
+              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
               disabled={undoing} onClick={() => setShowUndoConfirm(true)}
             >
-              <Undo2 className="mr-1 h-3 w-3" /> Undo
+              <Undo2 className="mr-1 h-3 w-3" aria-hidden="true" /> Undo
             </Button>
           )}
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
+          <div className="flex gap-0 -mb-px overflow-x-auto" role="tablist" aria-label="Position workspace tabs">
             {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                role="tab"
+                aria-selected={activeTab === key}
                 onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 whitespace-nowrap active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg ${
                   activeTab === key
-                    ? "border-stitch-accent text-stitch-accent"
+                    ? "border-stitch-accent text-stitch-accent font-semibold"
                     : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 {label}
               </button>
             ))}
@@ -557,8 +560,8 @@ export default function HoldingDetail() {
             <div className="rounded-xl border border-stitch-border bg-stitch-card p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[11px] font-semibold uppercase tracking-widest text-stitch-muted">Position Overview</h2>
-                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white" onClick={() => setEditOpen(true)}>
-                  <Pencil className="mr-1 h-3 w-3" /> Edit
+                <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-stitch-muted hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150" onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-1 h-3 w-3" aria-hidden="true" /> Edit
                 </Button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
