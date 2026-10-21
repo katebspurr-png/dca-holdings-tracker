@@ -1,0 +1,3 @@
+## 2025-05-18 - Financial Scenario Builder Input ARIA & Mode Toggle States
+**Learning:** In interactive financial scenario builders with dynamic currency/percentage mode toggling and tabular stock allocation rows, icon-only toggle buttons require explicit `aria-pressed` states and descriptive `aria-label`s ("Dollar allocation mode" / "Percentage allocation mode"), while numeric table inputs need ticker-specific context labels (`aria-label="Buy price for AAPL"`) so screen reader users understand which position's price or budget allocation is being modified.
+**Action:** Always provide dynamic `aria-pressed` attributes on segment toggles and format table input ARIA labels with the row entity name/ticker.
