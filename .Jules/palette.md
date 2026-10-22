@@ -1,0 +1,3 @@
+## 2025-02-22 - Keyboard-Accessible Interactive Card Selection & Filter Micro-UX Pattern
+**Learning:** Selecting scenario cards or toggling list filters in dense financial workspace views requires explicit keyboard accessibility (`role="button"`, `tabIndex={0}`, `aria-pressed`, `onKeyDown` for Space/Enter) combined with distinct `focus-visible` offset ring styles and tactile scaling (`active:scale-95`). Relying on click-only `div` wrappers breaks screen reader and keyboard-only navigation.
+**Action:** Always make selectable card item lists and filter chips keyboard-interactive with WAI-ARIA `aria-pressed` states, `aria-label` descriptors, and `focus-visible` rings when building interactive list components.
