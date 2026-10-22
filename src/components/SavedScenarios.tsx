@@ -98,10 +98,10 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
   };
 
   const filters: { key: FilterMode; label: string; icon: React.ReactNode }[] = [
-    { key: "all", label: "All", icon: <SlidersHorizontal className="h-3 w-3" /> },
-    { key: "best_avg", label: "Lowest new avg", icon: <Award className="h-3 w-3" /> },
-    { key: "lowest_spend", label: "Lowest Spend", icon: <DollarSign className="h-3 w-3" /> },
-    { key: "most_recent", label: "Most Recent", icon: <Clock className="h-3 w-3" /> },
+    { key: "all", label: "All", icon: <SlidersHorizontal className="h-3 w-3" aria-hidden="true" /> },
+    { key: "best_avg", label: "Lowest new avg", icon: <Award className="h-3 w-3" aria-hidden="true" /> },
+    { key: "lowest_spend", label: "Lowest Spend", icon: <DollarSign className="h-3 w-3" aria-hidden="true" /> },
+    { key: "most_recent", label: "Most Recent", icon: <Clock className="h-3 w-3" aria-hidden="true" /> },
   ];
 
   return (
@@ -134,30 +134,33 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                aria-label="Exit scenario comparison mode"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                 onClick={exitCompareMode}
               >
-                <X className="h-3 w-3" />
+                <X className="h-3 w-3" aria-hidden="true" />
                 Exit Compare
               </Button>
             ) : hasFeature("scenario_compare") ? (
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill"
+                aria-label="Compare saved scenarios side by side"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-white hover:bg-stitch-pill focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                 onClick={() => setCompareMode(true)}
               >
-                <GitCompareArrows className="h-3 w-3 text-stitch-accent" />
+                <GitCompareArrows className="h-3 w-3 text-stitch-accent" aria-hidden="true" />
                 Compare
               </Button>
             ) : (
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-white"
+                aria-label="Compare saved scenarios (Premium feature)"
+                className="h-6 gap-1 border-stitch-border bg-transparent px-2.5 text-[10px] text-stitch-muted opacity-90 hover:bg-stitch-pill hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                 onClick={() => toast.info("Enable premium preview in Settings to compare scenarios side-by-side.")}
               >
-                <Lock className="h-3 w-3" />
+                <Lock className="h-3 w-3" aria-hidden="true" />
                 Compare
                 <PremiumBadge className="ml-0.5" />
               </Button>
@@ -176,7 +179,9 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-colors ${
+              aria-pressed={filter === f.key}
+              aria-label={`Filter scenarios by ${f.label}`}
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1 rounded-full border transition-all focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none active:scale-95 ${
                 filter === f.key
                   ? "bg-stitch-accent/10 border-stitch-accent/30 text-stitch-accent"
                   : "bg-stitch-pill/30 border-stitch-border text-stitch-muted hover:bg-stitch-pill/60 hover:text-white"
@@ -191,7 +196,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
 
       {filteredScenarios.length === 0 ? (
         <div className="rounded-xl border border-dashed border-stitch-border bg-stitch-pill/10 p-8 text-center space-y-2">
-          <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" />
+          <BookOpen className="h-5 w-5 mx-auto text-stitch-muted/50" aria-hidden="true" />
           <p className="text-xs text-stitch-muted font-medium">No saved scenarios yet.</p>
           <p className="text-[11px] text-stitch-muted/50">
             Use the Calculator tab, then Save — or add a note when saving to label your plan.
@@ -214,8 +219,12 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                 <div
                   key={s.id}
                   onClick={compareMode ? () => toggleSelect(s.id) : undefined}
-                  className={`group rounded-xl border bg-stitch-card p-3.5 transition-all ${
-                    compareMode ? "cursor-pointer" : ""
+                  role={compareMode ? "checkbox" : undefined}
+                  aria-checked={compareMode ? isSelected : undefined}
+                  tabIndex={compareMode ? 0 : undefined}
+                  onKeyDown={compareMode ? (e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleSelect(s.id); } } : undefined}
+                  className={`group rounded-xl border bg-stitch-card p-3.5 transition-all outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card ${
+                    compareMode ? "cursor-pointer active:scale-[0.99]" : ""
                   } ${
                     isSelected
                       ? "border-stitch-accent/50 bg-stitch-accent/[0.06] ring-1 ring-stitch-accent/25"
@@ -229,7 +238,7 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                         <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                           isSelected ? "bg-stitch-accent border-stitch-accent" : "border-stitch-muted/40"
                         }`}>
-                          {isSelected && <Check className="h-2.5 w-2.5 text-black" />}
+                          {isSelected && <Check className="h-2.5 w-2.5 text-black" aria-hidden="true" />}
                         </div>
                       )}
                       <span className="text-[11px] font-semibold text-white/90 truncate" title={scenarioTitle}>
@@ -278,12 +287,12 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                     <div className="ml-auto">
                       {improves ? (
                         <span className="text-[10px] font-medium text-stitch-accent flex items-center gap-0.5">
-                          <TrendingDown className="h-3 w-3" />
+                          <TrendingDown className="h-3 w-3" aria-hidden="true" />
                           −{cp}{fmt(Math.abs(avgDiff))}
                         </span>
                       ) : worsens ? (
                         <span className="text-[10px] font-medium text-destructive flex items-center gap-0.5">
-                          <TrendingUp className="h-3 w-3" />
+                          <TrendingUp className="h-3 w-3" aria-hidden="true" />
                           +{cp}{fmt(Math.abs(avgDiff))}
                         </span>
                       ) : null}
@@ -296,19 +305,21 @@ export default function SavedScenarios({ holdingId, exchange, onUseScenario, onA
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-white hover:bg-stitch-pill"
+                        aria-label={`Use scenario: ${scenarioTitle}`}
+                        className="h-6 border-stitch-border bg-transparent px-2 text-[10px] text-white hover:bg-stitch-pill focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                         onClick={() => onUseScenario(s)}
                       >
-                        <ArrowRight className="mr-1 h-2.5 w-2.5 text-stitch-accent" />
+                        <ArrowRight className="mr-1 h-2.5 w-2.5 text-stitch-accent" aria-hidden="true" />
                         Use Scenario
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-6 px-2 text-[10px] text-stitch-muted hover:bg-stitch-pill/50 hover:text-destructive"
+                        aria-label={`Delete scenario: ${scenarioTitle}`}
+                        className="h-6 px-2 text-[10px] text-stitch-muted hover:bg-stitch-pill/50 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
                         onClick={() => setDeleting(s)}
                       >
-                        <Trash2 className="mr-1 h-2.5 w-2.5" />
+                        <Trash2 className="mr-1 h-2.5 w-2.5" aria-hidden="true" />
                         Delete
                       </Button>
                     </div>
