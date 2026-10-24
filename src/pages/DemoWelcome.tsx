@@ -42,9 +42,9 @@ export default function DemoWelcome() {
             <li key={line} className="flex gap-3 text-left text-sm leading-snug text-stitch-muted-soft">
               <span
                 className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-stitch-accent/15 text-stitch-accent"
-                aria-hidden
+                aria-hidden="true"
               >
-                <Check className="h-3 w-3 stroke-[3]" />
+                <Check className="h-3 w-3 stroke-[3]" aria-hidden="true" />
               </span>
               <span className="pt-0.5 text-white/90">{line}</span>
             </li>
@@ -55,7 +55,7 @@ export default function DemoWelcome() {
           <Button
             type="button"
             size="lg"
-            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90"
+            className="h-12 w-full bg-stitch-accent text-base font-semibold text-black shadow-lg shadow-stitch-accent/15 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => goToDemo(false)}
           >
             Enter Demo
@@ -64,7 +64,7 @@ export default function DemoWelcome() {
             type="button"
             variant="ghost"
             size="lg"
-            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white"
+            className="h-11 w-full text-[13px] font-medium text-stitch-muted hover:bg-stitch-pill hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => goToDemo(true)}
           >
             Skip walkthrough
