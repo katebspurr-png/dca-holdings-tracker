@@ -20,7 +20,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 const outlineBtn =
-  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150";
 
 export default function Scenarios() {
   const navigate = useNavigate();
@@ -43,8 +43,14 @@ export default function Scenarios() {
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="outline" size="sm" className={outlineBtn} onClick={() => navigate("/")}>
-              <ArrowLeft className="mr-1 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Back to portfolio overview"
+              className={outlineBtn}
+              onClick={() => navigate("/")}
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
               Portfolio
             </Button>
             <h1 className="sr-only">Saved Scenarios</h1>
@@ -56,12 +62,16 @@ export default function Scenarios() {
         <div className="flex flex-wrap gap-3">
           <Input
             placeholder="Filter by ticker…"
+            aria-label="Filter scenarios by ticker"
             value={tickerFilter}
             onChange={(e) => setTickerFilter(e.target.value)}
-            className="w-48 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50"
+            className="w-48 border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
           />
           <Select value={methodFilter} onValueChange={setMethodFilter}>
-            <SelectTrigger className={`w-52 ${outlineBtn}`}>
+            <SelectTrigger
+              aria-label="Filter scenarios by method"
+              className={`w-52 ${outlineBtn}`}
+            >
               <SelectValue placeholder="All methods" />
             </SelectTrigger>
             <SelectContent className="z-50 border-stitch-border bg-stitch-card text-white">
@@ -76,7 +86,7 @@ export default function Scenarios() {
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-sm text-stitch-muted">No scenarios found.</p>
+          <p className="text-sm text-stitch-muted" role="status">No scenarios found.</p>
         ) : (
           <div className="overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card shadow-lg">
             <div className="overflow-x-auto">
@@ -97,8 +107,17 @@ export default function Scenarios() {
                   {filtered.map((s) => (
                     <TableRow
                       key={s.id}
-                      className="cursor-pointer border-stitch-border hover:bg-stitch-pill/30"
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View scenario details for ${s.ticker} created on ${new Date(s.created_at).toLocaleDateString()}`}
+                      className="cursor-pointer border-stitch-border transition-colors hover:bg-stitch-pill/30 focus-visible:bg-stitch-pill/40 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none"
                       onClick={() => navigate(`/scenarios/${s.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/scenarios/${s.id}`);
+                        }
+                      }}
                     >
                       <TableCell className="whitespace-nowrap text-sm text-stitch-muted">
                         {new Date(s.created_at).toLocaleDateString()}
