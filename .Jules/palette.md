@@ -1,0 +1,3 @@
+## 2025-01-15 - Interactive Table Rows Keyboard Accessibility
+**Learning:** In this design system, Shadcn `TableRow` components with `onClick` navigation lack keyboard focus and keyboard activation handlers by default. Making table rows keyboard-accessible requires explicit `tabIndex={0}`, `role="button"`, descriptive `aria-label`, `onKeyDown` for `Enter`/`Space` keys, and `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none`.
+**Action:** Always add `tabIndex={0}`, `role="button"`, `aria-label`, `onKeyDown`, and design system focus-visible offset ring styles whenever making table rows clickable.
