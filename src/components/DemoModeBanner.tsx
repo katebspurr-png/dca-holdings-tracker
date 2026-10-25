@@ -39,7 +39,7 @@ export default function DemoModeBanner() {
           <Button
             type="button"
             size="sm"
-            className="h-9 w-full bg-stitch-accent text-xs font-semibold text-black shadow-md shadow-stitch-accent/15 hover:bg-stitch-accent/90 sm:h-8 sm:w-auto"
+            className="h-9 w-full bg-stitch-accent text-xs font-semibold text-black shadow-md shadow-stitch-accent/15 hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-950 active:scale-95 transition-all duration-150 sm:h-8 sm:w-auto"
             onClick={handleCreateOwnPortfolio}
           >
             {user ? "View my portfolio" : "Create your own portfolio"}
@@ -50,7 +50,7 @@ export default function DemoModeBanner() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white"
+                className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-950 active:scale-95 transition-all duration-150"
                 onClick={() => navigate("/auth?mode=login")}
               >
                 Sign in
@@ -60,7 +60,7 @@ export default function DemoModeBanner() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white"
+              className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-950 active:scale-95 transition-all duration-150"
               onClick={() => resetGuidedDemo()}
             >
               Restart walkthrough
@@ -69,7 +69,7 @@ export default function DemoModeBanner() {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white"
+              className="h-8 border-amber-500/40 bg-stitch-bg/30 text-[11px] text-amber-50 hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-950 active:scale-95 transition-all duration-150"
               onClick={resetDemo}
             >
               Reset demo
@@ -78,7 +78,7 @@ export default function DemoModeBanner() {
               type="button"
               size="sm"
               variant="outline"
-              className="h-8 border-amber-500/50 bg-transparent text-[11px] font-semibold text-amber-100 hover:bg-stitch-card hover:text-white"
+              className="h-8 border-amber-500/50 bg-transparent text-[11px] font-semibold text-amber-100 hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-950 active:scale-95 transition-all duration-150"
               onClick={exitDemo}
             >
               Exit demo
