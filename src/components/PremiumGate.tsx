@@ -32,17 +32,17 @@ export default function PremiumGate({ feature, title, description, children, cla
         <div className="mx-auto max-w-sm rounded-2xl border border-stitch-accent/25 bg-stitch-card p-5 text-center shadow-lg sm:p-6">
           <div className="mb-3 flex items-center justify-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-stitch-accent/15">
-              <Lock className="h-4 w-4 text-stitch-accent" />
+              <Lock className="h-4 w-4 text-stitch-accent" aria-hidden="true" />
             </div>
           </div>
           <h3 className="mb-1 text-sm font-semibold text-white">{displayTitle}</h3>
           <p className="mb-4 text-xs leading-relaxed text-stitch-muted">{displayDesc}</p>
           <Button
             size="sm"
-            className="h-8 gap-1.5 bg-stitch-accent px-4 text-xs font-semibold text-black hover:bg-stitch-accent/90"
+            className="h-8 gap-1.5 bg-stitch-accent px-4 text-xs font-semibold text-black hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none active:scale-95 transition-all duration-150"
             onClick={() => navigate("/settings")}
           >
-            <Crown className="h-3.5 w-3.5" />
+            <Crown className="h-3.5 w-3.5" aria-hidden="true" />
             Open Settings for premium preview
           </Button>
           <p className="mt-2 text-[10px] text-stitch-muted/60">
@@ -60,7 +60,7 @@ export function PremiumBadge({ className = "" }: { className?: string }) {
     <span
       className={`inline-flex items-center gap-0.5 rounded bg-stitch-accent/15 px-1.5 py-0.5 text-[9px] font-semibold text-stitch-accent ${className}`}
     >
-      <Crown className="h-2.5 w-2.5" /> PRO
+      <Crown className="h-2.5 w-2.5" aria-hidden="true" /> PRO
     </span>
   );
 }
