@@ -1,0 +1,3 @@
+## 2025-02-28 - Accessible Custom Progress Bar Pattern
+**Learning:** When custom progress bars are rendered using simple styled `<div>` elements without built-in Radix or HTML `<progress>` primitives, screen reader users cannot read the progress value or percentage. Adding `role="progressbar"`, `aria-label`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and `aria-valuetext` ensures full assistive reader compatibility while preserving custom design system styling.
+**Action:** Always verify custom visual progress bars in components and ensure full WAI-ARIA `role="progressbar"` attributes and landmark section wrapping are present.
