@@ -989,13 +989,14 @@ export default function Holdings() {
           <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
             <button
               type="button"
+              aria-label="Add new stock position"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-all duration-150 hover:bg-[#3a3a3c] focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg outline-none active:scale-95"
             >
-              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} aria-hidden="true" />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
             </button>
           </div>
