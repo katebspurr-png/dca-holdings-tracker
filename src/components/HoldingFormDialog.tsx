@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,10 +19,10 @@ import {
 import type { Holding, FeeType, Exchange } from "@/lib/storage";
 
 const inputClass =
-  "border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-stitch-accent";
+  "border-stitch-border bg-stitch-pill text-white placeholder:text-stitch-muted/50 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card";
 
 const selectTriggerClass =
-  "border-stitch-border bg-stitch-pill text-white focus:ring-stitch-accent";
+  "border-stitch-border bg-stitch-pill text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card focus:ring-stitch-accent";
 
 const selectContentClass = "z-50 border-stitch-border bg-stitch-card text-white";
 
@@ -107,7 +108,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
                 className={`${inputClass} flex-1 font-mono uppercase`}
               />
               <Select value={exchange} onValueChange={(v) => setExchange(v as Exchange)}>
-                <SelectTrigger className={`w-24 ${selectTriggerClass}`}>
+                <SelectTrigger aria-label="Select exchange" className={`w-24 ${selectTriggerClass}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className={selectContentClass}>
@@ -153,9 +154,9 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
           </div>
 
           <div className="space-y-2">
-            <Label className="text-stitch-muted">Trading fee type</Label>
+            <Label htmlFor="fee_type" className="text-stitch-muted">Trading fee type</Label>
             <Select value={feeType} onValueChange={(v) => setFeeType(v as FeeType)}>
-              <SelectTrigger className={`w-full ${selectTriggerClass}`}>
+              <SelectTrigger id="fee_type" aria-label="Select trading fee type" className={`w-full ${selectTriggerClass}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className={selectContentClass}>
@@ -192,7 +193,7 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="button"
               variant="outline"
-              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
               onClick={() => onOpenChange(false)}
             >
               Cancel
@@ -200,9 +201,18 @@ export default function HoldingFormDialog({ open, onOpenChange, onSubmit, initia
             <Button
               type="submit"
               disabled={loading}
-              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90"
+              className="bg-stitch-accent font-semibold text-black hover:bg-stitch-accent/90 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-95 transition-all duration-150"
             >
-              {initial ? "Save" : "Add"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  {initial ? "Saving..." : "Adding..."}
+                </span>
+              ) : initial ? (
+                "Save"
+              ) : (
+                "Add"
+              )}
             </Button>
           </div>
         </form>
