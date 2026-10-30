@@ -1,0 +1,3 @@
+## 2026-10-30 - Standardizing Accessible Page Headers & Navigation
+**Learning:** Top-level application sub-pages benefit significantly from landmark `<header>` tags, structured `<h1>` headings, and back navigation buttons that include explicit `aria-label` descriptions, `aria-hidden="true"` decorative icons, design system focus-visible offset rings (`focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2`), and tactile `active:scale-95` press scaling.
+**Action:** Always include a structured `<header>` with an `<h1>` heading and an accessible, keyboard-focused back navigation button when creating or polishing secondary page views.
