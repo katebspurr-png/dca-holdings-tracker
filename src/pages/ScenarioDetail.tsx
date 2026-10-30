@@ -13,7 +13,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 const outlineBtn =
-  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white";
+  "border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150";
 
 const cardClass =
   "relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg";
@@ -28,7 +28,20 @@ export default function ScenarioDetail() {
   if (!scenario) {
     return (
       <div className="relative flex min-h-[max(884px,100dvh)] items-center justify-center bg-stitch-bg px-4 text-white">
-        <p className="text-stitch-muted">Scenario not found.</p>
+        <div className="text-center">
+          <h1 className="mb-2 text-2xl font-bold">Scenario Not Found</h1>
+          <p className="mb-6 text-stitch-muted">The requested scenario could not be found or has been deleted.</p>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Back to scenarios list"
+            className={outlineBtn}
+            onClick={() => navigate("/scenarios")}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+            Back to Scenarios
+          </Button>
+        </div>
       </div>
     );
   }
@@ -37,8 +50,14 @@ export default function ScenarioDetail() {
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
       <header className="mb-6 px-4 pt-10 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-4xl flex-col gap-3">
-          <Button variant="outline" size="sm" className={`w-fit ${outlineBtn}`} onClick={() => navigate("/scenarios")}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Back to scenarios list"
+            className={`w-fit ${outlineBtn}`}
+            onClick={() => navigate("/scenarios")}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
             Back to Scenarios
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -59,7 +78,7 @@ export default function ScenarioDetail() {
               <button
                 type="button"
                 onClick={() => navigate(`/holdings/${scenario.holding_id}?tab=calculator`)}
-                className="text-lg font-mono font-semibold text-stitch-accent underline underline-offset-2 hover:opacity-80"
+                className="rounded-sm font-mono text-lg font-semibold text-stitch-accent underline underline-offset-2 transition-all duration-150 hover:opacity-80 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none active:scale-95"
               >
                 Open holding →
               </button>
