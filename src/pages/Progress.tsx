@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { PortfolioStrategyProgress } from "@/components/PortfolioStrategyProgress";
 import { getHoldings } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,25 @@ export default function Progress() {
 
   return (
     <div className="relative min-h-[max(884px,100dvh)] overflow-x-hidden bg-stitch-bg pb-28 font-sans text-white antialiased">
-      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-12 sm:px-6 md:px-8">
+      <header className="px-4 pt-10 sm:px-6 md:px-8">
+        <div className="mx-auto flex max-w-md flex-col gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="Back to portfolio overview"
+            className="w-fit border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg outline-none active:scale-95 transition-all duration-150"
+            asChild
+          >
+            <Link to="/">
+              <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+              Back to portfolio
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight">Strategy Progress</h1>
+        </div>
+      </header>
+
+      <main className="relative z-10 mx-auto flex max-w-md flex-1 flex-col gap-4 px-4 pt-6 sm:px-6 md:px-8">
         <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
           <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
           <div className="relative z-10">
@@ -22,7 +41,7 @@ export default function Progress() {
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white"
+              className="mt-4 border-stitch-border bg-stitch-pill text-stitch-muted-soft hover:bg-stitch-card hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none active:scale-95 transition-all duration-150"
               asChild
             >
               <Link to="/">Back to portfolio</Link>
