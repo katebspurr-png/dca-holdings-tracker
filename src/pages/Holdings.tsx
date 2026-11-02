@@ -174,8 +174,9 @@ function HoldingPortfolioCard({
         tabIndex={0}
         onClick={onRowActivate}
         onKeyDown={onKeyDown}
+        aria-label={`Holding ${h.ticker}, ${price != null ? `${cp}${fmt(price)}` : "price unavailable"}`}
         className={cn(
-          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-opacity",
+          "relative flex flex-col rounded-2xl border border-stitch-border bg-stitch-card p-3 shadow-md outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
           isSelected && "ring-2 ring-stitch-accent/60",
         )}
       >
@@ -250,40 +251,42 @@ function HoldingPortfolioCard({
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
             <button
               type="button"
-              className="shrink-0"
+              className="shrink-0 rounded p-1 outline-none transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               onClick={(e) => {
                 e.stopPropagation();
                 onStrategy();
               }}
-              aria-label="Open Plan tab"
+              aria-label={`Open Plan tab for ${h.ticker}`}
             >
-              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+              <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} aria-hidden="true" />
             </button>
-            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-stitch-muted/40" aria-hidden="true" />
           </div>
         </div>
         {!selectMode && (
           <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
             <button
               type="button"
-              className="text-[11px] text-stitch-muted hover:text-white"
+              aria-label={`Edit ${h.ticker}`}
+              className="rounded px-1.5 py-0.5 text-[11px] text-stitch-muted outline-none transition-all duration-150 hover:text-white active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit();
               }}
             >
-              <Pencil className="mr-1 inline h-3 w-3" />
+              <Pencil className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Edit
             </button>
             <button
               type="button"
-              className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+              aria-label={`Delete ${h.ticker}`}
+              className="rounded px-1.5 py-0.5 text-[11px] text-stitch-danger/90 outline-none transition-all duration-150 hover:text-stitch-danger active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-danger/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
             >
-              <Trash2 className="mr-1 inline h-3 w-3" />
+              <Trash2 className="mr-1 inline h-3 w-3" aria-hidden="true" />
               Delete
             </button>
           </div>
@@ -298,8 +301,9 @@ function HoldingPortfolioCard({
       tabIndex={0}
       onClick={onRowActivate}
       onKeyDown={onKeyDown}
+      aria-label={`Holding ${h.ticker}, ${price != null ? `${cp}${fmt(price)}` : "price unavailable"}`}
       className={cn(
-        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-opacity",
+        "relative flex flex-col rounded-[24px] border border-stitch-border bg-stitch-card p-4 shadow-md outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg",
         isSelected && "ring-2 ring-stitch-accent/60",
       )}
     >
@@ -323,14 +327,14 @@ function HoldingPortfolioCard({
         </div>
         <button
           type="button"
-          className="shrink-0"
+          className="shrink-0 rounded p-1 outline-none transition-all duration-150 active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
           onClick={(e) => {
             e.stopPropagation();
             onStrategy();
           }}
-          aria-label="Open Plan tab"
+          aria-label={`Open Plan tab for ${h.ticker}`}
         >
-          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} />
+          <SlidersHorizontal className={`h-4 w-4 ${sliderColor}`} aria-hidden="true" />
         </button>
       </div>
 
@@ -401,24 +405,26 @@ function HoldingPortfolioCard({
         <div className="mt-2 flex gap-2 border-t border-stitch-border/50 pt-2">
           <button
             type="button"
-            className="text-[11px] text-stitch-muted hover:text-white"
+            aria-label={`Edit ${h.ticker}`}
+            className="rounded px-1.5 py-0.5 text-[11px] text-stitch-muted outline-none transition-all duration-150 hover:text-white active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
             onClick={(e) => {
               e.stopPropagation();
               onEdit();
             }}
           >
-            <Pencil className="mr-1 inline h-3 w-3" />
+            <Pencil className="mr-1 inline h-3 w-3" aria-hidden="true" />
             Edit
           </button>
           <button
             type="button"
-            className="text-[11px] text-stitch-danger/90 hover:text-stitch-danger"
+            aria-label={`Delete ${h.ticker}`}
+            className="rounded px-1.5 py-0.5 text-[11px] text-stitch-danger/90 outline-none transition-all duration-150 hover:text-stitch-danger active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-danger/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
           >
-            <Trash2 className="mr-1 inline h-3 w-3" />
+            <Trash2 className="mr-1 inline h-3 w-3" aria-hidden="true" />
             Delete
           </button>
         </div>
@@ -989,13 +995,14 @@ export default function Holdings() {
           <div className="fixed bottom-24 right-4 z-50 sm:right-6 md:right-8">
             <button
               type="button"
+              aria-label="Add new stock position"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
               }}
-              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl transition-colors hover:bg-[#3a3a3c]"
+              className="flex items-center gap-2 rounded-full border border-stitch-border bg-stitch-pill py-3 pl-4 pr-5 shadow-xl outline-none transition-all duration-150 hover:bg-[#3a3a3c] active:scale-95 focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg"
             >
-              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} />
+              <Plus className="h-5 w-5 text-stitch-accent" strokeWidth={2.5} aria-hidden="true" />
               <span className="font-semibold text-stitch-accent">Add Stock</span>
             </button>
           </div>
