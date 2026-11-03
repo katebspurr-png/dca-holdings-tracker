@@ -1119,27 +1119,34 @@ function DcaOpportunities({
   const visibleRows = showAll || rows.length <= COLLAPSE_COUNT ? rows : rows.slice(0, COLLAPSE_COUNT);
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg">
+    <section
+      aria-labelledby="dca-opportunities-heading"
+      className="relative overflow-hidden rounded-[32px] border border-stitch-border bg-stitch-card p-6 shadow-lg"
+    >
       <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-stitch-accent/10 blur-3xl" />
       <div className="relative z-10">
         <button
           type="button"
           onClick={toggleSectionExpanded}
-          className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left transition-colors hover:bg-stitch-pill/20"
+          aria-expanded={sectionExpanded}
+          aria-controls="dca-opportunities-content"
+          className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left transition-all duration-150 hover:bg-stitch-pill/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.99]"
         >
           <div className="flex items-center gap-2">
-            <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" />
-            <h2 className="text-[17px] font-semibold text-white">Scenario results (per holding)</h2>
+            <Gauge className="h-4 w-4 shrink-0 text-stitch-accent" aria-hidden="true" />
+            <h2 id="dca-opportunities-heading" className="text-[17px] font-semibold text-white">
+              Scenario results (per holding)
+            </h2>
           </div>
           {sectionExpanded ? (
-            <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
+            <ChevronDown className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden="true" />
           ) : (
-            <ChevronRight className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden />
+            <ChevronRight className="h-5 w-5 shrink-0 text-stitch-muted" aria-hidden="true" />
           )}
         </button>
 
         {!sectionExpanded && (
-          <p className="text-[11px] leading-relaxed text-stitch-muted">
+          <p id="dca-opportunities-content" className="text-[11px] leading-relaxed text-stitch-muted">
             {hasRows
               ? `${rows.length} modeled ${rows.length === 1 ? "line" : "lines"} (illustrative only) — tap to expand`
               : "Tap header to expand"}
@@ -1147,7 +1154,7 @@ function DcaOpportunities({
         )}
 
         {sectionExpanded && (
-          <>
+          <div id="dca-opportunities-content">
             <p className="mb-4 text-[10px] leading-relaxed text-stitch-muted">
               One modeled ladder step per ticker (A–Z), using the same rules as each position’s budget-step simulator. Rows
               are <strong className="font-medium text-stitch-muted">not</strong> ranked or prioritized across holdings —
@@ -1170,8 +1177,9 @@ function DcaOpportunities({
                       <button
                         key={h.id}
                         type="button"
+                        aria-label={`Open strategy plan for ${h.ticker}`}
                         onClick={() => navigate(`/holdings/${h.id}?tab=strategy`)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-colors hover:bg-stitch-pill/30"
+                        className="flex w-full items-center gap-3 rounded-xl border border-stitch-border bg-stitch-card px-3 py-2.5 text-left transition-all duration-150 hover:bg-stitch-pill/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card active:scale-[0.99]"
                       >
                         <span className="w-16 shrink-0 text-sm font-semibold text-white">{h.ticker}</span>
                         <span className="flex-1 truncate font-mono text-[11px] text-stitch-muted">
@@ -1180,7 +1188,7 @@ function DcaOpportunities({
                           {fmt(step.newAvg)} (−{cp}
                           {fmt(step.avgImprovement)}/share)
                         </span>
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" />
+                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-stitch-muted/40" aria-hidden="true" />
                       </button>
                     );
                   })}
@@ -1188,7 +1196,7 @@ function DcaOpportunities({
                     <button
                       type="button"
                       onClick={() => setShowAll((v) => !v)}
-                      className="w-full py-1.5 text-center text-[11px] text-stitch-muted/60 transition-colors hover:text-stitch-muted"
+                      className="w-full rounded-lg py-1.5 text-center text-[11px] text-stitch-muted/60 transition-all duration-150 hover:text-stitch-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 active:scale-95"
                     >
                       {showAll ? "Show less" : `Show all ${rows.length}`}
                     </button>
@@ -1200,7 +1208,7 @@ function DcaOpportunities({
                 </p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </section>
