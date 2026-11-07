@@ -238,15 +238,33 @@ export default function Settings() {
           <div className="relative z-10 space-y-4">
             <h2 className={sectionTitle}>Appearance</h2>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Sun className={`h-5 w-5 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
+              <button
+                type="button"
+                onClick={() => setDark(false)}
+                aria-pressed={!dark}
+                aria-label="Switch to light mode"
+                className="flex items-center gap-3 rounded-lg px-1.5 py-1 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
+              >
+                <Sun className={`h-5 w-5 shrink-0 ${!dark ? "text-stitch-accent" : "text-stitch-muted"}`} aria-hidden="true" />
                 <span className={`text-sm font-medium ${!dark ? "text-white" : "text-stitch-muted"}`}>Light</span>
-              </div>
-              <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
-              <div className="flex items-center gap-3">
+              </button>
+              <Switch
+                id="dark-mode"
+                checked={dark}
+                onCheckedChange={setDark}
+                aria-label="Toggle dark mode"
+                className="focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
+              />
+              <button
+                type="button"
+                onClick={() => setDark(true)}
+                aria-pressed={dark}
+                aria-label="Switch to dark mode"
+                className="flex items-center gap-3 rounded-lg px-1.5 py-1 transition-all duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
+              >
                 <span className={`text-sm font-medium ${dark ? "text-white" : "text-stitch-muted"}`}>Dark</span>
-                <Moon className={`h-5 w-5 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} />
-              </div>
+                <Moon className={`h-5 w-5 shrink-0 ${dark ? "text-stitch-accent" : "text-stitch-muted"}`} aria-hidden="true" />
+              </button>
             </div>
           </div>
         </section>

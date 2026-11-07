@@ -1,0 +1,3 @@
+## 2026-11-07 - Semantic Buttons for State Toggles
+**Learning:** While `Label` components are standard for form fields, interactive text elements flanking binary toggle switches (like "Light" and "Dark" theme labels) provide superior accessibility and tactile responsiveness when implemented as semantic `<button type="button">` elements with `aria-pressed`. This provides built-in keyboard navigation, clear focus offset indicators, and direct click-to-activate targets without relying on precision clicking of small switch tracks.
+**Action:** Use semantic `<button type="button">` with `aria-pressed` and focus visible rings for flanking binary state toggles to ensure intuitive keyboard and touch interaction.
