@@ -1,0 +1,5 @@
+# Palette's Journal - Critical Learnings Only
+
+## 2026-03-09 - Accessible In-Text Navigation and Form Switches in Simulators
+**Learning:** In financial simulator and calculator panels like `GoalLadder`, action prompts embedded in informational messages often rely on plain inline buttons (e.g. "Update Prices") without explicit accessible names or keyboard visible focus ring offsets against dark card backgrounds (`bg-stitch-card` / `bg-stitch-pill`). Furthermore, `<Switch>` controls placed alongside `<Label>` components benefit from direct `aria-label` attributes to ensure screen readers unambiguously announce the toggle purpose even when navigated via quick toggle keys.
+**Action:** When adding inline navigation buttons and switch toggles in card/pill containers, ensure they include clear `aria-label` descriptors, `focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none`, and `active:scale-95` tactile scaling.
