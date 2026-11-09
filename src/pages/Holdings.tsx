@@ -892,28 +892,28 @@ export default function Holdings() {
                     aria-label="Grid view"
                     aria-pressed={holdingsLayout === "grid"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-all duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                       holdingsLayout === "grid"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
                     )}
                     onClick={() => handleLayoutChange("grid")}
                   >
-                    <LayoutGrid className="h-4 w-4" />
+                    <LayoutGrid className="h-4 w-4" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     aria-label="List view"
                     aria-pressed={holdingsLayout === "list"}
                     className={cn(
-                      "rounded-lg p-2 transition-colors",
+                      "rounded-lg p-2 transition-all duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card",
                       holdingsLayout === "list"
                         ? "bg-stitch-pill text-white"
                         : "text-stitch-muted hover:text-white",
                     )}
                     onClick={() => handleLayoutChange("list")}
                   >
-                    <List className="h-4 w-4" />
+                    <List className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
                 <DropdownMenu>
@@ -922,9 +922,9 @@ export default function Holdings() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft hover:bg-stitch-pill hover:text-white"
+                      className="h-9 border-stitch-border bg-stitch-card px-3 text-xs text-stitch-muted-soft transition-all duration-150 active:scale-95 outline-none hover:bg-stitch-pill hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card"
                     >
-                      <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
+                      <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                       Sort
                     </Button>
                   </DropdownMenuTrigger>
