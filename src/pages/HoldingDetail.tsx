@@ -505,10 +505,11 @@ export default function HoldingDetail() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white"
+            aria-label="Back to portfolio overview"
+            className="h-8 px-2 text-stitch-muted hover:bg-stitch-pill/40 hover:text-white focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
             onClick={() => navigate("/")}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <h1 className="text-lg font-bold tracking-tight truncate">
@@ -522,27 +523,29 @@ export default function HoldingDetail() {
           </div>
           {canUndo && (
             <Button
-              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive"
+              variant="ghost" size="sm" className="h-8 text-[10px] px-2 text-stitch-muted hover:text-destructive focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-bg active:scale-95 transition-all duration-150"
               disabled={undoing} onClick={() => setShowUndoConfirm(true)}
             >
-              <Undo2 className="mr-1 h-3 w-3" /> Undo
+              <Undo2 className="mr-1 h-3 w-3" aria-hidden="true" /> Undo
             </Button>
           )}
         </div>
         {/* Tab bar */}
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="flex gap-0 -mb-px overflow-x-auto">
+          <div role="tablist" aria-label="Position workspace tabs" className="flex gap-0 -mb-px overflow-x-auto">
             {WORKSPACE_TABS.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
+                role="tab"
+                aria-selected={activeTab === key}
                 onClick={() => switchTab(key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border-b-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stitch-accent/50 focus-visible:ring-offset-1 focus-visible:ring-offset-stitch-bg rounded-t-sm transition-all duration-150 whitespace-nowrap ${
                   activeTab === key
                     ? "border-stitch-accent text-stitch-accent"
                     : "border-transparent text-stitch-muted hover:text-white hover:border-stitch-border"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 {label}
               </button>
             ))}
