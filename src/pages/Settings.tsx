@@ -2,6 +2,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Moon, Sun, Download, Upload, RotateCcw, Crown, Check, LogOut, BookOpen, ExternalLink } from "lucide-react";
 import { resetOnboarding } from "@/components/onboarding";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +32,7 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { isDemoMode, exitDemo } = useDemoMode();
   const { resetGuidedDemo } = useExperience();
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -258,11 +269,11 @@ export default function Settings() {
             <h2 className={sectionTitle}>Data</h2>
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleExport} size="sm" variant="outline" className={outlineBtn}>
-                <Download className="mr-1.5 h-4 w-4" />
+                <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Export Data
               </Button>
               <Button onClick={() => fileRef.current?.click()} size="sm" variant="outline" className={outlineBtn}>
-                <Upload className="mr-1.5 h-4 w-4" />
+                <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Import Data
               </Button>
               <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
@@ -273,10 +284,44 @@ export default function Settings() {
                   ? "Resets the demo sandbox to the original sample dataset."
                   : "Removes all holdings and scenarios stored on this device for your account."}
               </p>
-              <Button onClick={handleReset} size="sm" variant="destructive">
-                <RotateCcw className="mr-1.5 h-4 w-4" />
+              <Button
+                onClick={() => setShowResetConfirm(true)}
+                size="sm"
+                variant="destructive"
+                className="active:scale-95 transition-all duration-150 focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-stitch-card outline-none"
+              >
+                <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 {isDemoMode ? "Reset demo sample" : "Clear portfolio"}
               </Button>
+
+              <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+                <AlertDialogContent className="border-stitch-border bg-stitch-card text-white">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-white">
+                      {isDemoMode ? "Reset demo sandbox?" : "Clear entire portfolio?"}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-stitch-muted">
+                      {isDemoMode
+                        ? "This will restore the demo sandbox back to the initial sample positions and clear any scenario changes you have made."
+                        : "This will permanently remove all holdings, transactions, and custom DCA scenarios saved on this device. This action cannot be undone."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2 sm:gap-0">
+                    <AlertDialogCancel className="border-stitch-border bg-transparent text-white hover:bg-stitch-pill">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setShowResetConfirm(false);
+                        handleReset();
+                      }}
+                      className="bg-stitch-danger font-semibold text-white hover:bg-stitch-danger/90 active:scale-95 transition-all duration-150"
+                    >
+                      {isDemoMode ? "Reset Demo" : "Clear Portfolio"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </section>
